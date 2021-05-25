@@ -109,6 +109,7 @@ class OIDC:
         )
 
         credentials = response.json()
+        print(credentials)
         assert "access_token" in credentials
         if self._when_login_callback is not None:
             self._when_login_callback()

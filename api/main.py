@@ -34,7 +34,7 @@ class API:
         }
         url = f"{API_HOST}/{url}"
         response = requests.post(url, headers=headers, files=files)
-        print(response)
+        response.raise_for_status()
         return response
 
     def post_file(self, target, filepath, content=None, modified=None):
