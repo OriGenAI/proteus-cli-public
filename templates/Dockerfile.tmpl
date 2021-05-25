@@ -1,0 +1,15 @@
+FROM gcr.io/$project/$project_name-basis:$project_version
+
+# startup this directory server stuff
+COPY command.py /app
+COPY setup.py /app
+COPY lifecycle /app/lifecycle
+COPY api /app/api
+COPY common /app/common
+WORKDIR /app
+
+ARG DEPLOY_ENV=production
+ENV DEPLOYMENT=production
+
+CMD python command.py run
+#CMD sleep 600
