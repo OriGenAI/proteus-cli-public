@@ -4,10 +4,8 @@ from config import config
 from common.logger import logger
 
 
-API_HOST, STATUS_URL, ENTITY_URL = (
-    config.API_HOST,
-    config.STATUS_URL,
-    config.ENTITY_URL,
+API_HOST = (
+    config.API_HOST
 )
 
 
@@ -18,19 +16,7 @@ class API:
     def report(
         self, set_status="processing", message=None, progress=0, result=None
     ):
-        data = {
-            "set_status": set_status,
-            "progress": progress,
-        }
-        report = {}
-        if message is not None:
-            report["message"] = message
-        if result is not None:
-            report["result"] = result
-        data["report"] = report
-        response = self.post(STATUS_URL, data)
-        response.raise_for_status()
-        return response
+        pass
 
     def post(self, url, data, headers={}):
         headers = {
@@ -47,7 +33,15 @@ class API:
             **headers,
         }
         url = f"{API_HOST}/{url}"
-        return requests.post(url, headers=headers, files=files)
+        response = requests.post(url, headers=headers, files=files)
+        print(response)
+        return response
+
+    def post_file(self, target, filepath, content=None, modified=None):
+        headers = {}
+        if modified is not None:
+            headers["x-last-modified"] = modified.isoformat()
+        return self.post_files(target, headers=headers, files={filepath: content.read()})
 
     def get(self, url, headers={}, **query_args):
         headers = {

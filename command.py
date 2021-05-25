@@ -1,24 +1,23 @@
 import click
-from api import login as api_login
-from config import config
-from project import name
 import sys
-import os
+from config import config
+from api import login as api_login
 
 USERNAME, PASSWORD, PROMPT = config.USERNAME, config.PASSWORD, config.PROMPT
+print(config, PROMPT)
 
 
 @click.group()
 def main():
     """
-    Simple CLI for PROTEUS Worker utils
+    Simple CLI for PROTEUS auxiliary utils
     """
     pass
 
 
 @main.command()
 @click.option("--user", prompt=True, default=USERNAME)
-@click.option("--password", prompt=True, default=PASSWORD)
+@click.option("--password", prompt=True, default=PASSWORD, hide_input=True)
 def login(user, password):
     """Will perfom a login to test current credentials"""
     session = api_login(username=user, password=password, auto_update=False)
@@ -27,27 +26,25 @@ def login(user, password):
 
 @main.command()
 @click.option("--user", prompt=PROMPT, default=USERNAME)
-@click.option("--password", prompt=PROMPT, default=PASSWORD)
-def run(user, password):
-    """Will start worker lifecycle"""
-    exit_code = os.EX_OK
-    try:
-        image_ref = os.getenv("CURRENT_IMAGE")
-        print("starting ", name, image_ref)
-        auth = api_login(username=user, password=password, auto_update=True)
-        from common.safe import safely
+@click.option("--password", prompt=PROMPT, default=PASSWORD, hide_input=True)
+@click.argument("bucket")
+@click.argument("prefix")
+@click.argument("dataset_uuid")
+def upload(user, password, bucket, prefix, dataset_uuid):
+    """This search and return results corresponding to the given query from Google Books"""
+    from upload import upload_dataset
+    auth = api_login(username=user, password=password, auto_update=True)
+    click.echo(upload_dataset(bucket, prefix, dataset_uuid))
 
-        safely.init(auth, image_ref)
-        safely.protected(basepath="private")
-        from private.lifecycle.main import Lifecycle
 
-        lifecycle = Lifecycle()
-        lifecycle.run()
-    except Exception as error:
-        print(error)
-        exit_code = os.EX_SOFTWARE
-    finally:
-        sys.exit(exit_code)
+@main.command()
+def test_az_bucket():
+    """Tests Azure access"""
+    sys.path.insert(0, ".")
+    from test_az_bucket import do as do_test_az_bucket
+
+    click.echo("Running azure connection tests")
+    do_test_az_bucket()
 
 
 if __name__ == "__main__":
