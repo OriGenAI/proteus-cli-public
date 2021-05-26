@@ -38,6 +38,18 @@ def upload(user, password, bucket, prefix, dataset_uuid):
 
 
 @main.command()
+@click.option("--user", prompt=PROMPT, default=USERNAME)
+@click.option("--password", prompt=PROMPT, default=PASSWORD, hide_input=True)
+@click.argument("job_uuid")
+def jobstatus(user, password, job_uuid):
+    """This search and return results corresponding to the given query from Google Books"""
+    from jobs import get_status
+    from pprint import pprint 
+    auth = api_login(username=user, password=password, auto_update=True)
+    pprint(get_status(job_uuid))
+
+
+@main.command()
 def test_az_bucket():
     """Tests Azure access"""
     sys.path.insert(0, ".")
