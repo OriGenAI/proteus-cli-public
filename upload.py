@@ -22,11 +22,20 @@ client = boto3.client(
 )
 
 
-def list_bucket_contents(bucket, prefix):
+s3_uri_re = re.compile(
+    r"^s3:(?P<bucket_name>[a-zA-Z0-9.\-_]{1,255})/(?P<prefix>.*)$"
+)
+
+
+def list_bucket_contents(bucket_uri):
+
+    match = s3_uri_re.match(bucket_uri)
+    assert match is not None, f"{bucket_uri} must be an s3 URI"
+    terms = match.groupdict()
     paginator = client.get_paginator("list_objects")
     page_iterator = paginator.paginate(
-        Bucket=bucket,
-        Prefix=prefix,
+        Bucket=terms.get('bucket_name'),
+        Prefix=terms.get('prefix'),
     )
     for page in page_iterator:
         for item in page["Contents"]:
@@ -42,13 +51,12 @@ _sheet_extension = re.compile(r".*(?P<extension>DATA|EGRID|INIT|SMSPEC|GRDECL)$"
 _timestep = re.compile(r".*(?P<extension>X\d{4}|S\d{4})$")
 
 
-
-def upload_dataset(bucket, prefix, dataset_uuid):
+def upload_dataset(bucket, dataset_uuid):
     try:
         assert api.auth.access_token is not None
         total_expected, case_by_group_and_number = get_cases(api.auth, dataset_uuid)
         with tqdm(total=total_expected) as progress:
-            load_from(case_by_group_and_number, bucket, prefix, progress)
+            load_from(case_by_group_and_number, bucket, progress)
     except KeyboardInterrupt:
         pass
     finally:
@@ -56,14 +64,8 @@ def upload_dataset(bucket, prefix, dataset_uuid):
 
 
 def get_cases(auth, dataset_uuid):
-    # ceba91e4-53ab-4dbb-8488-34ee655f2ce0
     cases_url = f"/api/v1/datasets/{dataset_uuid}/cases"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {auth.access_token}",
-    }
-    
-    response = requests.get(f"{PROTEUS_HOST}{cases_url}", headers=headers)
+    response = api.get(cases_url)
     cases = response.json().get("cases")
 
     case_by_group_and_number = {}
@@ -82,11 +84,11 @@ def find_target(case_by_group_and_number, group=None, number=None, **other):
     return case_by_group_and_number.get(f"{group}-{number}")
 
 
-def load_from(case_by_group_and_number, bucket, prefix, progress):
+def load_from(case_by_group_and_number, bucket_uri, progress):
     skipped_count = 0
     processed = 0
     progress.update(processed)
-    for item in list_bucket_contents(bucket, prefix):
+    for item in list_bucket_contents(bucket_uri):
         path = item.get("Key")
         matchs_as_case = case_re.match(path)
         terms = matchs_as_case.groupdict() if matchs_as_case is not None else {}
@@ -99,7 +101,7 @@ def load_from(case_by_group_and_number, bucket, prefix, progress):
         else:
             content = terms.get("content")
             matchs = _timestep.match(content) or _sheet_extension.match(content)
-            if matchs and is_pending(matchs.groupdict().get('extension'), target):
+            if matchs and is_pending(matchs, target):
                 progress.set_postfix_str(s=f"transfering file {path}")
                 done, skipped = send_as(target, path, **terms, **matchs.groupdict())
                 processed += done
@@ -107,7 +109,8 @@ def load_from(case_by_group_and_number, bucket, prefix, progress):
         progress.update(processed)
 
 
-def is_pending(extension, target):
+def is_pending(match, target):
+    extension = match.groupdict().get('extension')
     missing_core = target.get('missing_parts').get('core')
     if extension in missing_core:
         return True

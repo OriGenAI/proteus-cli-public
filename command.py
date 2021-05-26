@@ -28,13 +28,12 @@ def login(user, password):
 @click.option("--user", prompt=PROMPT, default=USERNAME)
 @click.option("--password", prompt=PROMPT, default=PASSWORD, hide_input=True)
 @click.argument("bucket")
-@click.argument("prefix")
 @click.argument("dataset_uuid")
-def upload(user, password, bucket, prefix, dataset_uuid):
+def upload(user, password, bucket, dataset_uuid):
     """This search and return results corresponding to the given query from Google Books"""
     from upload import upload_dataset
     auth = api_login(username=user, password=password, auto_update=True)
-    click.echo(upload_dataset(bucket, prefix, dataset_uuid))
+    click.echo(upload_dataset(bucket, dataset_uuid))
 
 
 @main.command()
