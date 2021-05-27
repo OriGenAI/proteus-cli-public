@@ -1,61 +1,59 @@
-# {{your-project-name}} based on proteus-runner
+# PROTEUS Command Line Tools
 
-Proposed structure for a worker. Put here your doc description
+CLI tools to interact with the plaform. Currently supports.
 
-## First steps
-
-1. Create your project
-
-2. Link this project as a `template` remote and pull `dev` branch
-
-```
-git remote add template git@github.com:OriGenAI/proteus-runner.git 
-git pull template dev --allow-unrelated-stories
-```
-
-Now on to update you only have to do
-
-```
-git pull template dev
-```
+* Provide files to a dataset
+* List a Job status
 
 
-3. Setting the project terms
+## Install and setup
 
-Edit `project.py` to fill in the addecuate project terms
+1. Clone the project into the desired directory
 
-
-4. All done
-
-Once created you can remove this section on the doc
-
-
-## Initial setup for {{your-project-name}}
-
-
-1. Install and setup enviroment
+2. Install and setup enviroment
 
 ```
 virtualenv -p3.8 venv
 source venv/bin/activate
 pip install -r requirements.txt
-pip install -r requirements/dev.txt
 pip install -e .
-pre-commit install
-```
-2. Optionally you can create basic dockerfiles and a update script
-```
-python setup.py docker
 ```
 
+3. create an environtment var shell script to handle configurations
+```
+#!/bin/sh
+export AWS_SERVER_PUBLIC_KEY=XXXXXXXXXXXXXX
+export AWS_SERVER_SECRET_KEY=YYYYYYYYYYYYYYYYY
+export OIDC_HOST=https://auth.dev.origen.ai
+export REALM="origen"
+export PROTEUS_HOST=https://proteus-test.dev.origen.ai
 
-## Running de project
+#optional export PROTEUS_USERNAME="your_account@origen.ai"
+#optional export PROTEUS_PASSWORD="secret-password"
+```
 
-first time:
+## Before using 
 
-1. Copy and customize a `env.sh.template` to `env.sh`
+On next times prior to use the CLI simpy use this command
+```
+source venv/bin/activate
+source secrets.sh
+```
 
-First and succesive times:
+## Dataset upload from S3
 
-2. Import it using `source env.sh`
-3. Run it: `run`
+Once you get an S3 URI that contains the cases groups, and choosen a dataset UUID to upload the source into simply run:
+
+```
+command upload s3:whatever-uri/you-selected/cases 02135a2a-7f73-4f4a-a5ef-843be8a8cf82
+``` 
+
+Process can be run again if failed only missing files will be uploaded
+
+## Job Status
+
+After getting a job UUID simply run:
+
+```
+command jobstatus 114058ca-7342-45ab-99ac-562167cc52e6
+```

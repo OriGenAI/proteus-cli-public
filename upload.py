@@ -26,9 +26,16 @@ s3_uri_re = re.compile(
     r"^s3:(?P<bucket_name>[a-zA-Z0-9.\-_]{1,255})/(?P<prefix>.*)$"
 )
 
+case_re = re.compile(
+    r"(?P<root>.*/(?P<group>validation|training|testing)/SIMULATION_(?P<number>\d+))/(?P<content>.*)"
+)
+
+_sheet_extension = re.compile(r".*(?P<extension>DATA|EGRID|INIT|SMSPEC|GRDECL)$")
+
+_timestep = re.compile(r".*(?P<extension>X\d{4}|S\d{4})$")
+
 
 def list_bucket_contents(bucket_uri):
-
     match = s3_uri_re.match(bucket_uri)
     assert match is not None, f"{bucket_uri} must be an s3 URI"
     terms = match.groupdict()
@@ -40,15 +47,6 @@ def list_bucket_contents(bucket_uri):
     for page in page_iterator:
         for item in page["Contents"]:
             yield item
-
-
-case_re = re.compile(
-    r"(?P<root>.*/(?P<group>validation|training|testing)/SIMULATION_(?P<number>\d+))/(?P<content>.*)"
-)
-
-_sheet_extension = re.compile(r".*(?P<extension>DATA|EGRID|INIT|SMSPEC|GRDECL)$")
-
-_timestep = re.compile(r".*(?P<extension>X\d{4}|S\d{4})$")
 
 
 def upload_dataset(bucket, dataset_uuid):

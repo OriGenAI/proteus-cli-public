@@ -24,7 +24,6 @@ class Config(object):
     API_HOST = os.getenv("API_HOST", "https://api.dev.origen.ai")
     RETRY_INTERVAL = 25  # Seconds
     REFRESH_GAP = 10  # Seconds
-    DATASET_UUID = os.getenv("DATASET_UUID")
     S3_REGION = "eu-west-3"
 
 
