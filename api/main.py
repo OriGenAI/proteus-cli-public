@@ -4,9 +4,7 @@ from config import config
 from common.logger import logger
 
 
-API_HOST = (
-    config.API_HOST
-)
+API_HOST = config.API_HOST
 
 
 class API:
@@ -41,7 +39,9 @@ class API:
         headers = {}
         if modified is not None:
             headers["x-last-modified"] = modified.isoformat()
-        return self.post_files(target, headers=headers, files={filepath: content.read()})
+        return self.post_files(
+            target, headers=headers, files={filepath: content}
+        )
 
     def get(self, url, headers={}, **query_args):
         headers = {

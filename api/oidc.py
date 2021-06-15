@@ -1,6 +1,7 @@
 import requests
 from config import config
-
+import base64
+import json
 from threading import Timer
 import certifi
 
@@ -63,6 +64,12 @@ class OIDC:
         self._resfresh_expires_in = refresh_expires_in
 
     @property
+    def access_token_parsed(self):
+        _header, payload, _sig = self.access_token.split('.')
+        payload = payload + "=" * divmod(len(payload), 4)[1]
+        return json.loads(base64.urlsafe_b64decode(payload))
+
+    @property
     def access_token(self):
         return self._access_token
 
@@ -109,7 +116,6 @@ class OIDC:
         )
 
         credentials = response.json()
-        print(credentials)
         assert "access_token" in credentials
         if self._when_login_callback is not None:
             self._when_login_callback()
