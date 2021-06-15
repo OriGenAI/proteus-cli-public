@@ -35,13 +35,21 @@ class API:
         response.raise_for_status()
         return response
 
-    def post_file(self, target, filepath, content=None, modified=None):
-        headers = {}
+    def post_file(self, url, filepath, content=None, modified=None):
+        headers = {
+            "Authorization": "Bearer {}".format(self.auth.access_token),
+        }
         if modified is not None:
             headers["x-last-modified"] = modified.isoformat()
-        return self.post_files(
-            target, headers=headers, files={filepath: content}
-        )
+        files = dict(file=(filepath, content))
+        url = f"{API_HOST}/{url}"
+        response = requests.post(url, headers=headers, files=files)
+        try:
+            response.raise_for_status()
+        except Exception as error:
+            print(response.content)
+            raise error
+        return response
 
     def get(self, url, headers={}, **query_args):
         headers = {
