@@ -4,7 +4,6 @@ from config import config
 from api import login as api_login, runs_authentified
 
 USERNAME, PASSWORD, PROMPT = config.USERNAME, config.PASSWORD, config.PROMPT
-print(config, PROMPT)
 
 
 @click.group()
@@ -29,10 +28,11 @@ def login(user, password):
 @click.option("--password", prompt=PROMPT, default=PASSWORD, hide_input=True)
 @click.argument("bucket")
 @click.argument("dataset_uuid")
-def upload(user, password, bucket, dataset_uuid):
-    """This search and return results corresponding to the given query from Google Books"""
+@runs_authentified
+def upload(bucket, dataset_uuid):
+    """This uploads an S3 bucket into a dataset"""
     from upload import upload_dataset
-    auth = api_login(username=user, password=password, auto_update=True)
+
     click.echo(upload_dataset(bucket, dataset_uuid))
 
 
@@ -44,13 +44,26 @@ def upload(user, password, bucket, dataset_uuid):
 @click.option("--model_uuid", prompt=False)
 @click.option("--batch_name", prompt=False)
 @runs_authentified
-def simulations(source_folder, batch_uuid=None, model_uuid=None, batch_name=None):
-    """This creates a new simulation batch and upload the DATA files and related dependencies from a source folder"""
+def simulations(
+    source_folder, batch_uuid=None, model_uuid=None, batch_name=None
+):
+    """This creates a new simulation batch and upload the DATA files
+    and related dependencies from a source folder"""
     if batch_uuid is None and model_uuid is None:
-        raise click.UsageError('model_uuid is necessary to create a new batch, for existing ones set batch_uuid')
+        raise click.UsageError(
+            "model_uuid is necessary to create a new batch" ""
+        )
     from simulations import upload_to_batch, create_batch
+
     if model_uuid is not None:
+        if batch_name is None or len(batch_name) == 0:
+            raise click.UsageError(
+                "batch_name is mandatory to create a new batch"
+            )
         batch_uuid = create_batch(model_uuid, batch_name)
+        print(
+            f'Created a new batch. to resume use --batch_uuid="{batch_uuid}"'
+        )
     upload_to_batch(source_folder, batch_uuid)
 
 
@@ -58,11 +71,13 @@ def simulations(source_folder, batch_uuid=None, model_uuid=None, batch_name=None
 @click.option("--user", prompt=PROMPT, default=USERNAME)
 @click.option("--password", prompt=PROMPT, default=PASSWORD, hide_input=True)
 @click.argument("job_uuid")
-def jobstatus(user, password, job_uuid):
-    """This search and return results corresponding to the given query from Google Books"""
+@runs_authentified
+def jobstatus(job_uuid):
+    """Lists the latests status for a given job uuid"""
+
     from jobs import get_status
-    from pprint import pprint 
-    auth = api_login(username=user, password=password, auto_update=True)
+    from pprint import pprint
+
     pprint(get_status(job_uuid))
 
 
