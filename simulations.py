@@ -33,9 +33,12 @@ def upload_file_to_batch(url, source_path, filepath):
             )
             response_json = response.json()
             # print('upload', source_path, 'as', filepath, response_json)
+            # from pprint import pprint
+            # print('uploaded', pprint(response_json))
             assert "case" in response_json
             return response_json.get("case")
     except FileNotFoundError:
+        print(f"File not found: {source_path}")
         return False
 
 
@@ -109,13 +112,17 @@ def upload_to_batch(source_folder, batch_uuid):
     datafiles_progress = tqdm(find_files(source_folder, ".DATA"))
     for source_path in datafiles_progress:
         filepath = source_path.replace(f"{source_folder}/", "")
+        print("source_path", source_path)
+        print("filepath", filepath)
         datafiles_progress.set_description(f"uploading DATA {filepath}")
         case = upload_file_to_batch(batch_url, source_path, filepath)
         assert "dependencies" in case
         dependencies = case.get("dependencies")
+        print("case dependencies", dependencies)
         provide_case_dependencies(batch_url, dependencies, source_folder)
     batch, batch_url = get_batch(batch_uuid)
     dependencies = batch.get("pending_dependencies", [])
+    print("batch dependencies", dependencies)
     provide_batch_dependencies(batch_url, dependencies, source_folder)
     batch, _ = get_batch(batch_uuid)
     report_batch_status(batch)
