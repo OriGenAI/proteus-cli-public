@@ -99,6 +99,7 @@ def provide_batch_dependencies(batch_url, dependencies, source_folder):
 
 def report_batch_status(batch):
     print(f"name: {batch['name']}")
+    print(f"uuid: {batch['uuid']}")
     print(f"status: {batch['status']}")
     dependencies = batch.get("pending_dependencies")
     if len(dependencies) > 0:
@@ -112,17 +113,13 @@ def upload_to_batch(source_folder, batch_uuid):
     datafiles_progress = tqdm(find_files(source_folder, ".DATA"))
     for source_path in datafiles_progress:
         filepath = source_path.replace(f"{source_folder}/", "")
-        print("source_path", source_path)
-        print("filepath", filepath)
         datafiles_progress.set_description(f"uploading DATA {filepath}")
         case = upload_file_to_batch(batch_url, source_path, filepath)
         assert "dependencies" in case
         dependencies = case.get("dependencies")
-        print("case dependencies", dependencies)
         provide_case_dependencies(batch_url, dependencies, source_folder)
     batch, batch_url = get_batch(batch_uuid)
     dependencies = batch.get("pending_dependencies", [])
-    print("batch dependencies", dependencies)
     provide_batch_dependencies(batch_url, dependencies, source_folder)
     batch, _ = get_batch(batch_uuid)
     report_batch_status(batch)
