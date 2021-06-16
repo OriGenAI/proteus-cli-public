@@ -1,5 +1,4 @@
 import click
-import sys
 from config import config
 from api import login as api_login, runs_authentified
 
@@ -20,7 +19,7 @@ def main():
 def login(user, password):
     """Will perfom a login to test current credentials"""
     session = api_login(username=user, password=password, auto_update=False)
-    click.echo(session.access_token)
+    click.echo(session.access_token_parsed)
 
 
 @main.command()
@@ -79,16 +78,6 @@ def jobstatus(job_uuid):
     from pprint import pprint
 
     pprint(get_status(job_uuid))
-
-
-@main.command()
-def test_az_bucket():
-    """Tests Azure access"""
-    sys.path.insert(0, ".")
-    from test_az_bucket import do as do_test_az_bucket
-
-    click.echo("Running azure connection tests")
-    do_test_az_bucket()
 
 
 if __name__ == "__main__":
