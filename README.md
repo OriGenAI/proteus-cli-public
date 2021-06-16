@@ -2,6 +2,7 @@
 
 CLI tools to interact with the plaform. Currently supports.
 
+* Create and update a simulations batch
 * Provide files to a dataset
 * List a Job status
 
@@ -40,6 +41,20 @@ source venv/bin/activate
 source secrets.sh
 ```
 
+## Simulations 
+
+### Create a new simulation
+
+Simply choose a folder which contains a set of DATA files and their dependencies.
+```
+command simulations /home/hesssample --model_uuid=<MODEL_UUID> --batch_name="<NAME-IT>"
+```
+The system will reply with a --batch_uuid parameter you should use to continue with the upload:
+
+```
+command simulations /home/hesssample --batch_uuid=<BATCH_UUID>
+```
+
 ## Dataset upload from S3
 
 Once you get an S3 URI that contains the cases groups, and choosen a dataset UUID to upload the source into simply run:
@@ -56,18 +71,4 @@ After getting a job UUID simply run:
 
 ```
 command jobstatus 114058ca-7342-45ab-99ac-562167cc52e6
-```
-
-## Simulations 
-
-### Create a new simulation
-
-Simply choose a folder which contains a set of DATA files and their dependencies.
-```
-command simulations /home/hesssample --model_uuid=<MODEL_UUID> --batch_name="<NAME-IT>"
-```
-The system will reply with a --batch_uuid parameter you should use to continue with the upload:
-
-```
-command simulations /home/hesssample --batch_uuid=<BATCH_UUID>
 ```
