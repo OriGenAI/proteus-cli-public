@@ -1,5 +1,0 @@
-docker build -t gcr.io/$project/$project_name-basis:$project_version  -f - . < Dockerfile-basis
-docker push gcr.io/$project/$project_name-basis:$project_version
-
-docker build -t gcr.io/$project/$project_name:$project_version .
-docker push gcr.io/$project/$project_name:$project_version
