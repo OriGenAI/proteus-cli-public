@@ -21,7 +21,7 @@ client = boto3.client(
 
 
 s3_uri_re = re.compile(
-    r"^s3:(?P<bucket_name>[a-zA-Z0-9.\-_]{1,255})/(?P<prefix>.*)$"
+    r"^s3://(?P<bucket_name>[a-zA-Z0-9.\-_]{1,255})/(?P<prefix>.*)$"
 )
 
 case_re = re.compile(
