@@ -88,7 +88,7 @@ def find_target(case_by_group_and_number, group=None, number=None, **other):
     return case_by_group_and_number.get(f"{group}-{number}")
 
 
-def load_from(case_by_group_and_number, bucket_uri, progress, workers=4):
+def load_from(case_by_group_and_number, bucket_uri, progress, workers=10):
     skipped_count = 0
     processed = 0
     progress.update(processed)
