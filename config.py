@@ -15,7 +15,9 @@ class Config(object):
     SLEEP_TIME = 30
     PROMPT = True
     AUTH_HOST = os.getenv("AUTH_HOST", "https://auth.dev.origen.ai")
-    PROTEUS_HOST = os.getenv("PROTEUS_HOST", "https://proteus-test.dev.origen.ai")
+    PROTEUS_HOST = os.getenv(
+        "PROTEUS_HOST", "https://proteus-test.dev.origen.ai"
+    )
     REALM = os.getenv("REALM", "origen")
     USERNAME = os.getenv("PROTEUS_USERNAME", "user-not-configured")
     PASSWORD = os.getenv("PROTEUS_PASSWORD", "password-not-configured")
@@ -23,7 +25,7 @@ class Config(object):
     CLIENT_SECRET = os.getenv("CLIENT_SECRET", None)
     API_HOST = os.getenv("API_HOST", "https://api.dev.origen.ai")
     RETRY_INTERVAL = 25  # Seconds
-    REFRESH_GAP = 10  # Seconds
+    REFRESH_GAP = 100  # Seconds
     S3_REGION = "eu-west-3"
 
 
