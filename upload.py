@@ -93,7 +93,10 @@ def load_from(case_by_group_and_number, bucket_uri, progress, workers=10):
     processed = 0
     progress.update(processed)
     items = list_bucket_contents(bucket_uri)
-    upload_partial = partial(parallelized_upload, case_by_group_and_number=case_by_group_and_number, progress=progress, processed=processed, skipped_count=skipped_count)
+    upload_partial = partial(parallelized_upload,
+                                          case_by_group_and_number=case_by_group_and_number,
+                                          progress=progress,
+                                          processed=processed, skipped_count=skipped_count)
     from multiprocessing.dummy import Pool as ThreadPool    
     pool = ThreadPool(workers)
     pool.map(upload_partial, items)
