@@ -1,11 +1,13 @@
 import boto3
 import os
 import re
+from functools import partial
 from api import api
 from config import config
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
-
+from multiprocessing.dummy import Pool
+from api.oidc import may_insist_up_to
 
 PROTEUS_HOST, S3_REGION = config.PROTEUS_HOST, config.S3_REGION
 
@@ -85,35 +87,47 @@ def find_target(case_by_group_and_number, group=None, number=None, **other):
     return case_by_group_and_number.get(f"{group}-{number}")
 
 
-def load_from(case_by_group_and_number, bucket_uri, progress):
+def load_from(case_by_group_and_number, bucket_uri, progress, workers=10):
     skipped_count = 0
     processed = 0
     progress.update(processed)
-    for item in list_bucket_contents(bucket_uri):
-        path = item.get("Key")
-        matchs_as_case = case_re.match(path)
-        terms = (
-            matchs_as_case.groupdict() if matchs_as_case is not None else {}
+    items = list_bucket_contents(bucket_uri)
+    upload_partial = partial(
+        parallelized_upload,
+        case_by_group_and_number=case_by_group_and_number,
+        progress=progress,
+        processed=processed,
+        skipped_count=skipped_count,
+    )
+
+    pool = Pool(workers)
+    pool.map(upload_partial, items)
+
+
+@may_insist_up_to(5, delay_in_secs=1)
+def parallelized_upload(
+    item, case_by_group_and_number, progress, processed, skipped_count
+):
+    path = item.get("Key")
+    matchs_as_case = case_re.match(path)
+    terms = matchs_as_case.groupdict() if matchs_as_case is not None else {}
+    target = find_target(case_by_group_and_number, **terms)
+    if target is None:
+        skipped_count += 1
+        progress.set_postfix_str(
+            s=f"{skipped_count} files skipped last one: {path}"
         )
-        target = find_target(case_by_group_and_number, **terms)
-        if target is None:
-            skipped_count += 1
-            progress.set_postfix_str(
-                s=f"{skipped_count} files skipped last one: {path}"
+    else:
+        content = terms.get("content")
+        matchs = _timestep.match(content) or _sheet_extension.match(content)
+        if matchs and is_pending(matchs, target):
+            progress.set_postfix_str(s=f"transfering file {path}")
+            done, skipped = send_as(
+                target, path, **terms, **matchs.groupdict()
             )
-        else:
-            content = terms.get("content")
-            matchs = _timestep.match(content) or _sheet_extension.match(
-                content
-            )
-            if matchs and is_pending(matchs, target):
-                progress.set_postfix_str(s=f"transfering file {path}")
-                done, skipped = send_as(
-                    target, path, **terms, **matchs.groupdict()
-                )
-                processed += done
-                skipped_count += skipped
-        progress.update(processed)
+            processed += done
+            skipped_count += skipped
+    progress.update(processed)
 
 
 def is_pending(match, target):
