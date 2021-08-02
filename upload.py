@@ -8,7 +8,7 @@ from config import config
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
 from multiprocessing.dummy import Pool as ThreadPool    
-
+from api.oidc import may_insist_up_to
 
 PROTEUS_HOST, S3_REGION = config.PROTEUS_HOST, config.S3_REGION
 
@@ -98,6 +98,7 @@ def load_from(case_by_group_and_number, bucket_uri, progress, workers=10):
     pool = ThreadPool(workers)
     pool.map(upload_partial, items)
 
+@may_insist_up_to(5, delay_in_secs=1)
 def parallelized_upload(item, case_by_group_and_number, progress, processed, skipped_count):
     path = item.get("Key")
     matchs_as_case = case_re.match(path)
