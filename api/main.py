@@ -4,7 +4,7 @@ from config import config
 from common.logger import logger
 
 
-API_HOST = config.API_HOST
+PROTEUS_HOST = config.PROTEUS_HOST
 
 
 class API:
@@ -22,7 +22,7 @@ class API:
             "Content-Type": "application/json",
             **headers,
         }
-        url = f"{API_HOST}/{url}"
+        url = f"{PROTEUS_HOST}/{url}"
         return requests.post(url, headers=headers, json=data)
 
     def post_files(self, url, files, headers={}):
@@ -30,7 +30,7 @@ class API:
             "Authorization": "Bearer {}".format(self.auth.access_token),
             **headers,
         }
-        url = f"{API_HOST}/{url}"
+        url = f"{PROTEUS_HOST}/{url}"
         response = requests.post(url, headers=headers, files=files)
         response.raise_for_status()
         return response
@@ -42,7 +42,7 @@ class API:
         if modified is not None:
             headers["x-last-modified"] = modified.isoformat()
         files = dict(file=(filepath, content))
-        url = f"{API_HOST}/{url}"
+        url = f"{PROTEUS_HOST}/{url}"
         response = requests.post(url, headers=headers, files=files)
         try:
             response.raise_for_status()
@@ -57,7 +57,7 @@ class API:
             "Content-Type": "application/json",
             **headers,
         }
-        url = f"{API_HOST}/{url}"
+        url = f"{PROTEUS_HOST}/{url}"
         response = requests.get(url, headers=headers, params=query_args)
         response.raise_for_status()
         return response

@@ -6,6 +6,8 @@ from api import api
 from config import config
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
+from pathlib import Path
+from datetime import datetime, timezone
 from multiprocessing.dummy import Pool
 from api.oidc import may_insist_up_to
 
@@ -49,16 +51,16 @@ def list_bucket_contents(bucket_uri):
     )
     for page in page_iterator:
         for item in page["Contents"]:
-            yield item
+            yield item, item["Key"]
 
 
 def upload_dataset(bucket, dataset_uuid):
     try:
         assert api.auth.access_token is not None
-        total_expected, case_by_group_and_number = get_cases(
-            api.auth, dataset_uuid
-        )
-        with tqdm(total=total_expected) as progress:
+        with tqdm(total=0) as progress:
+            total_expected, case_by_group_and_number = get_cases(
+                api.auth, dataset_uuid, progress
+            )
             load_from(case_by_group_and_number, bucket, progress)
     except KeyboardInterrupt:
         pass
@@ -66,11 +68,12 @@ def upload_dataset(bucket, dataset_uuid):
         api.auth.stop()
 
 
-def get_cases(auth, dataset_uuid):
+def get_cases(auth, dataset_uuid, progress):
+    progress.set_description("retrieving cases and expected files")
+    progress.refresh()
     cases_url = f"/api/v1/datasets/{dataset_uuid}/cases"
     response = api.get(cases_url)
     cases = response.json().get("cases")
-
     case_by_group_and_number = {}
     total = 0
     for case in cases:
@@ -78,6 +81,8 @@ def get_cases(auth, dataset_uuid):
         key = f"{case.get('group')}-{case.get('number')}"
         case_by_group_and_number[key] = case_details
         total += 5 + (2 * case.get("steps", 0))
+        progress.total = total
+        progress.refresh()
     return total, case_by_group_and_number
 
 
@@ -87,11 +92,24 @@ def find_target(case_by_group_and_number, group=None, number=None, **other):
     return case_by_group_and_number.get(f"{group}-{number}")
 
 
-def load_from(case_by_group_and_number, bucket_uri, progress, workers=10):
+def get_source_items(source_uri):
+    match = s3_uri_re.match(source_uri)
+    if match is not None:
+        return list_bucket_contents(source_uri)
+    else:
+        return list_folder_contents(source_uri)
+
+
+def list_folder_contents(source_uri):
+    for item in Path(source_uri).rglob("*"):
+        yield item, str(item)
+
+
+def load_from(case_by_group_and_number, source_uri, progress, workers=10):
     skipped_count = 0
     processed = 0
     progress.update(processed)
-    items = list_bucket_contents(bucket_uri)
+    items_and_paths = get_source_items(source_uri)
     upload_partial = partial(
         parallelized_upload,
         case_by_group_and_number=case_by_group_and_number,
@@ -101,14 +119,14 @@ def load_from(case_by_group_and_number, bucket_uri, progress, workers=10):
     )
 
     pool = Pool(workers)
-    pool.map(upload_partial, items)
+    pool.map(upload_partial, items_and_paths)
 
 
-@may_insist_up_to(5, delay_in_secs=1)
+@may_insist_up_to(1, delay_in_secs=1)
 def parallelized_upload(
-    item, case_by_group_and_number, progress, processed, skipped_count
+    item_and_path, case_by_group_and_number, progress, processed, skipped_count
 ):
-    path = item.get("Key")
+    item, path = item_and_path
     matchs_as_case = case_re.match(path)
     terms = matchs_as_case.groupdict() if matchs_as_case is not None else {}
     target = find_target(case_by_group_and_number, **terms)
@@ -123,7 +141,7 @@ def parallelized_upload(
         if matchs and is_pending(matchs, target):
             progress.set_postfix_str(s=f"transfering file {path}")
             done, skipped = send_as(
-                target, path, **terms, **matchs.groupdict()
+                target, item, **terms, **matchs.groupdict()
             )
             processed += done
             skipped_count += skipped
@@ -141,16 +159,26 @@ def is_pending(match, target):
     return False
 
 
-def send_as(
-    target, source_path, group=None, number=None, extension=None, **other
-):
+def get_data_from(source):
+    if isinstance(source, Path):
+        stats = source.stat()
+        source_path = str(source)
+        modified = datetime.fromtimestamp(stats.st_mtime, tz=timezone.utc)
+        file_size = stats.st_size
+        return source_path, file_size, modified, source.open("rb")
+    else:
+        source_response = client.get_object(
+            Bucket="client-research-data", Key=source.get("Key")
+        )
+        file_size = source_response["ContentLength"]
+        stream = source_response["Body"]
+        modified = source_response["LastModified"]
+        return source, file_size, modified, stream
+
+
+def send_as(target, source, group=None, number=None, extension=None, **other):
     target_url = target.get("case_url")
-    source_response = client.get_object(
-        Bucket="client-research-data", Key=source_path
-    )
-    file_size = source_response["ContentLength"]
-    source = source_response["Body"]
-    modified = source_response["LastModified"]
+    source_path, file_size, modified, stream = get_data_from(source)
     done = 0
     skipped = 0
     transfer = None
@@ -159,7 +187,7 @@ def send_as(
             total=file_size, unit="B", unit_scale=True, unit_divisor=1024
         ) as progress:
             progress.set_description(f"uploading {source_path}")
-            wrapped_file = CallbackIOWrapper(progress.update, source, "read")
+            wrapped_file = CallbackIOWrapper(progress.update, stream, "read")
             transfer = api.post_file(
                 target_url,
                 source_path,
@@ -167,7 +195,7 @@ def send_as(
                 modified=modified,
             )
             progress.set_description(f"uploaded {source_path}")
-            source.close()
+            stream.close()
             assert transfer.json()
             progress.close()
             if transfer.status_code == 201:
@@ -176,7 +204,6 @@ def send_as(
                 skipped = 1
             else:
                 print("transfer failed", transfer.content)
-
     except Exception as error:
         if transfer is not None:
             print(transfer.content)

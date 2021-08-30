@@ -23,7 +23,6 @@ class Config(object):
     PASSWORD = os.getenv("PROTEUS_PASSWORD", "password-not-configured")
     CLIENT_ID = os.getenv("CLIENT_ID", "proteus-front")
     CLIENT_SECRET = os.getenv("CLIENT_SECRET", None)
-    API_HOST = os.getenv("API_HOST", "https://api.dev.origen.ai")
     RETRY_INTERVAL = 25  # Seconds
     REFRESH_GAP = 100  # Seconds
     S3_REGION = "eu-west-3"

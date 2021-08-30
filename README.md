@@ -55,12 +55,25 @@ The system will reply with a --batch_uuid parameter you should use to continue w
 command simulations /home/hesssample --batch_uuid=<BATCH_UUID>
 ```
 
-## Dataset upload from S3
+## Dataset upload
+
+### from local filesystem
 
 Once you get an S3 URI that contains the cases groups, and choosen a dataset UUID to upload the source into simply run:
 
 ```
-command upload s3:whatever-uri/you-selected/cases 02135a2a-7f73-4f4a-a5ef-843be8a8cf82
+command upload /home/your-user/your-data 02135a2a-7f73-4f4a-a5ef-843be8a8cf82
+``` 
+
+Process can be run again if failed only missing files will be uploaded
+
+
+### from S3
+
+Once you get an S3 URI that contains the cases groups, and choosen a dataset UUID to upload the source into simply run:
+
+```
+command upload s3://whatever-uri/you-selected/cases 02135a2a-7f73-4f4a-a5ef-843be8a8cf82
 ``` 
 
 Process can be run again if failed only missing files will be uploaded
