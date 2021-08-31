@@ -11,7 +11,11 @@ from datetime import datetime, timezone
 from multiprocessing.dummy import Pool
 from api.oidc import may_insist_up_to
 
-PROTEUS_HOST, S3_REGION = config.PROTEUS_HOST, config.S3_REGION
+PROTEUS_HOST, S3_REGION, WORKERS_COUNT = (
+    config.PROTEUS_HOST,
+    config.S3_REGION,
+    config.WORKERS_COUNT,
+)
 
 client = boto3.client(
     "s3",
@@ -54,14 +58,17 @@ def list_bucket_contents(bucket_uri):
             yield item, item["Key"]
 
 
-def upload_dataset(bucket, dataset_uuid):
+def upload_dataset(bucket, dataset_uuid, workers=WORKERS_COUNT):
     try:
         assert api.auth.access_token is not None
+        print(f"This process will use {workers} simultaneous threads.")
         with tqdm(total=0) as progress:
             total_expected, case_by_group_and_number = get_cases(
                 api.auth, dataset_uuid, progress
             )
-            load_from(case_by_group_and_number, bucket, progress)
+            load_from(
+                case_by_group_and_number, bucket, progress, workers=workers
+            )
     except KeyboardInterrupt:
         pass
     finally:
@@ -105,7 +112,9 @@ def list_folder_contents(source_uri):
         yield item, str(item)
 
 
-def load_from(case_by_group_and_number, source_uri, progress, workers=10):
+def load_from(
+    case_by_group_and_number, source_uri, progress, workers=WORKERS_COUNT
+):
     skipped_count = 0
     processed = 0
     progress.update(processed)
@@ -117,7 +126,6 @@ def load_from(case_by_group_and_number, source_uri, progress, workers=10):
         processed=processed,
         skipped_count=skipped_count,
     )
-
     pool = Pool(workers)
     pool.map(upload_partial, items_and_paths)
 

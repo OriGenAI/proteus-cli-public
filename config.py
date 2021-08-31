@@ -26,6 +26,7 @@ class Config(object):
     RETRY_INTERVAL = 25  # Seconds
     REFRESH_GAP = 100  # Seconds
     S3_REGION = "eu-west-3"
+    WORKERS_COUNT = 5
 
 
 class ProductionConfig(Config):

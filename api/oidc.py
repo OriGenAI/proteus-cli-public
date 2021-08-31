@@ -126,6 +126,19 @@ class OIDC:
     def when_refresh(self, callback):
         self._when_refresh_callback = callback
 
+    def report_login_failure(self, username=None, password=None, **other):
+        print(f"Login attempt rejected on {self.host}")
+        if password is None or password == "password-not-configured":
+            password = "*empty*"
+        else:
+            import re
+
+            password = re.sub(r".", "*", password)
+        print(
+            f"for user {username} on realm [{self.realm}]",
+            f"with password {password}",
+        )
+
     @may_insist_up_to(3, delay_in_secs=1)
     def send_login_request(self, login):
         response = requests.post(
@@ -135,8 +148,9 @@ class OIDC:
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         if response.status_code == 401:
+            self.report_login_failure(**login)
             # No need to be blunt
-            return None
+            return False
         response.raise_for_status()
         return response
 
@@ -150,7 +164,8 @@ class OIDC:
         if self.client_secret is not None:
             login["client_secret"] = self.client_secret
         response = self.send_login_request(login)
-
+        if response is False:
+            return False
         credentials = response.json()
         assert "access_token" in credentials
         if self._when_login_callback is not None:
@@ -158,6 +173,7 @@ class OIDC:
         self._update_credentials(**credentials)
         if auto_update is True:
             self.prepare_refresh()
+        return True
 
     def prepare_refresh(self):
         assert self.expires_in is not None

@@ -3,6 +3,7 @@ from config import config
 from api import login as api_login, runs_authentified
 
 USERNAME, PASSWORD, PROMPT = config.USERNAME, config.PASSWORD, config.PROMPT
+WORKERS_COUNT = config.WORKERS_COUNT
 
 
 @click.group()
@@ -25,14 +26,15 @@ def login(user, password):
 @main.command()
 @click.option("--user", prompt=PROMPT, default=USERNAME)
 @click.option("--password", prompt=PROMPT, default=PASSWORD, hide_input=True)
+@click.option("--workers", prompt=PROMPT, default=WORKERS_COUNT)
 @click.argument("bucket")
 @click.argument("dataset_uuid")
 @runs_authentified
-def upload(bucket, dataset_uuid):
+def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
     """This uploads an S3 bucket into a dataset"""
     from upload import upload_dataset
 
-    click.echo(upload_dataset(bucket, dataset_uuid))
+    click.echo(upload_dataset(bucket, dataset_uuid, workers=workers))
 
 
 @main.command()
