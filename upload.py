@@ -130,7 +130,7 @@ def load_from(
     pool.map(upload_partial, items_and_paths)
 
 
-@may_insist_up_to(1, delay_in_secs=1)
+@may_insist_up_to(3, delay_in_secs=1)
 def parallelized_upload(
     item_and_path, case_by_group_and_number, progress, processed, skipped_count
 ):
@@ -141,19 +141,24 @@ def parallelized_upload(
     if target is None:
         skipped_count += 1
         progress.set_postfix_str(
-            s=f"{skipped_count} files skipped last one: {path}"
+            s=f"{skipped_count} files non related, last one: {path[:-15]}"
         )
     else:
         content = terms.get("content")
         matchs = _timestep.match(content) or _sheet_extension.match(content)
-        if matchs and is_pending(matchs, target):
-            progress.set_postfix_str(s=f"transfering file {path}")
-            done, skipped = send_as(
-                target, item, **terms, **matchs.groupdict()
-            )
-            processed += done
-            skipped_count += skipped
+        if matchs:
+            if is_pending(matchs, target):
+                progress.set_postfix_str(s=f"transfering file {path}")
+                done, skipped = send_as(
+                    target, item, **terms, **matchs.groupdict()
+                )
+                processed += done
+                skipped_count += skipped
+            else:
+                processed += 1
+                progress.set_postfix_str(s=f"already uploaded: {path[-20:]}")
     progress.update(processed)
+    progress.refresh()
 
 
 def is_pending(match, target):
@@ -202,7 +207,7 @@ def send_as(target, source, group=None, number=None, extension=None, **other):
                 content=wrapped_file,
                 modified=modified,
             )
-            progress.set_description(f"uploaded {source_path}")
+            progress.set_description(f"uploaded {source_path[-20:]}")
             stream.close()
             assert transfer.json()
             progress.close()
