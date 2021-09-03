@@ -27,6 +27,9 @@ class Config(object):
     REFRESH_GAP = 100  # Seconds
     S3_REGION = "eu-west-3"
     WORKERS_COUNT = 5
+    AZURE_STORAGE_CONNECTION_STRING = os.getenv(
+        "AZURE_STORAGE_CONNECTION_STRING"
+    )
 
 
 class ProductionConfig(Config):
