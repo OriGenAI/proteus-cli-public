@@ -1,6 +1,7 @@
 import click
 from config import config
 from api import login as api_login, runs_authentified
+from api.main import may_fail_on_http_error
 
 USERNAME, PASSWORD, PROMPT = config.USERNAME, config.PASSWORD, config.PROMPT
 WORKERS_COUNT = config.WORKERS_COUNT
@@ -17,6 +18,7 @@ def main():
 @main.command()
 @click.option("--user", prompt=True, default=USERNAME)
 @click.option("--password", prompt=True, default=PASSWORD, hide_input=True)
+@may_fail_on_http_error(exit_code=1)
 def login(user, password):
     """Will perfom a login to test current credentials"""
     session = api_login(username=user, password=password, auto_update=False)
@@ -29,6 +31,7 @@ def login(user, password):
 @click.option("--workers", prompt=PROMPT, default=WORKERS_COUNT)
 @click.argument("bucket")
 @click.argument("dataset_uuid")
+@may_fail_on_http_error(exit_code=1)
 @runs_authentified
 def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
     """This uploads an S3 bucket into a dataset"""
@@ -44,6 +47,7 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
 @click.option("--batch_uuid", prompt=False)
 @click.option("--model_uuid", prompt=False)
 @click.option("--batch_name", prompt=False)
+@may_fail_on_http_error(exit_code=1)
 @runs_authentified
 def simulations(
     source_folder, batch_uuid=None, model_uuid=None, batch_name=None
@@ -72,6 +76,7 @@ def simulations(
 @click.option("--user", prompt=PROMPT, default=USERNAME)
 @click.option("--password", prompt=PROMPT, default=PASSWORD, hide_input=True)
 @click.argument("job_uuid")
+@may_fail_on_http_error(exit_code=1)
 @runs_authentified
 def jobstatus(job_uuid):
     """Lists the latests status for a given job uuid"""
