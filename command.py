@@ -85,6 +85,7 @@ def listjobs(job_type, *args):
     from jobs import list_jobs
 
     list_jobs(job_type)
+    print("Bye")
 
 
 @main.command()

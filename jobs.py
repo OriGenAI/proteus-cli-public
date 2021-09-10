@@ -19,6 +19,10 @@ job_columns = [
 
 MISSING = "* not found *"
 
+ALLOWED_KEYS = ["n", "b", "q"]
+
+COMMANDS_TEXT = "Press n (continue), b (back), q (exit)"
+
 
 def data_of_job(item):
     return [item.get(column.get("field"), MISSING) for column in job_columns]
@@ -39,23 +43,39 @@ def has_prev(data):
     return data.get("prev", False)
 
 
+def api_load(url):
+    response = api.get(url)
+    response.raise_for_status()
+    return response.json()
+
+
+def receive_command():
+    while True:
+        command = readchar.readkey()
+        if command in ALLOWED_KEYS:
+            return command
+
+
 def list_jobs(target_type, rows=25 - 3):
     url = f"/api/v1/jobs?target_type={target_type}&per_page={rows}"
     command = None
     data = None
     while command is not False:
+        if command == "q":
+            break
         next_ = has_next(data)
-        if command == "c" and next_ is not False:
+        if command == "n" and next_ is not False:
             url = next_
         prev_ = has_prev(data)
         if command == "b" and prev_ is not False:
             url = prev_
-        response = api.get(url)
-        response.raise_for_status()
-        data = response.json()
+        data = api_load(url)
         page, pages = data["page"], data["pages"]
-        print(f"Listing {target_type} jobs page {page} of {pages}")
+        print(
+            f"Listing {target_type} jobs page {page} of {pages}"
+            f", {COMMANDS_TEXT}"
+        )
         content = [data_of_job(item) for item in data.get("results", [])]
         table = tabulate(content, job_headers)
         print(table)
-        command = readchar.readkey()
+        command = receive_command()
