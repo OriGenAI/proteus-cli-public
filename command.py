@@ -96,10 +96,10 @@ def listjobs(job_type, *args):
 @runs_authentified
 def jobstatus(job_uuid):
     """Lists the latests status for a given job uuid"""
-    from jobs import get_status
-    from pprint import pprint
+    from jobs import list_job_status
 
-    pprint(get_status(job_uuid))
+    list_job_status(job_uuid)
+    print("Bye")
 
 
 if __name__ == "__main__":
