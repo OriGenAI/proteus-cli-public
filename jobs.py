@@ -24,7 +24,7 @@ ALLOWED_KEYS = ["n", "b", "q"]
 COMMANDS_TEXT = "Press n (continue), b (back), q (exit)"
 
 
-def data_of_job(item):
+def job_as_row(item):
     return [item.get(column.get("field"), MISSING) for column in job_columns]
 
 
@@ -33,14 +33,14 @@ job_headers = [column.get("label") for column in job_columns]
 
 def has_next(data):
     if data is None:
-        return False
-    return data.get("next", False)
+        return None
+    return data.get("next", None)
 
 
 def has_prev(data):
     if data is None:
-        return False
-    return data.get("prev", False)
+        return None
+    return data.get("prev", None)
 
 
 def api_load(url):
@@ -56,6 +56,18 @@ def receive_command():
             return command
 
 
+def view(data, target_type):
+    page, pages = data["page"], data["pages"]
+    print(
+        "\n"
+        f"Listing {target_type} jobs page {page} of {pages}"
+        f", {COMMANDS_TEXT}"
+    )
+    content = [job_as_row(item) for item in data.get("results", [])]
+    table = tabulate(content, job_headers)
+    print(table)
+
+
 def list_jobs(target_type, rows=25 - 3):
     url = f"/api/v1/jobs?target_type={target_type}&per_page={rows}"
     command = None
@@ -64,18 +76,11 @@ def list_jobs(target_type, rows=25 - 3):
         if command == "q":
             break
         next_ = has_next(data)
-        if command == "n" and next_ is not False:
+        if command == "n" and next_ is not None:
             url = next_
         prev_ = has_prev(data)
-        if command == "b" and prev_ is not False:
+        if command == "b" and prev_ is not None:
             url = prev_
         data = api_load(url)
-        page, pages = data["page"], data["pages"]
-        print(
-            f"Listing {target_type} jobs page {page} of {pages}"
-            f", {COMMANDS_TEXT}"
-        )
-        content = [data_of_job(item) for item in data.get("results", [])]
-        table = tabulate(content, job_headers)
-        print(table)
+        view(data, target_type)
         command = receive_command()
