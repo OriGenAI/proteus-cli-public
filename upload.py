@@ -168,7 +168,7 @@ def parallelized_upload(
     if target is None:
         skipped_count += 1
         progress.set_postfix_str(
-            s=f"{skipped_count} files non related, last one: {path[:-15]}"
+            s=f"{skipped_count} files non related, last one: {path[-15:]}"
         )
     else:
         content = terms.get("content")
