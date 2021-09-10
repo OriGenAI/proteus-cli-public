@@ -78,10 +78,22 @@ command upload s3://whatever-uri/you-selected/cases 02135a2a-7f73-4f4a-a5ef-843b
 
 Process can be run again if failed only missing files will be uploaded
 
+## Jobs listing (by entity type)
+
+This command requires to specify what kind of jobs you want to list
+
+```
+command listjobs <samplings|models|simulations>
+```
+
+Follow screen instructions to navigate the results
+
 ## Job Status
 
-After getting a job UUID simply run:
+After getting a job UUID (for example from the prevous commnad) simply run:
 
 ```
 command jobstatus 114058ca-7342-45ab-99ac-562167cc52e6
 ```
+
+Follow screen instructions to navigate the results
