@@ -1,6 +1,8 @@
 from .oidc import auth
 from .main import API
 from functools import wraps
+import click
+from cli.config import config
 
 
 api = API(auth)
@@ -25,10 +27,17 @@ def iterate_pagination(response, current=0):
         data = api.get(next_).json()
 
 
+USERNAME, PASSWORD, PROMPT = config.USERNAME, config.PASSWORD, config.PROMPT
+
+
 def runs_authentified(func):
     """Decorator that authentifies and keeps token updated during execution."""
 
     @wraps(func)
+    @click.option("--user", prompt=PROMPT, default=USERNAME)
+    @click.option(
+        "--password", prompt=PROMPT, default=PASSWORD, hide_input=True
+    )
     def wrapper(user, password, *args, **kwargs):
         global auth
         try:

@@ -1,5 +1,5 @@
 from functools import wraps
-from common.logger import logger
+from cli.common.logger import logger
 from requests.exceptions import HTTPError
 import time
 

@@ -1,5 +1,5 @@
 import requests
-from config import config
+from cli.config import config
 from threading import Timer, Lock
 import certifi
 import json

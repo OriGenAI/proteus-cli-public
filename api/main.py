@@ -1,7 +1,7 @@
 import os
 import requests
-from config import config
-from common.logger import logger
+from cli.config import config
+from cli.common.logger import logger
 
 
 PROTEUS_HOST = config.PROTEUS_HOST

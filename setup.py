@@ -1,19 +1,18 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 import project
-import distutils
-import os
+
+
 with open("requirements/prod.txt") as f:
     requirements = f.read().splitlines()
-
 
 
 setup(
     name=project.name,
     version=project.version,
-    py_modules=["proteus"],
+    packages=find_packages(),
     install_requires=requirements,
     entry_points="""
         [console_scripts]
-        proteus=proteus:main
+        proteus=cli.cli:main
     """,
 )
