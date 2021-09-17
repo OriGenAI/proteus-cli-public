@@ -82,7 +82,7 @@ def list_jobs(target_type, rows=25 - 3):
         data = api_load(url)
         page, pages = data["page"], data["pages"]
         print("\n" f"Listing jobs page {page} of {pages}" f", {COMMANDS_TEXT}")
-        view(data, columns=target_type)
+        view(data, render_row=job_as_row, headers=job_headers)
         command = receive_command()
 
 

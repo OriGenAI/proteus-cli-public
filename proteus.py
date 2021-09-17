@@ -1,7 +1,7 @@
 import click
 from config import config
 from api import login as api_login, runs_authentified
-from api.decorators import may_fail_on_http_error
+from api.main import may_fail_on_http_error
 
 USERNAME, PASSWORD, PROMPT = config.USERNAME, config.PASSWORD, config.PROMPT
 WORKERS_COUNT = config.WORKERS_COUNT
@@ -63,7 +63,7 @@ def login(user, password):
 @runs_authentified
 def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
     """This uploads an S3 bucket into a dataset"""
-    from datasets import upload as upload_dataset
+    from upload import upload_dataset
 
     click.echo(upload_dataset(bucket, dataset_uuid, workers=workers))
 
@@ -74,22 +74,14 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
 @click.option("--workers", prompt=PROMPT, default=WORKERS_COUNT)
 @click.argument("bucket_uuid")
 @click.argument("folder")
-@click.option("--replace/--no-replace", default=False)
 @click.option("--ends-with", prompt=False, default=False)
-@click.option("--starts-with", prompt=False, default=False)
 @may_fail_on_http_error(exit_code=1)
 @runs_authentified
-def download(
-    bucket_uuid, folder, workers=WORKERS_COUNT, replace=False, **search
-):
+def download(bucket_uuid, folder, workers=WORKERS_COUNT, **search):
     """downloads a bucket's content to de specified folder"""
     from buckets import download as download_bucket
 
-    click.echo(
-        download_bucket(
-            bucket_uuid, folder, workers=workers, replace=replace, **search
-        )
-    )
+    click.echo(download_bucket(bucket_uuid, folder, workers=workers, **search))
 
 
 @simulations.command()

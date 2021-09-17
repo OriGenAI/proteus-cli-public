@@ -1,9 +1,8 @@
-from .oidc import OIDC
+from .oidc import auth
 from .main import API
 from functools import wraps
 
 
-auth = OIDC()
 api = API(auth)
 
 
@@ -16,13 +15,14 @@ def login(**kwargs):
 def iterate_pagination(response, current=0):
     assert response.status_code == 200
     data = response.json()
-    total = data.get("total")
-    for item in data.get("results"):
-        yield item
-        current += 1
-    if current < total:
+    while True:
+        for item in data.get("results"):
+            yield item
+            current += 1
         next_ = data.get("next")
-        return iterate_pagination(api.get(next_), current=current)
+        if next_ is None:
+            break
+        data = api.get(next_).json()
 
 
 def runs_authentified(func):
