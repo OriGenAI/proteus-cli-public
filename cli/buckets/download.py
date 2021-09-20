@@ -1,7 +1,7 @@
 from functools import partial
 from api import api, iterate_pagination
 from api.oidc import may_insist_up_to
-from config import config
+from cli.config import config
 from tqdm import tqdm
 from multiprocessing.dummy import Pool
 import os
