@@ -18,3 +18,13 @@ class Source:
 
     def open(self, reference):
         raise NotImplementedError()
+
+
+class SourcedItem:
+    def __init__(self, reference, path, source):
+        self.source = source
+        self.path = path
+        self.reference = reference
+
+    def __str__(self):
+        return f"< {self.path}@{self.source} >"

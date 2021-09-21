@@ -2,7 +2,7 @@ import boto3
 import re
 from cli.config import config
 import os
-from .common import Source
+from .common import Source, SourcedItem
 
 
 class S3Source(Source):
@@ -22,19 +22,24 @@ class S3Source(Source):
             ),
         )
 
-    def list_contents(self):
+    def list_contents(self, starts_with="", ends_with=""):
         match = self.URI_re.match(self.uri)
         terms = match.groupdict()
         client = self.get_client()
+        prefix = terms.get("prefix", "") + starts_with
         paginator = client.get_paginator("list_objects")
         page_iterator = paginator.paginate(
             Bucket=terms.get("bucket_name"),
-            Prefix=terms.get("prefix"),
+            Prefix=prefix,
         )
+        if len(ends_with) > 0:
+            search = f"Contents[?ends_with(Key, `{ends_with}`)][]"
+            for item in page_iterator.search(search):
+                yield SourcedItem(item, item["Key"], self)
+            return
         for page in page_iterator:
             for item in page["Contents"]:
-                item.source = self
-                yield item, item["Key"]
+                yield SourcedItem(item, item["Key"], self)
 
     def open(self, reference):
         client = self.get_client()

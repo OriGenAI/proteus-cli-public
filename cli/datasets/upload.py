@@ -62,6 +62,7 @@ def get_cases(auth, dataset_uuid, progress):
         total += 5 + (2 * case.get("steps", 0))
         progress.total = total
         progress.refresh()
+        break
     return total, case_by_group_and_number
 
 
@@ -84,7 +85,7 @@ def load_from(
     processed = 0
     progress.update(processed)
     source = get_source(source_uri)
-    items_and_paths = source.list_contents()
+    items_and_paths = source.list_contents(ends_with="X0000")
     upload_partial = partial(
         parallelized_upload,
         case_by_group_and_number=case_by_group_and_number,

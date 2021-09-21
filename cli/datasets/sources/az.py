@@ -4,7 +4,7 @@ from azure.storage.blob import ContainerClient, BlobClient
 
 # from azure.storage.blob._models import BlobProperties as AzureBlobProperties
 from io import BytesIO
-from .common import Source
+from .common import Source, SourcedItem
 
 
 class AZSource(Source):
@@ -13,7 +13,7 @@ class AZSource(Source):
         r"(?P<container_name>.*)(/(?P<prefix>.*))?$"
     )
 
-    def list_contents(self):
+    def list_contents(self, starts_with=None, ends_with=None):
         bucket_uri = self.uri
         match = self.URI_re.match(bucket_uri)
         assert match is not None, f"{bucket_uri} must be an s3 URI"
@@ -22,9 +22,10 @@ class AZSource(Source):
             conn_str=config.AZURE_STORAGE_CONNECTION_STRING,
             container_name=container_name,
         )
-        for item in client.list_blobs():
-            item.source = self
-            yield item, item["name"]
+        for item in client.list_blobs(name_starts_with=starts_with):
+            item_name = item["name"]
+            if ends_with is None or item_name.endswith(ends_with):
+                yield SourcedItem(item, item_name, self)
 
     def open(self, reference):
         container = reference.get("container")

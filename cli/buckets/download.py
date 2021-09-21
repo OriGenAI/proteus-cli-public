@@ -17,6 +17,7 @@ PROTEUS_HOST, S3_REGION, WORKERS_COUNT, AZURE_STORAGE_CONNECTION_STRING = (
 
 def list_bucket_files(bucket_uuid, each_item, workers=3, **search):
     assert api.auth.access_token is not None
+    print("search", search)
     response = api.get(
         f"/api/v1/buckets/{bucket_uuid}/files", per_page=10, **search
     )
@@ -32,6 +33,7 @@ def store_stream_in(stream, filepath, progress, chunk_size=1024):
     folder_path = os.path.join(*filepath.split("/")[:-1])
     os.makedirs(folder_path, exist_ok=True)
     temp_filepath = f"{filepath}.partial"
+    temp_filepath = "/dev/null"
     with open(temp_filepath, "wb") as _file:
         for data in stream.iter_content(chunk_size):
             progress.update(len(data))
@@ -41,7 +43,7 @@ def store_stream_in(stream, filepath, progress, chunk_size=1024):
     except OSError:
         pass
 
-    os.rename(temp_filepath, filepath)
+    #    os.rename(temp_filepath, filepath)
 
 
 def is_file_already_present(filepath, size=None):
