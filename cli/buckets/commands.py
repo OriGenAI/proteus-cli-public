@@ -19,8 +19,8 @@ def buckets():
 @click.argument("bucket_uuid")
 @click.argument("folder")
 @click.option("--replace/--no-replace", default=False)
-@click.option("--ends-with", prompt=False, default=False)
-@click.option("--starts-with", prompt=False, default=False)
+@click.option("--ends-with", prompt=False, default=None)
+@click.option("--starts-with", prompt=False, default=None)
 @may_fail_on_http_error(exit_code=1)
 @runs_authentified
 def download(

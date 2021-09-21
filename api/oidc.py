@@ -194,7 +194,8 @@ class OIDC:
             credentials = response.json()
             assert credentials.get("access_token") is not None
             self._update_credentials(**credentials)
-            print(" Done.")
+            if self.verbose:
+                print(" Done.")
         except Exception:
             print(" Failed.")
             return self.do_login()
