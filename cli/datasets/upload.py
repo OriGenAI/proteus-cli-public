@@ -144,7 +144,7 @@ def load_from(
     skipped_count = 0
     processed = 0
     progress.update(processed)
-    source = get_source(source_uri)
+    source = get_source_items(source_uri)
     items_and_paths = source.list_contents()
     upload_partial = partial(
         parallelized_upload,
