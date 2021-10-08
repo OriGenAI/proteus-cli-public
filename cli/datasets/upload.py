@@ -3,7 +3,7 @@ import os
 import re
 from functools import partial
 from api import api
-from config import config
+from cli.config import config
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
 from pathlib import Path
