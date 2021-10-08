@@ -144,7 +144,8 @@ def load_from(
     skipped_count = 0
     processed = 0
     progress.update(processed)
-    items_and_paths = get_source_items(source_uri)
+    source = get_source(source_uri)
+    items_and_paths = source.list_contents()
     upload_partial = partial(
         parallelized_upload,
         case_by_group_and_number=case_by_group_and_number,
@@ -161,7 +162,7 @@ def load_from(
 def parallelized_upload(
     item_and_path, case_by_group_and_number, progress, processed, skipped_count
 ):
-    item, path = item_and_path
+    item, path, reference = item_and_path
     matchs_as_case = case_re.match(path)
     terms = matchs_as_case.groupdict() if matchs_as_case is not None else {}
     target = find_target(case_by_group_and_number, **terms)
@@ -177,7 +178,7 @@ def parallelized_upload(
             if is_pending(matchs, target):
                 progress.set_postfix_str(s=f"transfering file {path[-20:]}")
                 done, skipped = send_as(
-                    target, item, **terms, **matchs.groupdict()
+                    target, item, reference, **terms, **matchs.groupdict()
                 )
                 processed += done
                 skipped_count += skipped
@@ -233,9 +234,11 @@ def get_data_from(source):
         return source_path, file_size, modified, stream
 
 
-def send_as(target, source, group=None, number=None, extension=None, **other):
+def send_as(
+    target, source, reference, group=None, number=None, extension=None, **other
+):
     target_url = target.get("case_url")
-    source_path, file_size, modified, stream = get_data_from(source)
+    source_path, file_size, modified, stream = source.open(reference)
     done = 0
     skipped = 0
     transfer = None
