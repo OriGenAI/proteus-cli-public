@@ -62,7 +62,6 @@ def get_cases(auth, dataset_uuid, progress):
         total += 5 + (2 * case.get("steps", 0))
         progress.total = total
         progress.refresh()
-        break
     return total, case_by_group_and_number
 
 
@@ -94,7 +93,7 @@ def load_from(
         skipped_count=skipped_count,
     )
     with Pool(processes=workers) as pool:
-        for res in pool.imap(upload_partial, items_and_paths):
+        for res in pool.imap_unordered(upload_partial, items_and_paths):
             pass
 
 
