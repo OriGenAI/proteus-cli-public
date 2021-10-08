@@ -10,19 +10,20 @@ from .common import Source, SourcedItem
 class AZSource(Source):
     URI_re = re.compile(
         r"^https://(?P<bucket_name>.*\.windows\.net)/"
-        r"(?P<container_name>.*)(/(?P<prefix>.*))?$"
+        r"(?P<container_name>.*)/(?P<prefix>.*)?$"
     )
 
-    def list_contents(self, starts_with=None, ends_with=None):
+    def list_contents(self, starts_with='', ends_with=None):
         bucket_uri = self.uri
         match = self.URI_re.match(bucket_uri)
         assert match is not None, f"{bucket_uri} must be an s3 URI"
         container_name = match.groupdict()["container_name"]
+        prefix = match.groupdict()["prefix"]
         client = ContainerClient.from_connection_string(
             conn_str=config.AZURE_STORAGE_CONNECTION_STRING,
             container_name=container_name,
         )
-        for item in client.list_blobs(name_starts_with=starts_with):
+        for item in client.list_blobs(name_starts_with=prefix + starts_with):
             item_name = item["name"]
             if ends_with is None or item_name.endswith(ends_with):
                 yield SourcedItem(item, item_name, self)

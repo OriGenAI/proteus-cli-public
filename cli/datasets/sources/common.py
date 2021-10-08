@@ -26,5 +26,8 @@ class SourcedItem:
         self.path = path
         self.reference = reference
 
+    def __iter__(self):
+        return iter((self.source, self.path, self.reference))
+
     def __str__(self):
         return f"< {self.path}@{self.source} >"
