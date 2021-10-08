@@ -16,7 +16,6 @@ CLI tools to interact with the plaform. Currently supports.
 ```
 virtualenv -p3.8 venv
 source venv/bin/activate
-pip install -r requirements.txt
 pip install -e .
 ```
 
@@ -33,6 +32,8 @@ export PROTEUS_HOST=https://proteus-test.dev.origen.ai
 #optional export PROTEUS_PASSWORD="secret-password"
 ```
 
+Credentials can also be type using the proteus line prompt
+
 ## Before using 
 
 On next times prior to use the CLI simpy use this command
@@ -47,12 +48,12 @@ source secrets.sh
 
 Simply choose a folder which contains a set of DATA files and their dependencies.
 ```
-command simulations /home/hesssample --model_uuid=<MODEL_UUID> --batch_name="<NAME-IT>"
+proteus simulations create /home/hesssample --model_uuid=<MODEL_UUID> --batch_name="<NAME-IT>"
 ```
 The system will reply with a --batch_uuid parameter you should use to continue with the upload:
 
 ```
-command simulations /home/hesssample --batch_uuid=<BATCH_UUID>
+proteus simulations create /home/hesssample --batch_uuid=<BATCH_UUID>
 ```
 
 ## Dataset upload
@@ -62,7 +63,7 @@ command simulations /home/hesssample --batch_uuid=<BATCH_UUID>
 Once you get an S3 URI that contains the cases groups, and choosen a dataset UUID to upload the source into simply run:
 
 ```
-command upload /home/your-user/your-data 02135a2a-7f73-4f4a-a5ef-843be8a8cf82
+proteus datasets upload /home/your-user/your-data 02135a2a-7f73-4f4a-a5ef-843be8a8cf82
 ``` 
 
 Process can be run again if failed only missing files will be uploaded
@@ -73,17 +74,17 @@ Process can be run again if failed only missing files will be uploaded
 Once you get an S3 URI that contains the cases groups, and choosen a dataset UUID to upload the source into simply run:
 
 ```
-command upload s3://whatever-uri/you-selected/cases 02135a2a-7f73-4f4a-a5ef-843be8a8cf82
+proteus datasets uploads s3://whatever-uri/you-selected/cases 02135a2a-7f73-4f4a-a5ef-843be8a8cf82
 ``` 
 
 Process can be run again if failed only missing files will be uploaded
 
 ## Jobs listing (by entity type)
 
-This command requires to specify what kind of jobs you want to list
+This proteus requires to specify what kind of jobs you want to list
 
 ```
-command listjobs <samplings|models|simulations>
+proteus jobs list <samplings|models|simulations>
 ```
 
 Follow screen instructions to navigate the results
@@ -93,7 +94,17 @@ Follow screen instructions to navigate the results
 After getting a job UUID (for example from the prevous commnad) simply run:
 
 ```
-command jobstatus 114058ca-7342-45ab-99ac-562167cc52e6
+proteus jobs status 114058ca-7342-45ab-99ac-562167cc52e6
 ```
 
 Follow screen instructions to navigate the results
+
+# Buckets
+
+## Download bucket's contents
+
+As easy as set bucket UUID and a target folder, it will re-create the structure and files won't have it's final filename till the partial download is done. Note that already exitent files will remove previous files when it's download is done.
+
+```
+proteus buckets download 17ca1e74-a70c-4598-bfc3-71de915e08cb  ./target_folder  --workers 5 [--ends-with X0001]
+```

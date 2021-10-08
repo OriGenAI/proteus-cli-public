@@ -1,20 +1,18 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 import project
-import distutils
-import os
+
+
+with open("requirements/prod.txt") as f:
+    requirements = f.read().splitlines()
 
 
 setup(
     name=project.name,
     version=project.version,
-    py_modules=["command"],
-    install_requires=[
-        "Click",
-    ],
+    packages=find_packages(),
+    install_requires=requirements,
     entry_points="""
         [console_scripts]
-        upload=command:upload
-        login=command:login
-        jobstatus=command:jobstatus
+        proteus=cli.cli:main
     """,
 )

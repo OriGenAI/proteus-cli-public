@@ -82,7 +82,7 @@ def list_az_bucket_contents(bucket_uri):
         yield item, item["name"]
 
 
-def upload_dataset(bucket, dataset_uuid, workers=WORKERS_COUNT):
+def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
     try:
         assert api.auth.access_token is not None
         print(f"This process will use {workers} simultaneous threads.")

@@ -1,49 +1,10 @@
 import os
 import requests
-from config import config
-from common.logger import logger
-from functools import wraps
+from cli.config import config
+from cli.common.logger import logger
 
 
 PROTEUS_HOST = config.PROTEUS_HOST
-
-
-def message_or_content_of(http_error):
-    response = http_error.response
-    request = http_error.request
-    reason = response.content
-    try:
-        response_json = response.json()
-        if "msg" in response_json:
-            reason = response_json["msg"]
-        elif "message" in response_json:
-            reason = response_json["message"]
-    except Exception:
-        pass
-    return (
-        f"Petition failed with status {response.status_code}"
-        f", reason: {reason}\n"
-        f"while performing {request.method} on {request.url}"
-    )
-
-
-def may_fail_on_http_error(exit_code=None):
-    def execution_may_fail_on_http_error(fn):
-        @wraps(fn)
-        def wrapped(*args, **kwargs):
-            try:
-                return fn(*args, **kwargs)
-            except requests.exceptions.HTTPError as error:
-                print(message_or_content_of(error))
-                if exit_code is not None:
-                    import sys
-
-                    sys.exit(exit_code)
-                raise error
-
-        return wrapped
-
-    return execution_may_fail_on_http_error
 
 
 class API:
@@ -71,11 +32,7 @@ class API:
         }
         url = f"{PROTEUS_HOST}/{url}"
         response = requests.post(url, headers=headers, files=files)
-        try:
-            response.raise_for_status()
-        except Exception as error:
-            print(response.content)
-            raise error
+        response.raise_for_status()
         return response
 
     def post_file(self, url, filepath, content=None, modified=None):
@@ -87,21 +44,19 @@ class API:
         files = dict(file=(filepath, content))
         url = f"{PROTEUS_HOST}/{url}"
         response = requests.post(url, headers=headers, files=files)
-        try:
-            response.raise_for_status()
-        except Exception as error:
-            print(response.content)
-            raise error
+        response.raise_for_status()
         return response
 
-    def get(self, url, headers={}, **query_args):
+    def get(self, url, headers={}, stream=False, **query_args):
         headers = {
             "Authorization": "Bearer {}".format(self.auth.access_token),
             "Content-Type": "application/json",
             **headers,
         }
         url = f"{PROTEUS_HOST}/{url}"
-        response = requests.get(url, headers=headers, params=query_args)
+        response = requests.get(
+            url, headers=headers, params=query_args, stream=stream
+        )
         try:
             response.raise_for_status()
         except Exception as error:
@@ -130,3 +85,6 @@ class API:
             f.write(r.content)
 
         return r.status_code
+
+    def download_as_stream(self, url):
+        return self.get(url, stream=True)

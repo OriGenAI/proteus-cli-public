@@ -1,11 +1,10 @@
 import requests
-from config import config
+from cli.config import config
 from threading import Timer, Lock
 import certifi
 import json
 import base64
-from functools import wraps
-import time
+from .decorators import may_insist_up_to
 
 (
     AUTH_HOST,
@@ -32,27 +31,6 @@ class RepeatTimer(Timer):
             self.function(*self.args, **self.kwargs)
 
 
-def may_insist_up_to(times, delay_in_secs=0):
-    def wil_retry_if_fails(fn):
-        @wraps(fn)
-        def wrapped(*args, **kwargs):
-            failures = 0
-            while failures < times:
-                try:
-                    return fn(*args, **kwargs)
-                except Exception as error:
-                    failures += 1
-                    if failures > times:
-                        raise error
-                    else:
-                        print("+", end="")
-                        time.sleep(delay_in_secs)
-
-        return wrapped
-
-    return wil_retry_if_fails
-
-
 class OIDC:
     def __init__(
         self,
@@ -61,6 +39,7 @@ class OIDC:
         realm=REALM,
         client_id=CLIENT_ID,
         client_secret=CLIENT_SECRET,
+        verbose=False,
     ):
         self.username = username
         self.host = host
@@ -73,6 +52,7 @@ class OIDC:
         self._when_login_callback = None
         self._when_refresh_callback = None
         self._update_credentials()
+        self.verbose = verbose
 
     def _update_credentials(
         self,
@@ -199,7 +179,8 @@ class OIDC:
 
     def do_refresh(self):
         assert self.refresh_token is not None
-        print("Performing token update.", end="")
+        if self.verbose:
+            print("Performing token update.", end="")
         self._access_token_locked.acquire()
         refresh = {
             "grant_type": "refresh_token",
@@ -213,7 +194,8 @@ class OIDC:
             credentials = response.json()
             assert credentials.get("access_token") is not None
             self._update_credentials(**credentials)
-            print(" Done.")
+            if self.verbose:
+                print(" Done.")
         except Exception:
             print(" Failed.")
             return self.do_login()
@@ -225,3 +207,6 @@ class OIDC:
     def stop(self):
         if self._refresh_timer is not None:
             self._refresh_timer.cancel()
+
+
+auth = OIDC()
