@@ -157,7 +157,7 @@ def load_from(
             pass
 
 
-@may_insist_up_to(3, delay_in_secs=1)
+@may_insist_up_to(5, delay_in_secs=5)
 def parallelized_upload(
     item_and_path, case_by_group_and_number, progress, processed, skipped_count
 ):
