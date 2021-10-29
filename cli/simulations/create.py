@@ -11,15 +11,18 @@ WORKERS_COUNT = config.WORKERS_COUNT
 
 
 def create_batch(
-    project_uuid, pressure_model_uuid, swat_model_uuid, batch_name=None
+    project_uuid, pressure_model_uuid, swat_model_uuid, batch_name
 ):
     """[summary]
 
     Args:
-        model_uuid (string): the UUID of the model who will be
-            simulating the new batch
-        name (string, optional): The name of this simulation batch.
-            Defaults to None.
+        project_uuid (string): the UUID of the project this
+            new batch will belong to
+        pressure_model_uuid (string): the UUID of the
+            pressure model
+        swat_model_uuid (string): the UUID of the
+            swat model
+        batch_name (string): The name of this simulation batch.
 
     Returns:
         string: the UUID of the newly created simulation batch
