@@ -3,7 +3,12 @@ from api import api
 from tqdm import tqdm
 from datetime import datetime
 from dateutil import tz
+from multiprocessing.dummy import Pool
+from functools import partial
+from cli.config import config
+from cli.simulations.dependencySolver import DependencySolver
 
+WORKERS_COUNT = config.WORKERS_COUNT
 
 def create_batch(model_uuid, name=None):
     """[summary]
@@ -80,29 +85,6 @@ def find_files(source_folder, extension):
             if file_.endswith(extension):
                 yield os.path.join(root, file_)
 
-
-def provide_case_dependencies(
-    simulations_batch_url, dependencies, source_folder
-):
-    """Loops through a single case's dependencies and uploads to the batch input folder
-
-    Args:
-        simulations_batch_url (string): the case/batch input bucket url to upload to
-        dependencies (list): a list of file dependencies
-        source_folder (string): the source folder path
-    """
-    dependencies_progress = tqdm(dependencies, leave=False)
-    for dependency_item in dependencies_progress:
-        if dependency_item.get("status") == "solved":
-            continue
-        filepath = dependency_item.get("path")
-        source_path = f"{source_folder}/{filepath}"
-        dependencies_progress.set_description(
-            f"uploading dependency {filepath}"
-        )
-        upload_file_to_batch(simulations_batch_url, source_path, filepath)
-
-
 def provide_batch_initial_state(batch_url, missing_expression, source_folder):
     extension = missing_expression.replace("*", "")
     for source_path in find_files(source_folder, extension):
@@ -158,6 +140,26 @@ def report_batch_status(batch):
         for dependency in dependencies:
             print("*", dependency)
 
+def parse_path(source_folder, source_path):
+    """ Parse file path
+        Arguments:
+            source_folder {string}: the folder that holds all batch cases
+            source_path {string}: the path of the case
+        Returns:
+            parsed_path {string}: the new parsed path of the case
+            has_case_folder {bool}: boolean indicating if the `case` folder was removed
+    """
+    # Remove `cases` from source_path if exists
+    has_case_folder = source_folder.endswith("/cases")
+    if has_case_folder:
+        source_path = source_path.replace("cases/", "")
+
+    # Get source folder string without last folder
+    to_replace = source_folder.split("/")
+    to_replace = to_replace[:-1]
+    to_replace = '/'.join(to_replace)
+
+    return source_path.replace(f"{to_replace}/", ""), has_case_folder
 
 def upload_to_batch(source_folder, batch_uuid):
     """Uploads each data file to generate a case. 
@@ -171,14 +173,18 @@ def upload_to_batch(source_folder, batch_uuid):
     batch, batch_url = get_batch(batch_uuid)
     datafiles_progress = tqdm(find_files(source_folder, ".DATA"))
     for source_path in datafiles_progress:
-        filepath = source_path.replace(f"{source_folder}/", "")
+        # Upload the .DATA file
+        filepath, has_case_folder = parse_path(source_folder, source_path)
         datafiles_progress.set_description(f"uploading DATA {filepath}")
         case = upload_file_to_batch(batch_url, source_path, filepath)
-        assert "dependencies" in case
-        dependencies = case.get("dependencies")
-        provide_case_dependencies(batch_url, dependencies, source_folder)
-    batch, batch_url = get_batch(batch_uuid)
-    dependencies = batch.get("pending_dependencies", [])
-    provide_batch_dependencies(batch_url, dependencies, source_folder)
+
+        # Solve all dependencies
+        if "dependencies" in case:
+            dependencies = case.get("dependencies")
+            number = case.get("number")
+            dependencySolver = DependencySolver(batch_url, dependencies, number, source_folder, has_case_folder)
+            dependencySolver.solve_dependencies()
+
+    # Upload any pending dependency
     batch, _ = get_batch(batch_uuid)
     report_batch_status(batch)
