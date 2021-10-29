@@ -3,40 +3,62 @@ from api import api
 from tqdm import tqdm
 from datetime import datetime
 from dateutil import tz
-from multiprocessing.dummy import Pool
-from functools import partial
 from cli.config import config
 from cli.simulations.dependencySolver import DependencySolver
+from cli.common import logger
 
 WORKERS_COUNT = config.WORKERS_COUNT
 
-def create_batch(model_uuid, name=None):
+
+def create_batch(
+    project_uuid, pressure_model_uuid, swat_model_uuid, batch_name=None
+):
     """[summary]
 
     Args:
-        model_uuid (string): the UUID of the model who will be simulating the new batch
-        name (string, optional): The name of this simulation batch. Defaults to None.
+        model_uuid (string): the UUID of the model who will be
+            simulating the new batch
+        name (string, optional): The name of this simulation batch.
+            Defaults to None.
 
     Returns:
         string: the UUID of the newly created simulation batch
     """
-    simulations_url = "api/v1/simulations/batches"
-    new_simulation = dict(model_uuid=model_uuid, name=name)
-    response = api.post(simulations_url, new_simulation)
+    simulations_url = "api/v1/simulations"
+
+    # CREATE BATCH
+    new_simulation = dict(name=batch_name, project_uuid=project_uuid)
+    response = api.post(f"{simulations_url}/batches", new_simulation)
     assert (
         response.status_code == 201
     ), f"Expectend batch to be created but got {response.content}"
     simulation = response.json().get("batch")
-    return simulation.get("uuid")
+    batch_uuid = simulation.get("uuid")
+    logger.info("Simulation batch creation successful")
+
+    # UPDATE BATCH WITH MODELS
+    sim_batch_url = f"{simulations_url}/{batch_uuid}"
+    mod_simulation = dict(
+        pressure_model_uuid=pressure_model_uuid,
+        swat_model_uuid=swat_model_uuid,
+        set_status="typed",
+    )
+    response = api.put(sim_batch_url, mod_simulation)
+    assert (
+        response.status_code == 200
+    ), f"Expectend batch to be created but got {response.content}"
+    logger.info("Simulation batch models updated")
+    return batch_uuid
 
 
 def get_batch(batch_uuid):
     """Gets the batch with the given UUID
 
     Args:
-        batch_uuid (string): the UUID of the batch to get
+        batch_uuid (string): the UUID of the batch
     Returns:
-        (dict, string): the simulation batch object, the url for this simulation batch
+        (dict, string): the simulation batch object,
+            the url for this simulation batch
     """
     simulations_batch_url = f"api/v1/simulations/{batch_uuid}"
     response = api.get(simulations_batch_url)
@@ -84,6 +106,7 @@ def find_files(source_folder, extension):
         for file_ in files:
             if file_.endswith(extension):
                 yield os.path.join(root, file_)
+
 
 def provide_batch_initial_state(batch_url, missing_expression, source_folder):
     extension = missing_expression.replace("*", "")
@@ -140,14 +163,17 @@ def report_batch_status(batch):
         for dependency in dependencies:
             print("*", dependency)
 
+
 def parse_path(source_folder, source_path):
-    """ Parse file path
-        Arguments:
-            source_folder {string}: the folder that holds all batch cases
-            source_path {string}: the path of the case
-        Returns:
-            parsed_path {string}: the new parsed path of the case
-            has_case_folder {bool}: boolean indicating if the `case` folder was removed
+    """Parse file path
+    Arguments:
+        source_folder {string}: the folder that holds
+            all batch cases
+        source_path {string}: the path of the case
+    Returns:
+        parsed_path {string}: the new parsed path of the case
+        has_case_folder {bool}: boolean indicating if
+            the `case` folder was removed
     """
     # Remove `cases` from source_path if exists
     has_case_folder = source_folder.endswith("/cases")
@@ -157,12 +183,13 @@ def parse_path(source_folder, source_path):
     # Get source folder string without last folder
     to_replace = source_folder.split("/")
     to_replace = to_replace[:-1]
-    to_replace = '/'.join(to_replace)
+    to_replace = "/".join(to_replace)
 
     return source_path.replace(f"{to_replace}/", ""), has_case_folder
 
+
 def upload_to_batch(source_folder, batch_uuid):
-    """Uploads each data file to generate a case. 
+    """Uploads each data file to generate a case.
     For each case, find the depndencies and upload them as well.
     Finally, find and upload any pending batch dependencies
 
@@ -182,7 +209,9 @@ def upload_to_batch(source_folder, batch_uuid):
         if "dependencies" in case:
             dependencies = case.get("dependencies")
             number = case.get("number")
-            dependencySolver = DependencySolver(batch_url, dependencies, number, source_folder, has_case_folder)
+            dependencySolver = DependencySolver(
+                batch_url, dependencies, number, source_folder, has_case_folder
+            )
             dependencySolver.solve_dependencies()
 
     # Upload any pending dependency
