@@ -35,12 +35,13 @@ def create(
         swat_model_uuid is None
         or pressure_model_uuid is None
         or project_uuid is None
+        or batch_name is None
     ):
         raise click.UsageError(
             "Useage error: You may create/modify a "
             + "simulation batch one of two ways:"
             + "\n  1) use a project_uuid, a pressure_model_uuid,"
-            + " and a swat_model_uuid to create a new batch.\n"
+            + " a swat_model_uuid, and a batch_name to create a new batch.\n"
             + "  2) use a batch_uuid to modify an existing batch."
         )
     from .create import upload_to_batch, create_batch
