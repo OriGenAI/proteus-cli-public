@@ -14,4 +14,7 @@ def _setup_logging(config):
 _setup_logging(config=config)
 logging.config.fileConfig("logging.ini", disable_existing_loggers=False)
 
+azure_logger = logging.getLogger("azure.core.pipeline.policies.http_logging_policy")
+azure_logger.setLevel(logging.WARNING)
+
 logger = logging.getLogger(__name__)
