@@ -10,7 +10,7 @@ from .common import Source, SourcedItem
 class AZSource(Source):
     URI_re = re.compile(
         r"^https://(?P<bucket_name>.*\.windows\.net)/"
-        r"(?P<container_name>.*)/(?P<prefix>.*)?$"
+        r"(?P<container_name>[^/]*)/(?P<prefix>.*)?$"
     )
 
     def list_contents(self, starts_with='', ends_with=None):
