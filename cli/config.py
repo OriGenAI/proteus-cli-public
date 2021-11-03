@@ -11,6 +11,7 @@ class Config(object):
     OUTPUT_LOC = "output"
     TEMPLATE_NAME = "case_template"
     INPUT_LOC = "input"
+    LOG_LOC = "logs"
 
     SLEEP_TIME = 30
     PROMPT = True

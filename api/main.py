@@ -16,6 +16,15 @@ class API:
     ):
         pass
 
+    def put(self, url, data, headers={}):
+        headers = {
+            "Authorization": "Bearer {}".format(self.auth.access_token),
+            "Content-Type": "application/json",
+            **headers,
+        }
+        url = f"{PROTEUS_HOST}/{url}"
+        return requests.put(url, headers=headers, json=data)
+
     def post(self, url, data, headers={}):
         headers = {
             "Authorization": "Bearer {}".format(self.auth.access_token),
