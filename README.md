@@ -2,10 +2,9 @@
 
 CLI tools to interact with the plaform. Currently supports.
 
-* Create and update a simulations batch
-* Provide files to a dataset
-* List a Job status
-
+- Create and update a simulations batch
+- Provide files to a dataset
+- List a Job status
 
 ## Install and setup
 
@@ -20,6 +19,7 @@ pip install -e .
 ```
 
 3. create an environtment var shell script to handle configurations
+
 ```
 #!/bin/sh
 export AWS_SERVER_PUBLIC_KEY=XXXXXXXXXXXXXX
@@ -34,26 +34,35 @@ export PROTEUS_HOST=https://proteus-test.dev.origen.ai
 
 Credentials can also be type using the proteus line prompt
 
-## Before using 
+## Before using
 
 On next times prior to use the CLI simpy use this command
+
 ```
 source venv/bin/activate
 source secrets.sh
 ```
 
-## Simulations 
+## Simulations
 
 ### Create a new simulation
 
 Simply choose a folder which contains a set of DATA files and their dependencies.
+
 ```
-proteus simulations create /home/hesssample --model_uuid=<MODEL_UUID> --batch_name="<NAME-IT>"
+proteus simulations create ./home/hesssample --model_uuid=<MODEL_UUID> --batch_name="<NAME-IT>"
 ```
+
 The system will reply with a --batch_uuid parameter you should use to continue with the upload:
 
 ```
-proteus simulations create /home/hesssample --batch_uuid=<BATCH_UUID>
+proteus simulations create ./home/hesssample --batch_uuid=<BATCH_UUID>
+```
+
+use the flag --reupload if you want to force reuploading all the dependencies:
+
+```
+proteus simulations create ./home/hesssample --batch_uuid=<BATCH_UUID> --reupload
 ```
 
 ## Dataset upload
@@ -64,10 +73,9 @@ Once you get an S3 URI that contains the cases groups, and choosen a dataset UUI
 
 ```
 proteus datasets upload /home/your-user/your-data 02135a2a-7f73-4f4a-a5ef-843be8a8cf82
-``` 
+```
 
 Process can be run again if failed only missing files will be uploaded
-
 
 ### from S3
 
@@ -75,7 +83,7 @@ Once you get an S3 URI that contains the cases groups, and choosen a dataset UUI
 
 ```
 proteus datasets uploads s3://whatever-uri/you-selected/cases 02135a2a-7f73-4f4a-a5ef-843be8a8cf82
-``` 
+```
 
 Process can be run again if failed only missing files will be uploaded
 

@@ -6,7 +6,7 @@ from dateutil import tz
 from datetime import datetime
 
 class DependencySolver:
-    def __init__(self, batch_url, dependencies, case_number, source_folder, has_case_folder=False):
+    def __init__(self, batch_url, dependencies, case_number, source_folder, has_case_folder=False, reupload=False):
         """ Class to solve all the dependencies of a case
           Arguments:
               batch_url {string}: the path of the case
@@ -20,6 +20,7 @@ class DependencySolver:
         self.case_number = case_number
         self.source_folder = source_folder
         self.has_case_folder = has_case_folder
+        self.reupload = reupload
 
         self.do_not_retry_list = []
         self.workers_count = config.WORKERS_COUNT
@@ -70,7 +71,7 @@ class DependencySolver:
         """ Loops through a single case's dependencies and uploads to the batch input folder """
         pending_dependencies = [
             dependency.get("path") for dependency in self.dependencies 
-            if dependency.get("status") != "solved" and dependency.get("path") not in self.do_not_retry_list
+            if self.reupload == True or dependency.get("status") != "solved" and dependency.get("path") not in self.do_not_retry_list
         ]
 
         """ dependencies_progress = tqdm(pending_dependencies, leave=False)
@@ -100,7 +101,10 @@ class DependencySolver:
         response = api.get(simulation_case_url)
         new_dependencies = response.json().get("dependencies")
 
-        pending_dependencies = [dependency for dependency in new_dependencies if dependency.get("status") == 'pending']
+        pending_dependencies = [
+            dependency for dependency in new_dependencies 
+            if dependency.get("status") == 'pending'
+        ]
         if(pending_dependencies and not should_stop):
             self.dependencies = pending_dependencies
             self.solve_dependencies()

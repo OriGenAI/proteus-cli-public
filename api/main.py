@@ -45,8 +45,14 @@ class API:
         return response
 
     def post_file(self, url, filepath, content=None, modified=None):
+        content.seek(0, 2)
+        size = content.tell()
+        content.seek(0)
+
         headers = {
             "Authorization": "Bearer {}".format(self.auth.access_token),
+            "Content-Disposition": f"form-data; name=''; filename={filepath}",
+            "Content-Range": f"bytes */{size}"
         }
         if modified is not None:
             headers["x-last-modified"] = modified.isoformat()

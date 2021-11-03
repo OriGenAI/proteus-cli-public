@@ -43,9 +43,6 @@ def store_stream_in(stream, filepath, progress, chunk_size=1024):
     except OSError:
         pass
 
-    #    os.rename(temp_filepath, filepath)
-
-
 def is_file_already_present(filepath, size=None):
     try:
         found_size = os.stat(filepath).st_size

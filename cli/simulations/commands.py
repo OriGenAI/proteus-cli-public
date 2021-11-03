@@ -18,6 +18,7 @@ def simulations():
 @click.option("--pressure_model_uuid", prompt=False)
 @click.option("--swat_model_uuid", prompt=False)
 @click.option("--batch_name", prompt=False)
+@click.option("--reupload/--no-reupload", prompt=False, default=False)
 @may_fail_on_http_error(exit_code=1)
 @runs_authentified
 def create(
@@ -27,6 +28,7 @@ def create(
     swat_model_uuid=None,
     pressure_model_uuid=None,
     batch_name=None,
+    reupload=False,
 ):
     """This creates a new simulation batch and uploads the DATA files
     and related dependencies from a source folder"""
@@ -61,4 +63,4 @@ def create(
             f'Created a new batch. to resume use --batch_uuid="{batch_uuid}"'
         )
     logger.info("Uploading files and dependencies to simulation batch")
-    upload_to_batch(source_folder, batch_uuid)
+    upload_to_batch(source_folder, batch_uuid, reupload)

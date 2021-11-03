@@ -190,15 +190,15 @@ def parse_path(source_folder, source_path):
 
     return source_path.replace(f"{to_replace}/", ""), has_case_folder
 
-
-def upload_to_batch(source_folder, batch_uuid):
-    """Uploads each data file to generate a case.
+def upload_to_batch(source_folder, batch_uuid, reupload):
+    """Uploads each data file to generate a case. 
     For each case, find the depndencies and upload them as well.
     Finally, find and upload any pending batch dependencies
 
     Args:
         source_folder (string): the folder that holds all batch cases
         batch_uuid (string): the UUID for this batch
+        reupload (bool): flag to know if we should reupload all files
     """
     batch, batch_url = get_batch(batch_uuid)
     datafiles_progress = tqdm(find_files(source_folder, ".DATA"))
@@ -213,7 +213,7 @@ def upload_to_batch(source_folder, batch_uuid):
             dependencies = case.get("dependencies")
             number = case.get("number")
             dependencySolver = DependencySolver(
-                batch_url, dependencies, number, source_folder, has_case_folder
+                batch_url, dependencies, number, source_folder, has_case_folder, reupload
             )
             dependencySolver.solve_dependencies()
 
