@@ -60,7 +60,7 @@ class DependencySolver:
             source_folder.replace("./", "./cases/")
 
         source_folder = source_folder.split("/")
-        source_folder = source_folder[:-1] if len(source_folder) > 2 else source_folder
+        source_folder = source_folder[:-1] if len(source_folder) > 1 else source_folder
         source_folder = '/'.join(source_folder)
 
         source_path = f"{source_folder}/{filepath}"
