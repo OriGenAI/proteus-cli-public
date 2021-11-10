@@ -74,14 +74,6 @@ class DependencySolver:
             if self.reupload == True or dependency.get("status") != "solved" and dependency.get("path") not in self.do_not_retry_list
         ]
 
-        """ dependencies_progress = tqdm(pending_dependencies, leave=False)
-        upload_partial = partial(
-            async_dependency_upload,
-            progress=dependencies_progress, 
-            source_folder=source_folder, 
-            simulations_batch_url=self.batch_url,
-            has_case_folder=has_case_folder
-        ) """
         with Pool(processes=self.workers_count) as pool:
             for res in pool.imap_unordered(self.async_dependency_upload, pending_dependencies):
                 if res:
