@@ -2,10 +2,32 @@ import os
 import requests
 from cli.config import config
 from cli.common.logger import logger
-
+from .oidc import auth
+from requests.exceptions import HTTPError
+from functools import wraps
 
 PROTEUS_HOST = config.PROTEUS_HOST
 
+
+def refresh_authentication():
+    def refresh_authentication_if_authenticated(fn):
+        @wraps(fn)
+        def wrapped(*args, **kwargs):
+            try:
+                return fn(*args, **kwargs)
+            except HTTPError as error:
+                print(error.response.content)
+                if error.response.status_code == 401:
+                    global auth
+                    auth.do_login()
+
+                    return fn(*args, **kwargs)
+
+                raise error
+
+        return wrapped
+
+    return refresh_authentication_if_authenticated
 
 class API:
     def __init__(self, auth):
@@ -44,6 +66,7 @@ class API:
         response.raise_for_status()
         return response
 
+    @refresh_authentication()
     def post_file(self, url, filepath, content=None, modified=None):
         content.seek(0, 2)
         size = content.tell()
