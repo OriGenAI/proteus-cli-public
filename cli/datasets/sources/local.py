@@ -11,7 +11,6 @@ class LocalSource(Source):
     def list_contents(self, starts_with="", ends_with=""):
         source_uri = self.uri
         for item in Path(source_uri).rglob(f"{starts_with}*{ends_with}"):
-            item.source = self
             yield SourcedItem(item, str(item), self)
 
     def open(self, reference):
