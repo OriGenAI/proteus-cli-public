@@ -4,7 +4,7 @@ from api import api
 from cli.config import config
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
-from multiprocessing.dummy import Pool
+from multiprocessing.pool import Pool
 from api.oidc import may_insist_up_to
 from .sources.s3 import S3Source
 from .sources.az import AZSource
@@ -88,18 +88,17 @@ def load_from(
     upload_partial = partial(
         parallelized_upload,
         case_by_group_and_number=case_by_group_and_number,
-        progress=progress,
         processed=processed,
         skipped_count=skipped_count,
     )
     with Pool(processes=workers) as pool:
         for res in pool.imap_unordered(upload_partial, items_and_paths):
-            pass
-
+            progress.update(res if res else 0)
+            progress.refresh()
 
 @may_insist_up_to(5, delay_in_secs=5)
 def parallelized_upload(
-    item_and_path, case_by_group_and_number, progress, processed, skipped_count
+    item_and_path, case_by_group_and_number, processed, skipped_count
 ):
     item, path, reference = item_and_path
     matchs_as_case = case_re.match(path)
@@ -107,15 +106,11 @@ def parallelized_upload(
     target = find_target(case_by_group_and_number, **terms)
     if target is None:
         skipped_count += 1
-        progress.set_postfix_str(
-            s=f"{skipped_count} files non related, last one: {path[-15:]}"
-        )
     else:
         content = terms.get("content")
         matchs = _timestep.match(content) or _sheet_extension.match(content)
         if matchs:
             if is_pending(matchs, target):
-                progress.set_postfix_str(s=f"transfering file {path[-20:]}")
                 done, skipped = send_as(
                     target, item, reference, **terms, **matchs.groupdict()
                 )
@@ -123,9 +118,8 @@ def parallelized_upload(
                 skipped_count += skipped
             else:
                 processed += 1
-                progress.set_postfix_str(s=f"already uploaded: {path[-20:]}")
-    progress.update(processed)
-    progress.refresh()
+
+    return processed
 
 
 def is_pending(match, target):
