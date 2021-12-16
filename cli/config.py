@@ -31,6 +31,8 @@ class Config(object):
     AZURE_STORAGE_CONNECTION_STRING = os.getenv(
         "AZURE_STORAGE_CONNECTION_STRING"
     )
+    
+    STRESS_ITERATIONS = 10
 
 
 class ProductionConfig(Config):
