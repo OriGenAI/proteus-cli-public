@@ -7,16 +7,14 @@ USERNAME, PASSWORD = config.USERNAME, config.PASSWORD
 def test_init_stress_test():
     # Given
     runner = CliRunner()
-    bucket = "6ed65156-64c1-4e06-bbbd-1827b2c54336"
-    folder= "tests/files"
-    workers = "5"
+    bucket = "dba55075-1ccb-483a-afd7-cc7a42c1fcdd"
+    workers = "1"
     iterations = "10"
     input = "\n".join([workers, iterations, USERNAME, PASSWORD])
     # When
-    result = runner.invoke(init_stress_test, [bucket, folder], input=input)
+    result = runner.invoke(init_stress_test, [bucket], input=input)
     # Then
     assert result.exit_code == 0
-    assert result.output == "Done"
 
 
 if __name__ == "__main__":
