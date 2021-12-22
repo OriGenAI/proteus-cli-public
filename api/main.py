@@ -125,8 +125,8 @@ class API:
 
         return r.status_code
 
-    def download_as_stream(self, url, localpath, localname):
-        r = self.get(url)
+    def download_as_stream(self, url, localpath, localname, timeout=60):
+        r = self.get(url, stream=True, timeout=timeout)
         os.makedirs(localpath, exist_ok=True)
         local = localpath
         if localname is not None:
