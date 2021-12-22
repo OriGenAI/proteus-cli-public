@@ -15,7 +15,7 @@ def debugger():
 @click.option("--workers", prompt=config.PROMPT, default=config.WORKERS_COUNT)
 @click.option("--iterations", prompt=config.PROMPT, default=config.STRESS_ITERATIONS)
 @click.argument("bucket")
-@click.argument("file_ext")
+@click.argument("file_ext", default=".X")
 @may_fail_on_http_error(exit_code=1)
 @runs_authentified
 def init_stress_test(bucket, file_ext, workers=config.WORKERS_COUNT, iterations=config.STRESS_ITERATIONS):
