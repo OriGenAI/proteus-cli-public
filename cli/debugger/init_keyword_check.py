@@ -2,10 +2,10 @@ import os
 import time
 import shutil
 from functools import partial
-from api import api, iterate_pagination
+from api import api
 from cli.config import config
 from tqdm import tqdm
-from multiprocessing.pool import ThreadPool
+from multiprocessing.pool import Pool, ThreadPool
 from api.oidc import may_insist_up_to
 from ecl.eclfile import EclFile, EclInitFile
 from ecl.grid import EclGrid
@@ -13,15 +13,20 @@ from ecl.grid import EclGrid
 
 WORKERS_COUNT, STRESS_ITERATIONS = (config.WORKERS_COUNT, config.STRESS_ITERATIONS)
 
+POOLS = {
+    "processes": Pool,
+    "threads": ThreadPool
+}
+
 FILES_PATH = 'tests/files'
 
 
-def keyword_check(bucket, file_ext, workers=WORKERS_COUNT, iterations=STRESS_ITERATIONS):
+def keyword_check(bucket, file_ext, parallel_method, workers=WORKERS_COUNT, iterations=STRESS_ITERATIONS):
     try:
         assert api.auth.access_token is not None
         print(f"This process will use {workers} simultaneous threads.")
         start = time.time()
-        count_success = list_bucket_files(bucket, file_ext, workers=workers, iterations=iterations)
+        count_success = list_bucket_files(bucket, file_ext, parallel_method, workers=workers, iterations=iterations)
         end = time.time()
         print(f"Succesful downloads: {count_success} of {iterations}, took: {end - start:.2f} seconds")
         return "Done"
@@ -32,12 +37,12 @@ def keyword_check(bucket, file_ext, workers=WORKERS_COUNT, iterations=STRESS_ITE
 
 @may_insist_up_to(5, delay_in_secs=5)
 def do_download(item, chunk_size=1024):
-    url, path, size = item["url"], item["filepath"], item["size"]
+    url, path, size, num = item["url"], item["filepath"], item["size"], item["num"]
 
     with tqdm(
             total=None, unit="B", unit_scale=True, unit_divisor=chunk_size, leave=False
         ) as file_progress:
-        file_name = path.split('/')[-1]
+        file_name = f"{path.split('/')[-1]}_{num}"
         file_progress.set_postfix_str(s=f"download file ...{file_name}")
 
         try:
@@ -49,27 +54,31 @@ def do_download(item, chunk_size=1024):
                 grid = _get_grid(url, file_name)
                 init = EclInitFile(grid, f"{FILES_PATH}/{file_name}")
                 _validate_init_file(init)
-        except:
+        except Exception as e:
+            print(e)
             return False
 
         file_progress.total = size
         file_progress.refresh()
         return True
 
-def list_bucket_files(bucket_uuid, file_ext, workers=3, iterations=10):
+def list_bucket_files(bucket_uuid, file_ext, parallel_method, workers=3, iterations=10):
     if os.path.exists(FILES_PATH):
         shutil.rmtree(FILES_PATH) 
 
     os.mkdir(FILES_PATH)
 
     search = {"contains": file_ext}
-    response = api.get(f"/api/v1/buckets/{bucket_uuid}/files", **search, per_page=iterations)
+    response = api.get(f"/api/v1/buckets/{bucket_uuid}/files", **search, per_page=1)
     total = response.json().get("total")
     count_success = 0
     progress = tqdm(total=total)
     download_partial = partial(do_download)
-    items = response.json().get("results")
-    with ThreadPool(processes=workers) as pool:
+    items = [{"num": i, **response.json().get("results")[0]} for i in range(iterations)]
+
+    SelectedPool = POOLS[parallel_method]
+
+    with SelectedPool(processes=workers) as pool:
         for res in pool.imap(download_partial, items):
             count_success += 1 if res else 0
             progress.update(1)
