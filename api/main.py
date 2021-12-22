@@ -5,6 +5,7 @@ from cli.common.logger import logger
 from .oidc import auth
 from requests.exceptions import HTTPError
 from functools import wraps
+from io import BytesIO
 
 PROTEUS_HOST = config.PROTEUS_HOST
 
@@ -124,5 +125,14 @@ class API:
 
         return r.status_code
 
-    def download_as_stream(self, url):
-        return self.get(url, stream=True)
+    def download_as_stream(self, url, localpath, localname):
+        r = self.get(url)
+        os.makedirs(localpath, exist_ok=True)
+        local = localpath
+        if localname is not None:
+            local = os.path.join(local, localname)
+
+        with open(local, "wb") as f:
+            f.write(r.content)
+
+        return r.status_code
