@@ -34,6 +34,14 @@ export PROTEUS_HOST=https://proteus-test.dev.origen.ai
 
 Credentials can also be type using the proteus line prompt
 
+4. In order to use testing it will be necesary to create the .testenv file with valid proteus credentials, and a proteus-backend host. It will be also neccesary to install the dev requirements.
+
+```
+PROTEUS_USERNAME="proteus-username-not-configured"
+PROTEUS_PASSWORD="proteus-password-not-configured"
+PROTEUS_HOST=http://localhost:5000
+```
+
 ## Before using
 
 On next times prior to use the CLI simpy use this command
