@@ -26,7 +26,8 @@ def keyword_check(bucket, file_ext, parallel_method, workers=WORKERS_COUNT, iter
         assert api.auth.access_token is not None
         print(f"This process will use {workers} simultaneous threads.")
         start = time.time()
-        count_success = list_bucket_files(bucket, file_ext, parallel_method, workers=workers, iterations=iterations)
+        items = list_bucket_files(bucket, file_ext, iterations=iterations)
+        count_success = download_files(items, parallel_method, workers=workers, iterations=iterations)
         end = time.time()
         print(f"Succesful downloads: {count_success} of {iterations}, took: {end - start:.2f} seconds")
         return "Done"
@@ -46,14 +47,10 @@ def do_download(item, chunk_size=1024):
         file_progress.set_postfix_str(s=f"download file ...{file_name}")
 
         try:
-            _ = api.download_as_stream(url, FILES_PATH, file_name, timeout=600)
             if ".X" in file_name:
-                unrst = EclFile(f"{FILES_PATH}/{file_name}")
-                _validate_x_file(unrst)
-            elif ".INIT" in file_name:
-                grid = _get_grid(url, file_name)
-                init = EclInitFile(grid, f"{FILES_PATH}/{file_name}")
-                _validate_init_file(init)
+                _download_x(url, file_name)
+            if ".INIT" in file_name:
+               _download_init(url, file_name) 
         except Exception as e:
             print(e)
             return False
@@ -62,7 +59,7 @@ def do_download(item, chunk_size=1024):
         file_progress.refresh()
         return True
 
-def list_bucket_files(bucket_uuid, file_ext, parallel_method, workers=3, iterations=10):
+def list_bucket_files(bucket_uuid, file_ext, iterations=10):
     if os.path.exists(FILES_PATH):
         shutil.rmtree(FILES_PATH) 
 
@@ -70,12 +67,13 @@ def list_bucket_files(bucket_uuid, file_ext, parallel_method, workers=3, iterati
 
     search = {"contains": file_ext}
     response = api.get(f"/api/v1/buckets/{bucket_uuid}/files", **search, per_page=1)
-    total = response.json().get("total")
-    count_success = 0
-    progress = tqdm(total=total)
-    download_partial = partial(do_download)
-    items = [{"num": i, **response.json().get("results")[0]} for i in range(iterations)]
 
+    return [{"num": i, **response.json().get("results")[0]} for i in range(iterations)]
+
+def download_files(items, parallel_method, workers=3, iterations=10):
+    count_success = 0
+    progress = tqdm(total=iterations)
+    download_partial = partial(do_download)
     SelectedPool = POOLS[parallel_method]
 
     with SelectedPool(processes=workers) as pool:
@@ -86,6 +84,17 @@ def list_bucket_files(bucket_uuid, file_ext, parallel_method, workers=3, iterati
     shutil.rmtree(FILES_PATH)
 
     return count_success
+
+def _download_x(url, file_name):
+    _ = api.download_as_stream(url, FILES_PATH, file_name, timeout=600)
+    unrst = EclFile(f"{FILES_PATH}/{file_name}")
+    _validate_x_file(unrst)
+
+def _download_init(url, file_name):
+    _ = api.download_as_stream(url, FILES_PATH, file_name, timeout=600)
+    grid = _get_grid(url, file_name)
+    init = EclInitFile(grid, f"{FILES_PATH}/{file_name}")
+    _validate_init_file(init)
 
 def _validate_x_file(file):
     file.iget_named_kw("SWAT", 0).numpy_copy()
