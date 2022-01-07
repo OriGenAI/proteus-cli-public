@@ -6,8 +6,6 @@ from .oidc import auth
 from requests.exceptions import HTTPError
 from functools import wraps
 
-PROTEUS_HOST = config.PROTEUS_HOST
-
 
 def refresh_authentication():
     def refresh_authentication_if_authenticated(fn):
@@ -44,7 +42,7 @@ class API:
             "Content-Type": "application/json",
             **headers,
         }
-        url = f"{PROTEUS_HOST}/{url}"
+        url = f"{config.PROTEUS_HOST}/{url}"
         return requests.put(url, headers=headers, json=data)
 
     def post(self, url, data, headers={}):
@@ -53,7 +51,7 @@ class API:
             "Content-Type": "application/json",
             **headers,
         }
-        url = f"{PROTEUS_HOST}/{url}"
+        url = f"{config.PROTEUS_HOST}/{url}"
         return requests.post(url, headers=headers, json=data)
 
     def post_files(self, url, files, headers={}):
@@ -61,7 +59,7 @@ class API:
             "Authorization": "Bearer {}".format(self.auth.access_token),
             **headers,
         }
-        url = f"{PROTEUS_HOST}/{url}"
+        url = f"{config.PROTEUS_HOST}/{url}"
         response = requests.post(url, headers=headers, files=files)
         response.raise_for_status()
         return response
@@ -80,7 +78,7 @@ class API:
         if modified is not None:
             headers["x-last-modified"] = modified.isoformat()
         files = dict(file=(filepath, content))
-        url = f"{PROTEUS_HOST}/{url}"
+        url = f"{config.PROTEUS_HOST}/{url}"
         response = requests.post(url, headers=headers, files=files)
         response.raise_for_status()
         return response
@@ -91,7 +89,7 @@ class API:
             "Content-Type": "application/json",
             **headers,
         }
-        url = f"{PROTEUS_HOST}/{url}"
+        url = f"{config.PROTEUS_HOST}/{url}"
         response = requests.get(
             url, headers=headers, params=query_args, stream=stream
         )
@@ -124,5 +122,14 @@ class API:
 
         return r.status_code
 
-    def download_as_stream(self, url):
-        return self.get(url, stream=True)
+    def download_as_stream(self, url, localpath, localname, timeout=60):
+        r = self.get(url, stream=True, timeout=timeout)
+        os.makedirs(localpath, exist_ok=True)
+        local = localpath
+        if localname is not None:
+            local = os.path.join(local, localname)
+
+        with open(local, "wb") as f:
+            f.write(r.content)
+
+        return r.status_code
