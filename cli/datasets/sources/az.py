@@ -9,8 +9,8 @@ from .common import Source, SourcedItem
 
 class AZSource(Source):
     URI_re = re.compile(
-        r"^https://(?P<bucket_name>.*\.windows\.net)/"
-        r"(?P<container_name>[^/]*)/(?P<prefix>.*)?$"
+        r"^https:\/\/(?P<bucket_name>.*\.windows\.net)\/"
+        r"(?P<container_name>[^\/]*)(\/)?(?P<prefix>.*)?$"
     )
 
     def list_contents(self, starts_with='', ends_with=None):
@@ -39,7 +39,18 @@ class AZSource(Source):
             blob_name=reference_path,
         )
         stream = BytesIO()
-        streamdownloader = blob_client.download_blob()
+        streamdownloader = blob_client.download_blob(max_concurrency=4)
         streamdownloader.download_to_stream(stream)
         stream.seek(0)
         return reference_path, file_size, modified, stream
+
+    def download(self, reference):
+        container = reference.get("container")
+        reference_path = reference.get("name")
+
+        blob_client = BlobClient.from_connection_string(
+            conn_str=config.AZURE_STORAGE_CONNECTION_STRING,
+            container_name=container,
+            blob_name=reference_path,
+        )
+        return blob_client.download_blob().readall()

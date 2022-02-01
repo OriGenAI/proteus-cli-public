@@ -1,21 +1,28 @@
 import re
+import io
+import tempfile
 from functools import partial
+import numpy as np
+
 from api import api
 from cli.config import config
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
-from multiprocessing.pool import Pool
+from multiprocessing.pool import ThreadPool
 from api.oidc import may_insist_up_to
 from .sources.s3 import S3Source
 from .sources.az import AZSource
 from .sources.local import LocalSource
 
+from cli.datasets.preprocessor.config import CaseConfig, CommonConfig, StepConfig
+
 AVAILABLE_SOURCES = [S3Source, AZSource, LocalSource]
 
 
-PROTEUS_HOST, WORKERS_COUNT = (
+PROTEUS_HOST, WORKERS_COUNT, DATASET_VERSION = (
     config.PROTEUS_HOST,
     config.WORKERS_COUNT,
+    config.DATASET_VERSION,
 )
 
 _sheet_extension = re.compile(
@@ -29,40 +36,58 @@ case_re = re.compile(
 
 _timestep = re.compile(r".*(?P<extension>X\d{4}|S\d{4})$")
 
+def set_dataset_version(dataset_uuid):
+    new_version = dict(
+        major_version=DATASET_VERSION.get("major"), 
+        minor_version=DATASET_VERSION.get("minor"), 
+        patch_version=DATASET_VERSION.get("patch")
+    )
+
+    dataset_version_url = f"/api/v1/datasets/{dataset_uuid}/versions"
+    api.post(dataset_version_url, new_version)
 
 def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
     try:
         assert api.auth.access_token is not None
+        set_dataset_version(dataset_uuid)
+
         print(f"This process will use {workers} simultaneous threads.")
         with tqdm(total=0) as progress:
-            total_expected, case_by_group_and_number = get_cases(
-                api.auth, dataset_uuid, progress
-            )
-            load_from(
-                case_by_group_and_number, bucket, progress, workers=workers
-            )
-    except KeyboardInterrupt:
+            cases = get_cases(dataset_uuid, progress)
+
+            progress.set_description("Setting the dataset version")
+            progress.refresh()
+            response = api.get(f"/api/v1/datasets/{dataset_uuid}")
+            bucket_url = response.json().get("dataset").get("bucket_url")
+            cases_url = response.json().get("dataset").get("cases_url")
+
+            first_case_response = api.get(f"{cases_url}/training/1")
+            initialStep = first_case_response.json().get("case").get("initialStep")
+            finalStep = first_case_response.json().get("case").get("finalStep")
+
+            common_step = CommonConfig.number_of_steps()
+            cases_steps = CaseConfig.number_of_steps()
+            timesteps_steps = StepConfig.number_of_steps() - 1
+            total_steps = common_step + (cases_steps + timesteps_steps * (finalStep - initialStep + 1)) * len(cases)
+
+            progress.total = total_steps
+            progress.set_description("Starting processing files")
+            progress.refresh()
+            process_files(bucket, bucket_url, cases_url, progress, cases=cases, workers=workers)
+    except Exception as e:
         pass
     finally:
         api.auth.stop()
 
 
-def get_cases(auth, dataset_uuid, progress):
-    progress.set_description("retrieving cases and expected files")
+def get_cases(dataset_uuid, progress):
+    progress.set_description("Retrieving cases and expected files")
     progress.refresh()
+    
     cases_url = f"/api/v1/datasets/{dataset_uuid}/cases"
     response = api.get(cases_url)
-    cases = response.json().get("cases")
-    case_by_group_and_number = {}
-    total = 0
-    for case in cases:
-        case_details = api.get(case.get("case_url")).json().get("case")
-        key = f"{case.get('group')}-{case.get('number')}"
-        case_by_group_and_number[key] = case_details
-        total += 5 + (2 * case.get("steps", 0))
-        progress.total = total
-        progress.refresh()
-    return total, case_by_group_and_number
+    
+    return response.json().get("cases")
 
 
 def find_target(case_by_group_and_number, group=None, number=None, **other):
@@ -91,7 +116,7 @@ def load_from(
         processed=processed,
         skipped_count=skipped_count,
     )
-    with Pool(processes=workers) as pool:
+    with ThreadPool(processes=workers) as pool:
         for res in pool.imap_unordered(upload_partial, items_and_paths):
             progress.update(res if res else 0)
             progress.refresh()
@@ -169,3 +194,40 @@ def send_as(
             print(error, transfer.content)
         raise error
     return done, skipped
+
+def process_files(source_url, bucket_url, cases_url, progress, cases=[], workers=WORKERS_COUNT):
+    from .preprocessor.config import Config
+    from .preprocessor.process_step import process_step    
+
+    # Download common.p if exists
+    common_content = download_common(f"{bucket_url}/cases/common.p")
+
+    # Generate all the files-pairs with a generator
+    sortedCases = sorted(cases, key=lambda d: d['root']) 
+    config = Config(cases=sortedCases, common_data=common_content)
+    steps = config.return_iterator()
+
+    # Create temporary folder
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        with ThreadPool(processes=workers) as pool:
+            process_step_partial = partial(
+                process_step,
+                tmpdirname=tmpdirname,
+                source_url=source_url,
+                bucket_url=bucket_url,
+                cases_url=cases_url,
+            )
+            for res in pool.imap_unordered(process_step_partial, steps):
+                progress.update(1)
+                progress.set_description(f"File uploaded: {res}")
+                progress.refresh()
+
+def download_common(url):
+    try:
+        r = api.get(url)
+        open("/tmp/common.p", 'wb').write(r.content)
+            
+        download = np.load("/tmp/common.p", allow_pickle=True)
+        return download
+    except Exception as e:
+        return None

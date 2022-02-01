@@ -17,7 +17,6 @@ PROTEUS_HOST, S3_REGION, WORKERS_COUNT, AZURE_STORAGE_CONNECTION_STRING = (
 
 def list_bucket_files(bucket_uuid, each_item, workers=3, **search):
     assert api.auth.access_token is not None
-    print("search", search)
     response = api.get(
         f"/api/v1/buckets/{bucket_uuid}/files", per_page=10, **search
     )

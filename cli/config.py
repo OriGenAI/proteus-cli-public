@@ -33,6 +33,12 @@ class Config(object):
     )
     
     STRESS_ITERATIONS = 10
+    
+    DATASET_VERSION = {
+        "major": os.getenv("DATASET_MAJOR_VERSION", 1),
+        "minor": os.getenv("DATASET_MINOR_VERSION", 0),
+        "patch": os.getenv("DATASET_PATCH_VERSION", 0),
+    }
 
 
 class ProductionConfig(Config):
