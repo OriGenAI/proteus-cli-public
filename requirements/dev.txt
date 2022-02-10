@@ -1,2 +1,3 @@
 python-dotenv==0.19.2
-preprocessing @ git+ssh://git@github.com/OriGenAI/preprocessing.git
+preprocessing @ git+ssh://git@github.com/OriGenAI/preprocessing.gitblack==22.1.0
+pre-commit==2.9.3

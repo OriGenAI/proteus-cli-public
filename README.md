@@ -42,6 +42,22 @@ PROTEUS_PASSWORD="proteus-password-not-configured"
 PROTEUS_HOST=http://localhost:5000
 ```
 
+### Contributors
+
+Please note that to apply correct linting developer properties have to be installed:
+
+```
+pip install -r requirements/dev.txt
+```
+
+And pre-commit should be installed:
+
+```
+pre-commit install
+```
+
+
+
 ## Before using
 
 On next times prior to use the CLI simpy use this command
