@@ -47,6 +47,14 @@ PROTEUS_PASSWORD="proteus-password-not-configured"
 PROTEUS_HOST=http://localhost:5000
 ```
 
+5. Keeping up-to-date
+
+Remember, to update both the current repo and submodules updated you have to run the following command:
+
+```
+git pull --recurse-submodules
+```
+
 ### Contributors
 
 Please note that to apply correct linting developer properties have to be installed:
