@@ -51,6 +51,23 @@ def set_dataset_version(dataset_uuid):
     api.post(dataset_version_url, new_version)
 
 
+def get_total_steps(cases):
+    first_training_case = next(
+        filter(lambda c: c["group"] == "training" and c["number"] == 1, cases),
+        None,
+    )
+    first_case_response = api.get(first_training_case.get("case_url"))
+    first_case_json = first_case_response.json().get("case")
+    initial_step = first_case_json.get("initialStep")
+    final_step = first_case_json.get("finalStep")
+    common_step = CommonConfig.number_of_steps()
+    cases_steps = CaseConfig.number_of_steps()
+    timesteps_steps = StepConfig.number_of_steps() - 1
+    return common_step + (
+        cases_steps + timesteps_steps * (final_step - initial_step + 1)
+    ) * len(cases)
+
+
 def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
     assert api.auth.access_token is not None
     set_dataset_version(dataset_uuid)
@@ -62,19 +79,11 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
         progress.set_description("Setting the dataset version")
         progress.refresh()
         response = api.get(f"/api/v1/datasets/{dataset_uuid}")
-        bucket_url = response.json().get("dataset").get("bucket_url")
-        cases_url = response.json().get("dataset").get("cases_url")
+        dataset_json = response.json().get("dataset")
+        bucket_url = dataset_json.get("bucket_url")
+        cases_url = dataset_json.get("cases_url")
 
-        first_case_response = api.get(f"{cases_url}/training/1")
-        initialStep = first_case_response.json().get("case").get("initialStep")
-        finalStep = first_case_response.json().get("case").get("finalStep")
-
-        common_step = CommonConfig.number_of_steps()
-        cases_steps = CaseConfig.number_of_steps()
-        timesteps_steps = StepConfig.number_of_steps() - 1
-        total_steps = common_step + (
-            cases_steps + timesteps_steps * (finalStep - initialStep + 1)
-        ) * len(cases)
+        total_steps = get_total_steps(cases)
 
         progress.total = total_steps
         progress.set_description("Starting processing files")
