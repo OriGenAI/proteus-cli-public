@@ -31,9 +31,9 @@ class Config(object):
     AZURE_STORAGE_CONNECTION_STRING = os.getenv(
         "AZURE_STORAGE_CONNECTION_STRING"
     )
-    
+
     STRESS_ITERATIONS = 10
-    
+
     DATASET_VERSION = {
         "major": os.getenv("DATASET_MAJOR_VERSION", 1),
         "minor": os.getenv("DATASET_MINOR_VERSION", 0),
