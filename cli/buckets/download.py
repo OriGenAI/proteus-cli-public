@@ -32,7 +32,6 @@ def store_stream_in(stream, filepath, progress, chunk_size=1024):
     folder_path = os.path.join(*filepath.split("/")[:-1])
     os.makedirs(folder_path, exist_ok=True)
     temp_filepath = f"{filepath}.partial"
-    temp_filepath = "/dev/null"
     with open(temp_filepath, "wb") as _file:
         for data in stream.iter_content(chunk_size):
             progress.update(len(data))
