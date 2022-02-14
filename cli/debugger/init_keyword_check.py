@@ -86,12 +86,12 @@ def download_files(items, parallel_method, workers=3, iterations=10):
     return count_success
 
 def _download_x(url, file_name):
-    _ = api.download_as_stream(url, FILES_PATH, file_name, timeout=600)
+    _ = api.store_stream(url, FILES_PATH, file_name, timeout=600)
     unrst = EclFile(f"{FILES_PATH}/{file_name}")
     _validate_x_file(unrst)
 
 def _download_init(url, file_name):
-    _ = api.download_as_stream(url, FILES_PATH, file_name, timeout=600)
+    _ = api.store_stream(url, FILES_PATH, file_name, timeout=600)
     grid = _get_grid(url, file_name)
     init = EclInitFile(grid, f"{FILES_PATH}/{file_name}")
     _validate_init_file(init)
@@ -109,5 +109,5 @@ def _validate_init_file(file):
 def _get_grid(url, file_name):
     egrid_url = url.replace("INIT", "EGRID")
     egrid_file_name = file_name.replace("INIT", "EGRID")
-    _ = api.download_as_stream(egrid_url, FILES_PATH, egrid_file_name, timeout=600)
+    _ = api.store_stream(egrid_url, FILES_PATH, egrid_file_name, timeout=600)
     return EclGrid(f"{FILES_PATH}/{egrid_file_name}")
