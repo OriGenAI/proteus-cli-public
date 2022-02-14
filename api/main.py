@@ -112,7 +112,10 @@ class API:
 
         return r.status_code
 
-    def download_as_stream(self, url, localpath, localname, timeout=60):
+    def download_as_stream(self, url):
+        return self.get(url, stream=True)
+
+    def store_stream(self, url, localpath, localname, timeout=60):
         r = self.get(url, stream=True, timeout=timeout)
         os.makedirs(localpath, exist_ok=True)
         local = localpath
