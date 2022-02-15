@@ -18,8 +18,10 @@ git clone --recurse-submodules git@github.com:OriGenAI/proteus-cli.git
 2. Install and setup enviroment
 
 ```
-virtualenv -p3.8 venv
+virtualenv -p /usr/bin/python3.8 venv
 source venv/bin/activate
+pip install -r requirements.txt 
+# use requirements/dev.txt if you are a developer
 pip install -e .
 ```
 
