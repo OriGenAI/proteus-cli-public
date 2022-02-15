@@ -1,0 +1,3 @@
+[submodule "requirements/preprocessing"]
+	path = requirements/preprocessing
+	url = git@github.com:OriGenAI/preprocessing.git

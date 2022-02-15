@@ -8,13 +8,20 @@ CLI tools to interact with the plaform. Currently supports.
 
 ## Install and setup
 
-1. Clone the project into the desired directory
+1. Clone the project into the desired directory. This repo has submodules so you will need using
+
+```
+git clone --recurse-submodules git@github.com:OriGenAI/proteus-cli.git
+```
+
 
 2. Install and setup enviroment
 
 ```
-virtualenv -p3.8 venv
+virtualenv -p /usr/bin/python3.8 venv
 source venv/bin/activate
+pip install -r requirements.txt 
+# use requirements/dev.txt if you are a developer
 pip install -e .
 ```
 
@@ -40,6 +47,14 @@ Credentials can also be type using the proteus line prompt
 PROTEUS_USERNAME="proteus-username-not-configured"
 PROTEUS_PASSWORD="proteus-password-not-configured"
 PROTEUS_HOST=http://localhost:5000
+```
+
+5. Keeping up-to-date
+
+Remember, to update both the current repo and submodules updated you have to run the following command:
+
+```
+git pull --recurse-submodules
 ```
 
 ### Contributors

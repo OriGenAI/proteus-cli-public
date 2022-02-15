@@ -2,7 +2,6 @@ import os
 import requests
 from cli.config import config
 from cli.common.logger import logger
-from .oidc import auth
 from requests.exceptions import HTTPError
 from functools import wraps
 
@@ -26,6 +25,7 @@ def refresh_authentication():
         return wrapped
 
     return refresh_authentication_if_authenticated
+
 
 class API:
     def __init__(self, auth):
@@ -87,11 +87,7 @@ class API:
         response = requests.get(
             url, headers=headers, params=query_args, stream=stream
         )
-        try:
-            response.raise_for_status()
-        except Exception as error:
-            print("HTTP error:", response.content)
-            raise error
+        response.raise_for_status()
         return response
 
     def download_file(self, url, localpath, localname):

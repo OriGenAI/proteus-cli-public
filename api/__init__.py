@@ -13,6 +13,7 @@ def login(**kwargs):
     auth.do_login(**kwargs)
     return auth
 
+
 def iterate_pagination(response, current=0):
     assert response.status_code == 200
     data = response.json()

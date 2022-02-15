@@ -1,5 +1,4 @@
 import re
-import io
 import tempfile
 from functools import partial
 import numpy as np
@@ -14,7 +13,11 @@ from .sources.s3 import S3Source
 from .sources.az import AZSource
 from .sources.local import LocalSource
 
-from cli.datasets.preprocessor.config import CaseConfig, CommonConfig, StepConfig
+from cli.datasets.preprocessor.config import (
+    CaseConfig,
+    CommonConfig,
+    StepConfig,
+)
 
 AVAILABLE_SOURCES = [S3Source, AZSource, LocalSource]
 
@@ -36,57 +39,72 @@ case_re = re.compile(
 
 _timestep = re.compile(r".*(?P<extension>X\d{4}|S\d{4})$")
 
+
 def set_dataset_version(dataset_uuid):
     new_version = dict(
-        major_version=DATASET_VERSION.get("major"), 
-        minor_version=DATASET_VERSION.get("minor"), 
-        patch_version=DATASET_VERSION.get("patch")
+        major_version=DATASET_VERSION.get("major"),
+        minor_version=DATASET_VERSION.get("minor"),
+        patch_version=DATASET_VERSION.get("patch"),
     )
 
     dataset_version_url = f"/api/v1/datasets/{dataset_uuid}/versions"
     api.post(dataset_version_url, new_version)
 
+
+def get_total_steps(cases):
+    first_training_case = next(
+        filter(lambda c: c["group"] == "training" and c["number"] == 1, cases),
+        None,
+    )
+    first_case_response = api.get(first_training_case.get("case_url"))
+    first_case_json = first_case_response.json().get("case")
+    initial_step = first_case_json.get("initialStep")
+    final_step = first_case_json.get("finalStep")
+    common_step = CommonConfig.number_of_steps()
+    cases_steps = CaseConfig.number_of_steps()
+    timesteps_steps = StepConfig.number_of_steps() - 1
+    return common_step + (
+        cases_steps + timesteps_steps * (final_step - initial_step + 1)
+    ) * len(cases)
+
+
 def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
-    try:
-        assert api.auth.access_token is not None
-        set_dataset_version(dataset_uuid)
+    assert api.auth.access_token is not None
+    set_dataset_version(dataset_uuid)
 
-        print(f"This process will use {workers} simultaneous threads.")
-        with tqdm(total=0) as progress:
-            cases = get_cases(dataset_uuid, progress)
+    print(f"This process will use {workers} simultaneous threads.")
+    with tqdm(total=0) as progress:
+        cases = get_cases(dataset_uuid, progress)
 
-            progress.set_description("Setting the dataset version")
-            progress.refresh()
-            response = api.get(f"/api/v1/datasets/{dataset_uuid}")
-            bucket_url = response.json().get("dataset").get("bucket_url")
-            cases_url = response.json().get("dataset").get("cases_url")
+        progress.set_description("Setting the dataset version")
+        progress.refresh()
+        response = api.get(f"/api/v1/datasets/{dataset_uuid}")
+        dataset_json = response.json().get("dataset")
+        bucket_url = dataset_json.get("bucket_url")
+        cases_url = dataset_json.get("cases_url")
 
-            first_case_response = api.get(f"{cases_url}/training/1")
-            initialStep = first_case_response.json().get("case").get("initialStep")
-            finalStep = first_case_response.json().get("case").get("finalStep")
+        total_steps = get_total_steps(cases)
 
-            common_step = CommonConfig.number_of_steps()
-            cases_steps = CaseConfig.number_of_steps()
-            timesteps_steps = StepConfig.number_of_steps() - 1
-            total_steps = common_step + (cases_steps + timesteps_steps * (finalStep - initialStep + 1)) * len(cases)
-
-            progress.total = total_steps
-            progress.set_description("Starting processing files")
-            progress.refresh()
-            process_files(bucket, bucket_url, cases_url, progress, cases=cases, workers=workers)
-    except Exception as e:
-        pass
-    finally:
-        api.auth.stop()
+        progress.total = total_steps
+        progress.set_description("Starting processing files")
+        progress.refresh()
+        process_files(
+            bucket,
+            bucket_url,
+            cases_url,
+            progress,
+            cases=cases,
+            workers=workers,
+        )
 
 
 def get_cases(dataset_uuid, progress):
     progress.set_description("Retrieving cases and expected files")
     progress.refresh()
-    
+
     cases_url = f"/api/v1/datasets/{dataset_uuid}/cases"
     response = api.get(cases_url)
-    
+
     return response.json().get("cases")
 
 
@@ -120,6 +138,7 @@ def load_from(
         for res in pool.imap_unordered(upload_partial, items_and_paths):
             progress.update(res if res else 0)
             progress.refresh()
+
 
 @may_insist_up_to(5, delay_in_secs=5)
 def parallelized_upload(
@@ -195,15 +214,23 @@ def send_as(
         raise error
     return done, skipped
 
-def process_files(source_url, bucket_url, cases_url, progress, cases=[], workers=WORKERS_COUNT):
+
+def process_files(
+    source_url,
+    bucket_url,
+    cases_url,
+    progress,
+    cases=[],
+    workers=WORKERS_COUNT,
+):
     from .preprocessor.config import Config
-    from .preprocessor.process_step import process_step    
+    from .preprocessor.process_step import process_step
 
     # Download common.p if exists
     common_content = download_common(f"{bucket_url}/cases/common.p")
 
     # Generate all the files-pairs with a generator
-    sortedCases = sorted(cases, key=lambda d: d['root']) 
+    sortedCases = sorted(cases, key=lambda d: d["root"])
     config = Config(cases=sortedCases, common_data=common_content)
     steps = config.return_iterator()
 
@@ -222,12 +249,13 @@ def process_files(source_url, bucket_url, cases_url, progress, cases=[], workers
                 progress.set_description(f"File uploaded: {res}")
                 progress.refresh()
 
+
 def download_common(url):
     try:
         r = api.get(url)
-        open("/tmp/common.p", 'wb').write(r.content)
-            
+        open("/tmp/common.p", "wb").write(r.content)
+
         download = np.load("/tmp/common.p", allow_pickle=True)
         return download
-    except Exception as e:
+    except Exception:
         return None
