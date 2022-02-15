@@ -1,1 +1,1 @@
-git ls-files --recurse-submodules | grep -v test/cases | tar caf ../proteus-cli.tar.gz -T-
+git ls-files --recurse-submodules | grep -v requirements/preprocessing/tests/files | tar vcaf ../proteus-cli.tar.gz -T-
