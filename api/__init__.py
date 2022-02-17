@@ -1,4 +1,4 @@
-from .oidc import auth
+from .oidc import auth, is_worker_username
 from .main import API
 from functools import wraps
 import click
@@ -41,14 +41,24 @@ def runs_authentified(func):
     def wrapper(user, password, *args, **kwargs):
         global auth
         try:
-            if not auth.do_login(
-                username=user, password=password, auto_update=True
-            ):
+            terms = dict(username=user, password=password, auto_update=True)
+            is_worker = is_worker_username(user)
+            authentified = (
+                auth.do_worker_login(**terms)
+                if is_worker
+                else auth.do_login(**terms)
+            )
+            if not authentified:
                 print("Authentication failure, exiting")
                 import sys
 
                 sys.exit(1)
-            print(f"Welcome, {auth.access_token_parsed.get('given_name')}")
+            identity = (
+                f"unit {user}"
+                if is_worker
+                else auth.access_token_parsed.get("given_name")
+            )
+            print(f"Welcome, {identity}")
             return func(*args, **kwargs)
         except Exception as error:
             raise error

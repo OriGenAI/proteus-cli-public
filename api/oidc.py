@@ -2,6 +2,7 @@ import requests
 from cli.config import config
 from threading import Timer, Lock
 import certifi
+import re
 import json
 import base64
 from .decorators import may_insist_up_to
@@ -11,6 +12,9 @@ from .decorators import may_insist_up_to
     REALM,
     CLIENT_ID,
     CLIENT_SECRET,
+    WORKERS_REALM,
+    WORKERS_CLIENT_ID,
+    WORKERS_CLIENT_SECRET,
     REFRESH_GAP,
     USERNAME,
     PASSWORD,
@@ -19,6 +23,9 @@ from .decorators import may_insist_up_to
     config.REALM,
     config.CLIENT_ID,
     config.CLIENT_SECRET,
+    config.WORKERS_REALM,
+    config.WORKERS_CLIENT_ID,
+    config.WORKERS_CLIENT_SECRET,
     config.REFRESH_GAP,
     config.USERNAME,
     config.PASSWORD,
@@ -134,6 +141,12 @@ class OIDC:
         response.raise_for_status()
         return response
 
+    def do_worker_login(self, **terms):
+        self.realm = WORKERS_REALM
+        self.client_id = WORKERS_CLIENT_ID
+        self.client_secret = WORKERS_CLIENT_SECRET
+        return self.do_login(**terms)
+
     def do_login(self, password=PASSWORD, username=None, auto_update=True):
         login = {
             "grant_type": "password",
@@ -207,6 +220,17 @@ class OIDC:
     def stop(self):
         if self._refresh_timer is not None:
             self._refresh_timer.cancel()
+
+
+WORKER_USERNAME_RE = re.compile(
+    r"r-(?P<uuid>[0-9a-f]{8}\b-[0-9a-f]{4}"
+    r"-[0-9a-f]{4}"
+    r"-[0-9a-f]{4}-\b[0-9a-f]{12})(@.*)?"
+)
+
+
+def is_worker_username(username):
+    return WORKER_USERNAME_RE.match(username) is not None
 
 
 auth = OIDC()

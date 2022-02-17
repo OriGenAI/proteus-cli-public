@@ -19,11 +19,16 @@ class Config(object):
     PROTEUS_HOST = os.getenv(
         "PROTEUS_HOST", "https://proteus-test.dev.origen.ai"
     )
-    REALM = os.getenv("REALM", "origen")
     USERNAME = os.getenv("PROTEUS_USERNAME", "user-not-configured")
     PASSWORD = os.getenv("PROTEUS_PASSWORD", "password-not-configured")
+    REALM = os.getenv("REALM", "origen")
     CLIENT_ID = os.getenv("CLIENT_ID", "proteus-front")
     CLIENT_SECRET = os.getenv("CLIENT_SECRET", None)
+
+    WORKERS_REALM = os.getenv("WORKERS_REALM", "robots")
+    WORKERS_CLIENT_ID = os.getenv("WORKERS_CLIENT_ID", "workers")
+    WORKERS_CLIENT_SECRET = os.getenv("WORKERS_CLIENT_SECRET", None)
+
     RETRY_INTERVAL = 25  # Seconds
     REFRESH_GAP = 100  # Seconds
     S3_REGION = "eu-west-3"
