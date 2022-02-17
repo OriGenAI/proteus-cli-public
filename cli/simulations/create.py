@@ -190,8 +190,9 @@ def parse_path(source_folder, source_path):
 
     return source_path.replace(f"{to_replace}/", ""), has_case_folder
 
+
 def upload_to_batch(source_folder, batch_uuid, reupload):
-    """Uploads each data file to generate a case. 
+    """Uploads each data file to generate a case.
     For each case, find the depndencies and upload them as well.
     Finally, find and upload any pending batch dependencies
 
@@ -213,7 +214,12 @@ def upload_to_batch(source_folder, batch_uuid, reupload):
             dependencies = case.get("dependencies")
             number = case.get("number")
             dependencySolver = DependencySolver(
-                batch_url, dependencies, number, source_folder, has_case_folder, reupload
+                batch_url,
+                dependencies,
+                number,
+                source_folder,
+                has_case_folder,
+                reupload,
             )
             dependencySolver.solve_dependencies()
 

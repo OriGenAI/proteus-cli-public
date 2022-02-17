@@ -233,6 +233,7 @@ def process_files(
     sortedCases = sorted(cases, key=lambda d: d["root"])
     config = Config(cases=sortedCases, common_data=common_content)
     steps = config.return_iterator()
+    print(api.auth.username)
 
     # Create temporary folder
     with tempfile.TemporaryDirectory() as tmpdirname:
