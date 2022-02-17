@@ -32,15 +32,15 @@ def store_stream_in(stream, filepath, progress, chunk_size=1024):
     folder_path = os.path.join(*filepath.split("/")[:-1])
     os.makedirs(folder_path, exist_ok=True)
     temp_filepath = f"{filepath}.partial"
-    temp_filepath = "/dev/null"
+    try:
+        os.remove(temp_filepath)
+    except OSError:
+        pass
     with open(temp_filepath, "wb") as _file:
         for data in stream.iter_content(chunk_size):
             progress.update(len(data))
             _file.write(data)
-    try:
-        os.remove(filepath)
-    except OSError:
-        pass
+    os.rename(temp_filepath, filepath)
 
 
 def is_file_already_present(filepath, size=None):
@@ -85,23 +85,15 @@ def will_do_file_download(target, force_replace=False):
 def download(
     bucket_uuid, target_folder, workers=WORKERS_COUNT, replace=False, **search
 ):
-    try:
-        assert api.auth.access_token is not None
-        replacement = (
-            "Previous files will be overwritten"
-            if replace
-            else "Existing files will be kept."
-        )
-        print(
-            f"This process will use {workers} simultaneous threads.",
-            replacement,
-        )
-        do_download = will_do_file_download(
-            target_folder, force_replace=replace
-        )
+    replacement = (
+        "Previous files will be overwritten"
+        if replace
+        else "Existing files will be kept."
+    )
+    print(
+        f"This process will use {workers} simultaneous threads.",
+        replacement,
+    )
+    do_download = will_do_file_download(target_folder, force_replace=replace)
 
-        list_bucket_files(bucket_uuid, do_download, workers=workers, **search)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        api.auth.stop()
+    list_bucket_files(bucket_uuid, do_download, workers=workers, **search)
