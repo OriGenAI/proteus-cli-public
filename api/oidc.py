@@ -60,6 +60,7 @@ class OIDC:
         self._when_refresh_callback = None
         self._update_credentials()
         self.verbose = verbose
+        self._am_i_robot = False
 
     def _update_credentials(
         self,
@@ -107,6 +108,30 @@ class OIDC:
         )
         return path.format(self=self)
 
+    @property
+    def am_i_robot(self):
+        return True
+        return self._am_i_robot
+
+    @property
+    def who(self):
+        if self.access_token is None:
+            return None
+        parsed_token = self.access_token_parsed
+        if self.am_i_robot:
+            unit_name = parsed_token.get("preferred_username")
+            return f"unit {unit_name}"
+        return parsed_token.get("given_name")
+
+    @property
+    def worker_uuid(self):
+        if self.am_i_robot:
+            username = self.access_token_parsed.get("preferred_username")
+            robot_match = WORKER_USERNAME_RE.match(username)
+            if robot_match is not None:
+                return robot_match.groupdict().get("uuid")
+        return None
+
     def when_login(self, callback):
         self._when_login_callback = callback
 
@@ -145,6 +170,7 @@ class OIDC:
         self.realm = WORKERS_REALM
         self.client_id = WORKERS_CLIENT_ID
         self.client_secret = WORKERS_CLIENT_SECRET
+        self._am_i_robot = True
         return self.do_login(**terms)
 
     def do_login(self, password=PASSWORD, username=None, auto_update=True):

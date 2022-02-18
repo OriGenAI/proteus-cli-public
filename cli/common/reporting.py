@@ -1,9 +1,28 @@
+import cli.common
+
+
+class VoidReporting:
+    def send(self, message, status="processing", progress=0, result=None):
+        pass
+
+    def error(self, error, status=None, progress=-1):
+        pass
+
+
 class Reporting:
     """Unifies logging and reporting to status API"""
 
-    def __init__(self, logger, api):
-        self.logger = logger
+    @classmethod
+    def new(cls, api=None, logger=cli.common.logger):
+        if api is None or api.auth.worker_uuid is None:
+            return VoidReporting()
+
+        return cls(api=api, logger=logger)
+
+    def __init__(self, api, logger=cli.common.logger):
         self.api = api
+        self.logger = logger
+        self.worker_uuid = api.auth.worker_uuid
 
     def send(self, message, status="processing", progress=0, result=None):
         assert status is not None, "Status can't be set to None"
@@ -12,7 +31,8 @@ class Reporting:
             extra={"status": status, "progress": progress, "result": result},
         )
         self.api.report(
-            str(status),
+            self.worker_uuid,
+            set_status=str(status),
             message=message,
             progress=progress,
             result=result,
@@ -25,6 +45,7 @@ class Reporting:
             extra={"status": status, "progress": progress},
         )
         self.api.report(
+            self.worker_uuid,
             str(status),
             message=f"exception occurred: {error}",
             progress=progress,

@@ -53,12 +53,7 @@ def runs_authentified(func):
                 import sys
 
                 sys.exit(1)
-            identity = (
-                f"unit {user}"
-                if is_worker
-                else auth.access_token_parsed.get("given_name")
-            )
-            print(f"Welcome, {identity}")
+            print(f"Welcome, {auth.who}")
             return func(*args, **kwargs)
         except Exception as error:
             raise error
