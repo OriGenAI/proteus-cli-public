@@ -60,7 +60,7 @@ class OIDC:
         self._when_refresh_callback = None
         self._update_credentials()
         self.verbose = verbose
-        self._am_i_robot = False
+        self._i_am_robot = False
 
     def _update_credentials(
         self,
@@ -110,7 +110,7 @@ class OIDC:
 
     @property
     def am_i_robot(self):
-        return self._am_i_robot
+        return self._i_am_robot
 
     @property
     def who(self):
@@ -169,7 +169,7 @@ class OIDC:
         self.realm = WORKERS_REALM
         self.client_id = WORKERS_CLIENT_ID
         self.client_secret = WORKERS_CLIENT_SECRET
-        self._am_i_robot = True
+        self._i_am_robot = True
         return self.do_login(**terms)
 
     def do_login(self, password=PASSWORD, username=None, auto_update=True):
