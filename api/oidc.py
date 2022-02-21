@@ -110,7 +110,6 @@ class OIDC:
 
     @property
     def am_i_robot(self):
-        return True
         return self._am_i_robot
 
     @property
