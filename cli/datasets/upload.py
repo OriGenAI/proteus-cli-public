@@ -12,6 +12,7 @@ from api.oidc import may_insist_up_to
 from .sources.s3 import S3Source
 from .sources.az import AZSource
 from .sources.local import LocalSource
+from cli.common.reporting import Reporting
 
 from cli.datasets.preprocessor.config import (
     CaseConfig,
@@ -73,6 +74,8 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
     set_dataset_version(dataset_uuid)
 
     print(f"This process will use {workers} simultaneous threads.")
+    reporting = Reporting.new(api)
+    reporting.send("started upload", status="processing", progress=0)
     with tqdm(total=0) as progress:
         cases = get_cases(dataset_uuid, progress)
 
@@ -95,6 +98,7 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
             progress,
             cases=cases,
             workers=workers,
+            reporting=reporting,
         )
 
 
@@ -222,6 +226,7 @@ def process_files(
     progress,
     cases=[],
     workers=WORKERS_COUNT,
+    reporting=Reporting.new(),
 ):
     from .preprocessor.config import Config
     from .preprocessor.process_step import process_step

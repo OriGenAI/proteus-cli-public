@@ -13,7 +13,7 @@ class AZSource(Source):
         r"(?P<container_name>[^\/]*)(\/)?(?P<prefix>.*)?$"
     )
 
-    def list_contents(self, starts_with='', ends_with=None):
+    def list_contents(self, starts_with="", ends_with=None):
         bucket_uri = self.uri
         match = self.URI_re.match(bucket_uri)
         assert match is not None, f"{bucket_uri} must be an s3 URI"

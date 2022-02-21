@@ -32,9 +32,27 @@ class API:
         self.auth = auth
 
     def report(
-        self, set_status="processing", message=None, progress=0, result=None
+        self,
+        worker_uuid,
+        set_status="processing",
+        message=None,
+        progress=0,
+        result=None,
     ):
-        pass
+        status_url = f"/api/v1/jobs/{worker_uuid}/status"
+        data = {
+            "set_status": set_status,
+            "progress": progress,
+        }
+        report = {}
+        if message is not None:
+            report["message"] = message
+        if result is not None:
+            report["result"] = result
+        data["report"] = report
+        response = self.post(status_url, data)
+        response.raise_for_status()
+        return response
 
     def put(self, url, data, headers={}):
         headers = {

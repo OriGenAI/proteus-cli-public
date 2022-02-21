@@ -14,6 +14,7 @@ def session():
     config.PROTEUS_HOST = host
     return api_login(username=user, password=password, auto_update=False)
 
+
 @pytest.fixture
 def user(session):
     user = os.getenv("PROTEUS_USERNAME", "user-not-configured")
