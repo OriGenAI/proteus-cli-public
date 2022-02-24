@@ -3,7 +3,8 @@ from cli.common.reporting import Reporting
 
 
 class TqdmUpWithReport(tqdm):
-    """Provides `update_to(n)` which uses `tqdm.update(delta_n)`."""
+    """Provides `update_with_report(n)` which uses `tqdm.update(delta_n)`
+    and sends a report with upload progress."""
 
     def __init__(self, reporting=Reporting.new(), **kwargs):
         super().__init__(**kwargs)
