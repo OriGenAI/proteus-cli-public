@@ -13,6 +13,7 @@ from .sources.s3 import S3Source
 from .sources.az import AZSource
 from .sources.local import LocalSource
 from cli.common.reporting import Reporting
+from api.hooks import TqdmUpWithReport
 
 from cli.datasets.preprocessor.config import (
     CaseConfig,
@@ -76,7 +77,7 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
     print(f"This process will use {workers} simultaneous threads.")
     reporting = Reporting.new(api)
     reporting.send("started upload", status="processing", progress=0)
-    with tqdm(total=0) as progress:
+    with TqdmUpWithReport(total=0, reporting=reporting) as progress:
         cases = get_cases(dataset_uuid, progress)
 
         progress.set_description("Setting the dataset version")
@@ -250,7 +251,7 @@ def process_files(
                 cases_url=cases_url,
             )
             for res in pool.imap_unordered(process_step_partial, steps):
-                progress.update(1)
+                progress.update_with_report()
                 progress.set_description(f"File uploaded: {res}")
                 progress.refresh()
 

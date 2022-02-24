@@ -2,7 +2,9 @@ import cli.common
 
 
 class VoidReporting:
-    def send(self, message, status="processing", progress=0, result=None):
+    def send(
+        self, message, status="processing", progress=0, result=None, total=None
+    ):
         pass
 
     def error(self, error, status=None, progress=-1):
@@ -24,7 +26,9 @@ class Reporting:
         self.logger = logger
         self.worker_uuid = api.auth.worker_uuid
 
-    def send(self, message, status="processing", progress=0, result=None):
+    def send(
+        self, message, status="processing", progress=0, result=None, total=None
+    ):
         assert status is not None, "Status can't be set to None"
         self.logger.info(
             message,
@@ -36,6 +40,7 @@ class Reporting:
             message=message,
             progress=progress,
             result=result,
+            total=total,
         )
 
     def error(self, error, status=None, progress=-1):
