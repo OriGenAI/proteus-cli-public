@@ -51,7 +51,7 @@ class API:
             report["message"] = message
         if result is not None:
             report["result"] = result
-        report["number"] = number or progress
+        report["number"] = number
         report["total"] = total
         data["report"] = report
         response = self.post(status_url, data)

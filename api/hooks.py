@@ -14,7 +14,7 @@ class TqdmUpWithReport(tqdm):
         self.reporting.send(
             "uploading",
             status="processing",
-            progress=f"{(self.n + n)* 100 / self.total:.2f}",
+            progress=int((self.n + n) * 100 / self.total),
             number=self.n + n,
             total=self.total,
         )
