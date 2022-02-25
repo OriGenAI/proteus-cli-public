@@ -9,6 +9,7 @@ class TqdmUpWithReport(tqdm):
     def __init__(self, reporting=Reporting.new(), **kwargs):
         super().__init__(**kwargs)
         self.reporting = reporting
+        self.reporting.logger.disabled = True
 
     def update_with_report(self, n=1):
         self.reporting.send(
