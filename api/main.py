@@ -38,6 +38,8 @@ class API:
         message=None,
         progress=0,
         result=None,
+        total=None,
+        number=None,
     ):
         status_url = f"/api/v1/jobs/{worker_uuid}/status"
         data = {
@@ -49,6 +51,8 @@ class API:
             report["message"] = message
         if result is not None:
             report["result"] = result
+        report["number"] = number
+        report["total"] = total
         data["report"] = report
         response = self.post(status_url, data)
         response.raise_for_status()
