@@ -99,7 +99,6 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
             progress,
             cases=cases,
             workers=workers,
-            reporting=reporting,
         )
 
 
@@ -227,7 +226,6 @@ def process_files(
     progress,
     cases=[],
     workers=WORKERS_COUNT,
-    reporting=Reporting.new(),
 ):
     from .preprocessor.config import Config
     from .preprocessor.process_step import process_step
