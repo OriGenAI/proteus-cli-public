@@ -10,12 +10,19 @@ class DefaultConfig(object):
 
     def __init__(self, cases, common_data=None):
         self.cases = cases
+        self.endpoint = False
         self.common_data = common_data or {
             "max_pressure": -100000,
             "min_pressure": 100000,
         }
 
     """ Getters and setters """
+
+    def _get_endpoint(self):
+        return self.endpoint
+
+    def _set_endpoint(self, endpoint):
+        self.endpoint = endpoint
 
     def _get_common_data(self):
         return self.common_data

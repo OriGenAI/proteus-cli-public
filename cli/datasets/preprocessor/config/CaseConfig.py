@@ -1,109 +1,117 @@
+import os
+import json
+
 from .defaultConfig import DefaultConfig
 
+
 class CaseConfig(DefaultConfig):
-  """ Configuration generator for the cases """
+    """Configuration generator for the cases"""
 
-  def step_1_metadata(self):
-    """
-      List all cases and its steps to generate the Metadata iterator
+    def step_1_grid_props(self):
+        """
+        List all cases and its steps to generate the .EGRID iterator
 
-      Args: -
+        Args: -
 
-      Returns:
-          iterator: the list of steps to preprocess
-    """
-    return (
-      {
-        "input": [],
-        "output": [f'{case["root"]}/ecl_deck.p'],
-        "preprocessing": "export_deck",
-        "split": case["group"],
-        "case": case["number"],
-        "additional_info": {
-          "group": case["group"],
-          "number": case["number"],
-        }
-      } for case in self.cases
-    )
-    
+        Returns:
+            iterator: the list of steps to preprocess
+        """
+        return (
+            {
+                "input": [f'{case["root"]}/SIMULATION_{case["number"]}.EGRID'],
+                "output": [f'{case["root"]}/grid_props.h5'],
+                "preprocessing": "export_egrid_properties",
+                "split": case["group"],
+                "case": case["number"],
+                "keep": True,
+            }
+            for case in self.cases
+        )
 
-  def step_2_runspec(self):
-    """
-      List all cases and its steps to generate the .DATA iterator
+    def step_2_init_props(self):
+        """
+        List all cases and its steps to generate the .INIT iterator
 
-      Args: -
+        Args: -
 
-      Returns:
-          iterator: the list of steps to preprocess
-    """
-    return (
-      {
-        "input": [f'{case["root"]}/SIMULATION_{case["number"]}.DATA'],
-        "output": [f'{case["root"]}/runspec.p'],
-        "preprocessing": "export_runspec",
-        "split": case["group"],
-        "case": case["number"],
-      } for case in self.cases
-    )
+        Returns:
+            iterator: the list of steps to preprocess
+        """
+        init_keywords = []
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        with open(os.path.join(dir_path, "../init_keywords.json")) as file:
+            init_keywords = json.load(file)
 
-  def step_3_grid_props(self):
-    """
-      List all cases and its steps to generate the .EGRID iterator
+        return (
+            {
+                "input": [
+                    f'{case["root"]}/SIMULATION_{case["number"]}.INIT',
+                    f'{case["root"]}/SIMULATION_{case["number"]}.EGRID',
+                ],
+                "output": list(
+                    map(
+                        lambda output: f'{case["root"]}/'
+                        f'{output.get("filename")}',
+                        init_keywords,
+                    )
+                ),
+                "preprocessing": "export_init_properties",
+                "split": case["group"],
+                "case": case["number"],
+                "keep": True,
+                "additional_info": {"get_endpoint": self._get_endpoint},
+            }
+            for case in self.cases
+        )
 
-      Args: -
+    def step_3_smry(self):
+        """
+        List all cases and its steps to generate the Summaries iterator
 
-      Returns:
-          iterator: the list of steps to preprocess
-    """
-    return (
-      {
-        "input": [f'{case["root"]}/SIMULATION_{case["number"]}.EGRID'],
-        "output": [f'{case["root"]}/grid_props.h5', f'{case["root"]}/SIMULATION_{case["number"]}.EGRID'],
-        "preprocessing": "export_egrid_properties",
-        "split": case["group"],
-        "case": case["number"],
-        "keep": True
-      } for case in self.cases
-    )
+        Args: -
 
-  def step_4_init_props(self):
-    """
-      List all cases and its steps to generate the .INIT iterator
+        Returns:
+            iterator: the list of steps to preprocess
+        """
 
-      Args: -
+        def case_terms(case):
+            case_path = f'{case["root"]}/SIMULATION_{case["number"]}'
+            return {
+                "input": [
+                    f"{case_path}.SMSPEC",
+                    f"{case_path}.DATA",
+                ]
+                + [
+                    f"{case_path}.S{str(step).zfill(4)}"
+                    for step in range(case["initialStep"], case["finalStep"])
+                ],
+                "output": [
+                    f'{case["root"]}/raw_smry.h5',
+                    f'{case["root"]}/preprocessed_smry.h5',
+                ],
+                "preprocessing": "export_smry",
+                "split": case["group"],
+                "case": case["number"],
+            }
 
-      Returns:
-          iterator: the list of steps to preprocess
-    """
-    return (
-      {
-        "input": [f'{case["root"]}/SIMULATION_{case["number"]}.INIT', f'{case["root"]}/SIMULATION_{case["number"]}.EGRID'],
-        "output": [f'{case["root"]}/init_props.h5', f'{case["root"]}/SIMULATION_{case["number"]}.INIT'],
-        "preprocessing": "export_init_properties",
-        "split": case["group"],
-        "case": case["number"],
-        "keep": True
-      } for case in self.cases
-    )
+        return (case_terms(case) for case in self.cases)
 
+    def step_4_wellspecs(self):
+        """
+        List all cases and its steps to generate the Summaries iterator
 
-  def step_5_smry(self):
-    """
-      List all cases and its steps to generate the Summaries iterator
+        Args: -
 
-      Args: -
-
-      Returns:
-          iterator: the list of steps to preprocess
-    """
-    return (
-      {
-        "input": 
-          [f'{case["root"]}/SIMULATION_{case["number"]}.X0000', f'{case["root"]}/SIMULATION_{case["number"]}.SMSPEC', f'{case["root"]}/SIMULATION_{case["number"]}.EGRID'] 
-          + [f'{case["root"]}/SIMULATION_{case["number"]}.S{str(step).zfill(4)}' for step in range(case["initialStep"], case["finalStep"])],
-        "output": [f'{case["root"]}/smry.p', f'{case["root"]}/SIMULATION_{case["number"]}.SMSPEC'],
-        "preprocessing": "export_smry",
-        "split": case["group"],
-        "case": case["number"]
-      } for case in self.cases
-    )
+        Returns:
+            iterator: the list of steps to preprocess
+        """
+        return (
+            {
+                "input": [f'{case["root"]}/SIMULATION_{case["number"]}.DATA'],
+                "output": [f'{case["root"]}/well_spec.p'],
+                "preprocessing": "export_wellspec",
+                "split": case["group"],
+                "case": case["number"],
+            }
+            for case in self.cases
+        )

@@ -231,7 +231,7 @@ def process_files(
     from .preprocessor.process_step import process_step
 
     # Download common.p if exists
-    common_content = download_common(f"{bucket_url}/cases/common.p")
+    common_content = download_common(f"{bucket_url}/common.p")
 
     # Generate all the files-pairs with a generator
     sortedCases = sorted(cases, key=lambda d: d["root"])
