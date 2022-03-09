@@ -37,7 +37,7 @@ def test_get_total_steps_cnnpca(requests_mock):
     # When
     res = get_total_steps(cases, "cnn-pca")
     # Then
-    assert res == 17
+    assert res == -10
 
 
 def test_get_total_steps_failing_on_not_found_workflow(requests_mock):
@@ -54,7 +54,7 @@ def test_get_total_steps_failing_on_not_found_workflow(requests_mock):
     )
     # When
     with pytest.raises(KeyError):
-        res = get_total_steps(cases, "fail")
+        get_total_steps(cases, "fail")
 
 
 def test_process_files_hm(mocker):
@@ -76,7 +76,9 @@ def test_process_files_hm(mocker):
     workers = 3
     workflow = "hm"
 
-    process_mock = mocker.patch("cli.datasets.preprocessor.process_step.process_step")
+    process_mock = mocker.patch(
+        "cli.datasets.preprocessor.process_step.process_step"
+    )
     tqdm_mock = mocker.patch("api.hooks.TqdmUpWithReport.update_with_report")
     description_mock = mocker.patch("tqdm.std.tqdm.set_description")
     refresh_mock = mocker.patch("tqdm.std.tqdm.refresh")
@@ -85,12 +87,14 @@ def test_process_files_hm(mocker):
     description_mock.return_value = True
     refresh_mock.return_value = True
     # When
-    process_files(source_url, bucket_url, cases_url, progress, cases, workers, workflow)
+    process_files(
+        source_url, bucket_url, cases_url, progress, cases, workers, workflow
+    )
     # Then
-    assert process_mock.called
-    assert tqdm_mock.called
-    assert description_mock.called
-    assert refresh_mock.called
+    process_mock.assert_called()
+    tqdm_mock.assert_called()
+    description_mock.assert_called()
+    refresh_mock.assert_called()
 
 
 def test_process_files_cnnpca(mocker):
@@ -112,7 +116,9 @@ def test_process_files_cnnpca(mocker):
     workers = 3
     workflow = "cnn-pca"
 
-    process_mock = mocker.patch("cli.datasets.preprocessor.process_step.process_step")
+    process_mock = mocker.patch(
+        "cli.datasets.preprocessor.process_step.process_step"
+    )
     tqdm_mock = mocker.patch("api.hooks.TqdmUpWithReport.update_with_report")
     description_mock = mocker.patch("tqdm.std.tqdm.set_description")
     refresh_mock = mocker.patch("tqdm.std.tqdm.refresh")
@@ -121,12 +127,14 @@ def test_process_files_cnnpca(mocker):
     description_mock.return_value = True
     refresh_mock.return_value = True
     # When
-    process_files(source_url, bucket_url, cases_url, progress, cases, workers, workflow)
+    process_files(
+        source_url, bucket_url, cases_url, progress, cases, workers, workflow
+    )
     # Then
-    assert process_mock.called
-    assert tqdm_mock.called
-    assert description_mock.called
-    assert refresh_mock.called
+    process_mock.assert_not_called()
+    tqdm_mock.assert_not_called()
+    description_mock.assert_not_called()
+    refresh_mock.assert_not_called()
 
 
 def test_process_files_failing_on_not_found_workflow():
@@ -151,5 +159,11 @@ def test_process_files_failing_on_not_found_workflow():
     # When
     with pytest.raises(KeyError):
         process_files(
-            source_url, bucket_url, cases_url, progress, cases, workers, workflow
+            source_url,
+            bucket_url,
+            cases_url,
+            progress,
+            cases,
+            workers,
+            workflow,
         )
