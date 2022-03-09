@@ -2,6 +2,9 @@ import cli.common
 
 
 class VoidReporting:
+    def __init__(self, logger=cli.common.logger):
+        self.logger = logger
+
     def send(
         self,
         message,

@@ -16,9 +16,9 @@ from cli.common.reporting import Reporting
 from api.hooks import TqdmUpWithReport
 
 from cli.datasets.preprocessor.config import (
-    CaseConfig,
-    CommonConfig,
-    StepConfig,
+    CaseConfigMapper,
+    CommonConfigMapper,
+    StepConfigMapper,
 )
 
 AVAILABLE_SOURCES = [S3Source, AZSource, LocalSource]
@@ -53,7 +53,7 @@ def set_dataset_version(dataset_uuid):
     api.post(dataset_version_url, new_version)
 
 
-def get_total_steps(cases):
+def get_total_steps(cases, workflow):
     first_training_case = next(
         filter(lambda c: c["group"] == "training" and c["number"] == 1, cases),
         None,
@@ -62,9 +62,9 @@ def get_total_steps(cases):
     first_case_json = first_case_response.json().get("case")
     initial_step = first_case_json.get("initialStep")
     final_step = first_case_json.get("finalStep")
-    common_step = CommonConfig.number_of_steps()
-    cases_steps = CaseConfig.number_of_steps()
-    timesteps_steps = StepConfig.number_of_steps() - 1
+    common_step = CommonConfigMapper[workflow].number_of_steps()
+    cases_steps = CaseConfigMapper[workflow].number_of_steps()
+    timesteps_steps = StepConfigMapper[workflow].number_of_steps() - 1
     return common_step + (
         cases_steps + timesteps_steps * (final_step - initial_step + 1)
     ) * len(cases)
@@ -86,8 +86,9 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
         dataset_json = response.json().get("dataset")
         bucket_url = dataset_json.get("bucket_url")
         cases_url = dataset_json.get("cases_url")
+        workflow = dataset_json.get("workflow").get("name")
 
-        total_steps = get_total_steps(cases)
+        total_steps = get_total_steps(cases, workflow)
 
         progress.total = total_steps
         progress.set_description("Starting processing files")
@@ -226,6 +227,7 @@ def process_files(
     progress,
     cases=[],
     workers=WORKERS_COUNT,
+    workflow="hm"
 ):
     from .preprocessor.config import Config
     from .preprocessor.process_step import process_step
@@ -235,7 +237,7 @@ def process_files(
 
     # Generate all the files-pairs with a generator
     sortedCases = sorted(cases, key=lambda d: d["root"])
-    config = Config(cases=sortedCases, common_data=common_content)
+    config = Config(cases=sortedCases, common_data=common_content, workflow=workflow)
     steps = config.return_iterator()
 
     # Create temporary folder
