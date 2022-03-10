@@ -107,7 +107,7 @@ def tqdm_called(tqdm_mock, called_tqdm_mock):
 @then(
     parsers.parse(
         "Is it {called_description_mock} that"
-        + "I called the set_description method"
+        + " I called the set_description method"
     )
 )
 def description_called(description_mock, called_description_mock):
