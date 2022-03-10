@@ -100,6 +100,7 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
             progress,
             cases=cases,
             workers=workers,
+            workflow=workflow,
         )
 
 
@@ -227,7 +228,7 @@ def process_files(
     progress,
     cases=[],
     workers=WORKERS_COUNT,
-    workflow="hm"
+    workflow="hm",
 ):
     from .preprocessor.config import Config
     from .preprocessor.process_step import process_step
@@ -237,7 +238,9 @@ def process_files(
 
     # Generate all the files-pairs with a generator
     sortedCases = sorted(cases, key=lambda d: d["root"])
-    config = Config(cases=sortedCases, common_data=common_content, workflow=workflow)
+    config = Config(
+        cases=sortedCases, common_data=common_content, workflow=workflow
+    )
     steps = config.return_iterator()
 
     # Create temporary folder
