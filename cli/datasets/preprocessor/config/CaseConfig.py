@@ -4,7 +4,7 @@ import json
 from .defaultConfig import DefaultConfig
 
 
-class CaseConfig(DefaultConfig):
+class HMCaseConfig(DefaultConfig):
     """Configuration generator for the cases"""
 
     def step_1_grid_props(self):
@@ -115,3 +115,10 @@ class CaseConfig(DefaultConfig):
             }
             for case in self.cases
         )
+
+
+class CnnPcaCaseConfig(DefaultConfig):
+    """Configuration generator for the cases"""
+
+
+CaseConfigMapper = {"hm": HMCaseConfig, "cnn-pca": CnnPcaCaseConfig}

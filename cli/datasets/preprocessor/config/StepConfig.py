@@ -1,7 +1,7 @@
 from .defaultConfig import DefaultConfig
 
 
-class StepConfig(DefaultConfig):
+class HMStepConfig(DefaultConfig):
     """Configuration generator for the steps"""
 
     """ Private methods """
@@ -82,3 +82,10 @@ class StepConfig(DefaultConfig):
             result.extend(steps)
 
         return iter(result)
+
+
+class CnnPcaStepConfig(DefaultConfig):
+    """Configuration generator for the steps"""
+
+
+StepConfigMapper = {"hm": HMStepConfig, "cnn-pca": CnnPcaStepConfig}
