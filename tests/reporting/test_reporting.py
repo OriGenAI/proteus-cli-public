@@ -10,21 +10,6 @@ def reporting():
     return Reporting.new(api)
 
 
-@scenario("features/reporting.feature", "Generate a report")
-def test_generate_report():
-    pass
-
-
-@when("I report")
-def report(reporting):
-    print("done")
-
-
-@then("I do report")
-def done_reporting():
-    assert 1
-
-
 @scenario("features/reporting.feature", "Log info message")
 def test_log_info():
     pass

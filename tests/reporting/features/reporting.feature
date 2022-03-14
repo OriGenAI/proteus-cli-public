@@ -1,9 +1,4 @@
 Feature: Generate a report
-    Scenario: Generate a report
-        Given a reporting instance
-        When I report
-        Then I do report
-
     Scenario: Log info message
         Given a reporting instance
         When I log the messsage: logging some info
