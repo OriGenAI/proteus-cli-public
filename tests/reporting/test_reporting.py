@@ -1,6 +1,6 @@
 from pytest_bdd import scenario, given, when, then, parsers
 
-from cli.common.reporting import Reporting
+from cli.common import Reporting
 
 from api import api
 

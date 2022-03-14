@@ -1,5 +1,5 @@
 from tqdm.auto import tqdm
-from cli.common.reporting import Reporting
+from cli.common import Reporting
 
 
 class TqdmUpWithReport(tqdm):

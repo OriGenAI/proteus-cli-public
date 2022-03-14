@@ -1,5 +1,5 @@
 from functools import wraps
-from cli.common.reporting import Reporting
+from cli.common import Reporting
 from requests.exceptions import HTTPError
 import time
 

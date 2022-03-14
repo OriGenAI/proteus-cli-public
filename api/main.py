@@ -1,7 +1,7 @@
 import os
 import requests
 from cli.config import config
-from cli.common.reporting import Reporting
+from cli.common import Reporting
 from requests.exceptions import HTTPError
 from functools import wraps
 
