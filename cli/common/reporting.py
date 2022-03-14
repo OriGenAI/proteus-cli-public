@@ -1,10 +1,7 @@
-import cli.common
+from cli.common.logger import logger
 
 
 class VoidReporting:
-    def __init__(self, logger=cli.common.logger):
-        self.logger = logger
-
     def send(
         self,
         message,
@@ -16,23 +13,27 @@ class VoidReporting:
     ):
         pass
 
-    def error(self, error, status=None, progress=-1):
-        pass
+    @classmethod
+    def error(self, msg, extra=None):
+        logger.error(msg, exc_info=True, extra=extra)
+
+    @classmethod
+    def info(self, msg):
+        logger.info(msg)
 
 
 class Reporting:
     """Unifies logging and reporting to status API"""
 
     @classmethod
-    def new(cls, api=None, logger=cli.common.logger):
+    def new(cls, api=None):
         if api is None or api.auth.worker_uuid is None:
             return VoidReporting()
 
-        return cls(api=api, logger=logger)
+        return cls(api=api)
 
-    def __init__(self, api, logger=cli.common.logger):
+    def __init__(self, api):
         self.api = api
-        self.logger = logger
         self.worker_uuid = api.auth.worker_uuid
 
     def send(
@@ -45,11 +46,11 @@ class Reporting:
         number=None,
     ):
         assert status is not None, "Status can't be set to None"
-        self.logger.info(
+        logger.info(
             message,
             extra={"status": status, "progress": progress, "result": result},
         )
-        self.api.report(
+        self.report(
             self.worker_uuid,
             set_status=str(status),
             message=message,
@@ -59,15 +60,37 @@ class Reporting:
             number=number,
         )
 
-    def error(self, error, status=None, progress=-1):
-        self.logger.error(
-            "exception occurred",
-            exc_info=True,
-            extra={"status": status, "progress": progress},
-        )
-        self.api.report(
-            self.worker_uuid,
-            str(status),
-            message=f"exception occurred: {error}",
-            progress=progress,
-        )
+    def report(
+        self,
+        worker_uuid,
+        set_status="processing",
+        message=None,
+        progress=0,
+        result=None,
+        total=None,
+        number=None,
+    ):
+        status_url = f"/api/v1/jobs/{worker_uuid}/status"
+        data = {
+            "set_status": set_status,
+            "progress": progress,
+        }
+        report = {}
+        if message is not None:
+            report["message"] = message
+        if result is not None:
+            report["result"] = result
+        report["number"] = number
+        report["total"] = total
+        data["report"] = report
+        response = self.api.post(status_url, data)
+        response.raise_for_status()
+        return response
+
+    @classmethod
+    def error(self, msg, extra=None):
+        logger.error(msg, exc_info=True, extra=extra)
+
+    @classmethod
+    def info(self, msg):
+        logger.info(msg)

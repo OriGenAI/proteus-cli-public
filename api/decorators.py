@@ -1,5 +1,5 @@
 from functools import wraps
-from cli.common.logger import logger
+from cli.common.reporting import Reporting
 from requests.exceptions import HTTPError
 import time
 
@@ -30,7 +30,7 @@ def may_fail_on_http_error(exit_code=None):
             try:
                 return fn(*args, **kwargs)
             except HTTPError as error:
-                logger.error(message_or_content_of(error))
+                Reporting.error(message_or_content_of(error))
                 if exit_code is not None:
                     import sys
 
