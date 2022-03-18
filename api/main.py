@@ -1,7 +1,7 @@
 import os
 import requests
 from cli.config import config
-from cli.common.logger import logger
+from cli.common import Reporting
 from requests.exceptions import HTTPError
 from functools import wraps
 
@@ -30,33 +30,6 @@ def refresh_authentication():
 class API:
     def __init__(self, auth):
         self.auth = auth
-
-    def report(
-        self,
-        worker_uuid,
-        set_status="processing",
-        message=None,
-        progress=0,
-        result=None,
-        total=None,
-        number=None,
-    ):
-        status_url = f"/api/v1/jobs/{worker_uuid}/status"
-        data = {
-            "set_status": set_status,
-            "progress": progress,
-        }
-        report = {}
-        if message is not None:
-            report["message"] = message
-        if result is not None:
-            report["result"] = result
-        report["number"] = number
-        report["total"] = total
-        data["report"] = report
-        response = self.post(status_url, data)
-        response.raise_for_status()
-        return response
 
     def put(self, url, data, headers={}):
         headers = {
@@ -114,13 +87,13 @@ class API:
 
     def download_file(self, url, localpath, localname):
         target = os.path.join(localpath)
-        logger.info(f"Downloading {url} to {target}")
+        Reporting.info(f"Downloading {url} to {target}")
         self.download(
             url=url,
             localpath=localpath,
             localname=localname,
         )
-        logger.info("Download complete")
+        Reporting.info("Download complete")
 
     def download(self, url, localpath, localname):
         r = self.get(url)

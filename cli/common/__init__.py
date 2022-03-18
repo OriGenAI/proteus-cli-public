@@ -1,3 +1,3 @@
-from .logger import logger
+from .reporting import Reporting
 
-__all__ = [logger]
+__all__ = [Reporting]

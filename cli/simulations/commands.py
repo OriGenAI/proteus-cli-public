@@ -1,7 +1,7 @@
 import click
 from api import runs_authentified
 from api.decorators import may_fail_on_http_error
-from cli.common import logger
+from cli.common import Reporting
 
 
 @click.group()
@@ -32,7 +32,7 @@ def create(
 ):
     """This creates a new simulation batch and uploads the DATA files
     and related dependencies from a source folder"""
-    logger.info("Create simulation command")
+    Reporting.info("Create simulation command")
     if batch_uuid is None and (
         swat_model_uuid is None
         or pressure_model_uuid is None
@@ -59,8 +59,8 @@ def create(
             swat_model_uuid=swat_model_uuid,
             batch_name=batch_name,
         )
-        logger.info(
+        Reporting.info(
             f'Created a new batch. to resume use --batch_uuid="{batch_uuid}"'
         )
-    logger.info("Uploading files and dependencies to simulation batch")
+    Reporting.info("Uploading files and dependencies to simulation batch")
     upload_to_batch(source_folder, batch_uuid, reupload)
