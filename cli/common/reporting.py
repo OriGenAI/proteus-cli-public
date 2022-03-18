@@ -8,7 +8,7 @@ from cli.config import config
 def _setup_logging():
     os.makedirs(config.LOG_LOC, exist_ok=True)
     loggin_path = os.path.abspath(
-        os.path.join(__file__, "../../../logging.ini")
+        os.path.join(os.path.abspath(os.curdir), "logging.ini")
     )
     logging.config.fileConfig(loggin_path, disable_existing_loggers=False)
 
