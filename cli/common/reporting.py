@@ -35,11 +35,11 @@ class VoidReporting:
         pass
 
     @classmethod
-    def error(self, msg, extra=None):
+    def error(cls, msg, extra=None):
         logger.error(msg, exc_info=True, extra=extra)
 
     @classmethod
-    def info(self, msg):
+    def info(cls, msg):
         logger.info(msg)
 
 
@@ -109,9 +109,9 @@ class Reporting:
         return response
 
     @classmethod
-    def error(self, msg, extra=None):
+    def error(cls, msg, extra=None):
         logger.error(msg, exc_info=True, extra=extra)
 
     @classmethod
-    def info(self, msg):
+    def info(cls, msg):
         logger.info(msg)
