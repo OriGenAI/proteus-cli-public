@@ -5,7 +5,7 @@ from datetime import datetime
 from dateutil import tz
 from cli.config import config
 from cli.simulations.dependencySolver import DependencySolver
-from cli.common import Reporting
+from reporting import Reporting
 
 WORKERS_COUNT = config.WORKERS_COUNT
 

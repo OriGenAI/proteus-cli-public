@@ -12,7 +12,7 @@ from api.oidc import may_insist_up_to
 from .sources.s3 import S3Source
 from .sources.az import AZSource
 from .sources.local import LocalSource
-from cli.common import Reporting
+from reporting import Reporting
 from api.hooks import TqdmUpWithReport
 
 from cli.datasets.preprocessor.config import (
