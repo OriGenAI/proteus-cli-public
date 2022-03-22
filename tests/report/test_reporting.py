@@ -1,5 +1,4 @@
 from pytest_bdd import scenario, given, when, then, parsers
-
 from reporting import Reporting
 
 from api import api
