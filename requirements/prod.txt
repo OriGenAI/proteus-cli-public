@@ -11,6 +11,6 @@ tqdm==4.61.0
 tabulate==0.8.9
 azure-storage-blob==12.8.1
 readchar==3.0.4
-proteus-report @ git+ssh://git@github.com/OriGenAI/proteus-report.git
 
 -e requirements/preprocessing
+-e requirements/proteus-report
