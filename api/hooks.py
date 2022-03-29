@@ -1,5 +1,6 @@
 from tqdm.auto import tqdm
-from cli.common import Reporting
+from reporting import Reporting
+from reporting.reporting import logger
 
 
 class TqdmUpWithReport(tqdm):
@@ -9,7 +10,7 @@ class TqdmUpWithReport(tqdm):
     def __init__(self, reporting=Reporting.new(), **kwargs):
         super().__init__(**kwargs)
         self.reporting = reporting
-        self.reporting.logger.disabled = True
+        logger.disabled = True
 
     def update_with_report(self, n=1):
         self.reporting.send(

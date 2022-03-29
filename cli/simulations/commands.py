@@ -1,7 +1,7 @@
 import click
 from api import runs_authentified
 from api.decorators import may_fail_on_http_error
-from cli.common import Reporting
+from reporting import Reporting
 
 
 @click.group()
