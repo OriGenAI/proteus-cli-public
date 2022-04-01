@@ -1,5 +1,5 @@
 from functools import partial
-from proteus import api
+from proteus import api, logger
 from api import iterate_pagination
 from proteus.oidc import may_insist_up_to
 from cli.config import config
@@ -91,9 +91,8 @@ def download(
         if replace
         else "Existing files will be kept."
     )
-    print(
-        f"This process will use {workers} simultaneous threads.",
-        replacement,
+    logger.info(
+        f"This process will use {workers} simultaneous threads. {replacement}"
     )
     do_download = will_do_file_download(target_folder, force_replace=replace)
 
