@@ -1,6 +1,6 @@
 import click
 from .config import config
-from api import login as api_login
+from proteus import login as api_login
 from api.decorators import may_fail_on_http_error
 
 from .jobs.commands import jobs as jobs_commands

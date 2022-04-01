@@ -1,6 +1,7 @@
 from functools import partial
-from api import api, iterate_pagination
-from api.oidc import may_insist_up_to
+from proteus import api
+from api import iterate_pagination
+from proteus.oidc import may_insist_up_to
 from cli.config import config
 from tqdm import tqdm
 from multiprocessing.dummy import Pool
@@ -72,7 +73,7 @@ def will_do_file_download(target, force_replace=False):
             file_progress.set_postfix_str(
                 s=f"transfering file ...{path[-20:]}"
             )
-            download = api.download_as_stream(url)
+            download = api.download(url, stream=True)
             file_progress.total = size
             file_progress.refresh()
             store_stream_in(

@@ -3,16 +3,15 @@ import tempfile
 from functools import partial
 import numpy as np
 
-from api import api
+from proteus import api, Reporting, logger
 from cli.config import config
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
 from multiprocessing.pool import ThreadPool
-from api.oidc import may_insist_up_to
+from proteus.oidc import may_insist_up_to
 from .sources.s3 import S3Source
 from .sources.az import AZSource
 from .sources.local import LocalSource
-from reporting import Reporting
 from api.hooks import TqdmUpWithReport
 
 from cli.datasets.preprocessor.config import (
@@ -74,8 +73,8 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
     assert api.auth.access_token is not None
     set_dataset_version(dataset_uuid)
 
-    print(f"This process will use {workers} simultaneous threads.")
-    reporting = Reporting.new(api)
+    logger.info(f"This process will use {workers} simultaneous threads.")
+    reporting = Reporting(api)
     reporting.send("started upload", status="processing", progress=0)
     with TqdmUpWithReport(total=0, reporting=reporting) as progress:
         cases = get_cases(dataset_uuid, progress)
@@ -214,9 +213,9 @@ def send_as(
             else:
                 raise Exception("transfer failed")
     except Exception as error:
-        print(f"Failed upload: {source_path}")
+        logger.error(f"Failed upload: {source_path}")
         if transfer is not None:
-            print(error, transfer.content)
+            logger.error(error, transfer.content)
         raise error
     return done, skipped
 

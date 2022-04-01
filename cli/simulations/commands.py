@@ -1,7 +1,6 @@
 import click
-from api import runs_authentified
+from proteus import runs_authentified, logger
 from api.decorators import may_fail_on_http_error
-from reporting import Reporting
 
 
 @click.group()
@@ -32,7 +31,7 @@ def create(
 ):
     """This creates a new simulation batch and uploads the DATA files
     and related dependencies from a source folder"""
-    Reporting.info("Create simulation command")
+    logger.info("Create simulation command")
     if batch_uuid is None and (
         swat_model_uuid is None
         or pressure_model_uuid is None
@@ -59,8 +58,8 @@ def create(
             swat_model_uuid=swat_model_uuid,
             batch_name=batch_name,
         )
-        Reporting.info(
+        logger.info(
             f'Created a new batch. to resume use --batch_uuid="{batch_uuid}"'
         )
-    Reporting.info("Uploading files and dependencies to simulation batch")
+    logger.info("Uploading files and dependencies to simulation batch")
     upload_to_batch(source_folder, batch_uuid, reupload)

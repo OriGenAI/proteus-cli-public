@@ -23,7 +23,7 @@ def set_get_case_mock(requests_mock):
 
 
 @scenario("features/get_total_steps.feature", "Get total steps of a case")
-def test_get_total_steps():
+def test_get_total_steps(session):
     pass
 
 
@@ -44,7 +44,7 @@ def num_of_steps_match(num_of_steps, expected_steps):
     "features/get_total_steps.feature",
     "Get total steps of a case with an unknown workflow",
 )
-def test_get_total_steps_failing_on_not_found_workflow():
+def test_get_total_steps_failing_on_not_found_workflow(session):
     pass
 
 
