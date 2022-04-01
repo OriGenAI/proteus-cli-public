@@ -12,7 +12,7 @@ def test_download(session):
 def updated_mocked_api_get(mocked_api_get):
     content = (
         b'{"total": 1, '
-        + b'"results":[{"url": "my_url", "filepath": "test-file", "size": 0}]}'
+        b'"results":[{"url": "my_url", "filepath": "test-file", "size": 0}]}'
     )
     mocked_api_get.return_value._content = content
     return mocked_api_get
