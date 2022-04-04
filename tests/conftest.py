@@ -34,6 +34,7 @@ def mocked_api_get(mocker):
 def mocked_api_post(mocker):
     mock = mocker.patch("proteus.api.post")
     mock.return_value = Response()
+    mock.return_value.status_code = 200
     return mock
 
 
