@@ -14,9 +14,9 @@ class TqdmUpWithReport(tqdm):
         logger.disabled = True
         return super().__enter__()
 
-    def __exit__(self):
+    def __exit__(self, *args):
         logger.disabled = False
-        super().__exit__()
+        super().__exit__(*args)
 
     def update_with_report(self, n=1):
         self.reporting.send(
