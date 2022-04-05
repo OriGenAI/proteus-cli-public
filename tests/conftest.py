@@ -1,23 +1,32 @@
-import os
 import pytest
-from dotenv import load_dotenv
-from cli.config import config
-from api import login as api_login
+from requests.models import Response
 
 
 @pytest.fixture
-def session():
-    load_dotenv(".testenv")
-    user = os.getenv("PROTEUS_USERNAME", "user-not-configured")
-    password = os.getenv("PROTEUS_PASSWORD", "password-not-configured")
-    host = os.getenv("PROTEUS_HOST", "https://proteus-test.dev.origen.ai")
-    config.PROTEUS_HOST = host
-    return api_login(username=user, password=password, auto_update=False)
+def mocked_api_get(mocker):
+    mock = mocker.patch("proteus.api.get")
+    mock.return_value = Response()
+    mock.return_value.status_code = 200
+    mock.return_value._content = b"Test content"
+    return mock
 
 
 @pytest.fixture
-def user(session):
-    user = os.getenv("PROTEUS_USERNAME", "user-not-configured")
-    password = os.getenv("PROTEUS_PASSWORD", "password-not-configured")
+def mocked_api_post(mocker):
+    mock = mocker.patch("proteus.api.post")
+    mock.return_value = Response()
+    mock.return_value.status_code = 200
+    return mock
 
-    return {"username": user, "password": password}
+
+@pytest.fixture
+def mocked_response(mocker):
+    mock = mocker.patch("requests.models.Response.raise_for_status")
+    mock.return_value = None
+    return mock
+
+
+@pytest.fixture
+def mocked_auth(mocker):
+    auth_mock = mocker.patch("proteus.oidc.OIDC.access_token")
+    auth_mock.return_value = True

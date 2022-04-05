@@ -1,11 +1,10 @@
 import os
-from api import api
+from proteus import api, logger
 from tqdm import tqdm
 from datetime import datetime
 from dateutil import tz
 from cli.config import config
 from cli.simulations.dependencySolver import DependencySolver
-from reporting import Reporting
 
 WORKERS_COUNT = config.WORKERS_COUNT
 
@@ -37,7 +36,7 @@ def create_batch(
     ), f"Expectend batch to be created but got {response.content}"
     simulation = response.json().get("batch")
     batch_uuid = simulation.get("uuid")
-    Reporting.info("Simulation batch creation successful")
+    logger.info("Simulation batch creation successful")
 
     # UPDATE BATCH WITH MODELS
     sim_batch_url = f"{simulations_url}/{batch_uuid}"
@@ -50,7 +49,7 @@ def create_batch(
     assert (
         response.status_code == 200
     ), f"Expectend batch to be created but got {response.content}"
-    Reporting.info("Simulation batch models updated")
+    logger.info("Simulation batch models updated")
     return batch_uuid
 
 

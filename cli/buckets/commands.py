@@ -1,6 +1,6 @@
 import click
 from cli.config import config
-from api import runs_authentified
+from proteus import runs_authentified
 from api.decorators import may_fail_on_http_error
 
 PROMPT = config.PROMPT

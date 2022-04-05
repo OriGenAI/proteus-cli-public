@@ -1,4 +1,4 @@
-from api import api
+from proteus import api
 from tabulate import tabulate
 import readchar
 

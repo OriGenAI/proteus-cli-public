@@ -1,17 +1,4 @@
-from .oidc import auth, is_worker_username
-from .main import API
-from functools import wraps
-import click
-from cli.config import config
-
-
-api = API(auth)
-
-
-def login(**kwargs):
-    global auth
-    auth.do_login(**kwargs)
-    return auth
+from proteus import api
 
 
 def iterate_pagination(response, current=0):
@@ -25,39 +12,3 @@ def iterate_pagination(response, current=0):
         if next_ is None:
             break
         data = api.get(next_).json()
-
-
-USERNAME, PASSWORD, PROMPT = config.USERNAME, config.PASSWORD, config.PROMPT
-
-
-def runs_authentified(func):
-    """Decorator that authentifies and keeps token updated during execution."""
-
-    @wraps(func)
-    @click.option("--user", prompt=PROMPT, default=USERNAME)
-    @click.option(
-        "--password", prompt=PROMPT, default=PASSWORD, hide_input=True
-    )
-    def wrapper(user, password, *args, **kwargs):
-        global auth
-        try:
-            terms = dict(username=user, password=password, auto_update=True)
-            is_worker = is_worker_username(user)
-            authentified = (
-                auth.do_worker_login(**terms)
-                if is_worker
-                else auth.do_login(**terms)
-            )
-            if not authentified:
-                print("Authentication failure, exiting")
-                import sys
-
-                sys.exit(1)
-            print(f"Welcome, {auth.who}")
-            return func(*args, **kwargs)
-        except Exception as error:
-            raise error
-        finally:
-            auth.stop()
-
-    return wrapper
