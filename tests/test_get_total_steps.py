@@ -1,5 +1,6 @@
 import pytest
 from pytest_bdd import scenario, given, when, then, parsers
+from requests.models import Response
 
 from cli.datasets.upload import get_total_steps
 
@@ -10,20 +11,18 @@ def cases():
 
 
 @given("setting a mock for case details")
-def set_get_case_mock(requests_mock):
-    requests_mock.get(
-        "https://proteus-test.dev.origen.ai/test-case-get",
-        json={
-            "case": {
-                "initialStep": 1,
-                "finalStep": 10,
-            }
-        },
+def set_get_case_mock(mocker):
+    mock = mocker.patch("proteus.api.get")
+    mock.return_value = Response()
+    mock.return_value.status_code = 200
+    mock.return_value._content = (
+        b'{"case": {"root": "", "group": 1, '
+        b'"number": 2, "initialStep": 1, "finalStep": 10}}'
     )
 
 
 @scenario("features/get_total_steps.feature", "Get total steps of a case")
-def test_get_total_steps(session):
+def test_get_total_steps():
     pass
 
 
@@ -44,7 +43,7 @@ def num_of_steps_match(num_of_steps, expected_steps):
     "features/get_total_steps.feature",
     "Get total steps of a case with an unknown workflow",
 )
-def test_get_total_steps_failing_on_not_found_workflow(session):
+def test_get_total_steps_failing_on_not_found_workflow():
     pass
 
 

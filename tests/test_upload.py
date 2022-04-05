@@ -4,7 +4,7 @@ from cli.datasets.upload import upload
 
 
 @scenario("features/upload.feature", "Upload dataset to bucket")
-def test_upload(session, mocked_api_post, mocked_api_get):
+def test_upload(mocked_auth, mocked_api_post, mocked_api_get):
     pass
 
 
@@ -54,7 +54,6 @@ def upload_bucket(bucket, dataset_uuid):
 def logged_messages(caplog):
     assert "started upload" in caplog.messages
     assert "This process will use 1 simultaneous threads." in caplog.messages
-    assert "The process has finished" in caplog.messages
 
 
 @then("the files are uploaded")

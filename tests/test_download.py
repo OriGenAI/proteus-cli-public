@@ -4,7 +4,7 @@ from pytest_bdd import scenario, given, when, then
 
 
 @scenario("features/download.feature", "Download bucket")
-def test_download(session):
+def test_download(mocked_auth):
     pass
 
 

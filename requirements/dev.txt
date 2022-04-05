@@ -1,4 +1,4 @@
-python-dotenv==0.19.2
+-r prod.txt
 preprocessing @ git+ssh://git@github.com/OriGenAI/preprocessing.git
 proteus-runtime @ git+ssh://git@github.com/OriGenAI/proteus-runtime.git
 black==22.1.0

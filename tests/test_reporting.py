@@ -4,7 +4,7 @@ from proteus import Reporting, api, logger
 
 
 @given("a reporting instance", target_fixture="reporting")
-def reporting(session):
+def reporting():
     return Reporting(api)
 
 
