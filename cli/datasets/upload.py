@@ -3,7 +3,7 @@ import tempfile
 from functools import partial
 import numpy as np
 
-from proteus import api, Reporting, logger
+from proteus import api, reporting, logger
 from cli.config import config
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
@@ -74,9 +74,8 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
     set_dataset_version(dataset_uuid)
 
     logger.info(f"This process will use {workers} simultaneous threads.")
-    reporting = Reporting(api)
     reporting.send("started upload", status="processing", progress=0)
-    with TqdmUpWithReport(total=0, reporting=reporting) as progress:
+    with TqdmUpWithReport(total=0) as progress:
         cases = get_cases(dataset_uuid, progress)
 
         progress.set_description("Setting the dataset version")
