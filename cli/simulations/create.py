@@ -4,52 +4,54 @@ from tqdm import tqdm
 from datetime import datetime
 from dateutil import tz
 from cli.config import config
-from cli.simulations.dependencySolver import DependencySolver
+
 
 WORKERS_COUNT = config.WORKERS_COUNT
 
 
-def create_batch(
-    project_uuid, pressure_model_uuid, swat_model_uuid, batch_name
-):
+def get_project_uuid_from_model_uuid(model_uuid):
+    models_url = "api/v1/models"
+    response = api.get(f"{models_url}/{model_uuid}")
+    model = response.json().get("model")
+    response.raise_for_status()
+    return model.get("project_uuid")
+
+
+def set_batch_model_and_typed_status(batch_uuid, model_uuid):
+    simulations_url = "api/v1/simulations"
+
+    # UPDATE BATCH WITH MODELS
+    sim_batch_url = f"{simulations_url}/{batch_uuid}"
+    update_simulation = dict(
+        model_uuid=model_uuid,
+        set_status="typed",
+    )
+    response = api.put(sim_batch_url, update_simulation)
+    response.raise_for_status()
+    return response.json()
+
+
+def create_batch(model_uuid, batch_name):
     """[summary]
 
     Args:
-        project_uuid (string): the UUID of the project this
-            new batch will belong to
-        pressure_model_uuid (string): the UUID of the
+        model_uuid (string): the UUID of the
             pressure model
-        swat_model_uuid (string): the UUID of the
-            swat model
         batch_name (string): The name of this simulation batch.
 
     Returns:
         string: the UUID of the newly created simulation batch
     """
+    project_uuid = get_project_uuid_from_model_uuid(model_uuid)
+
     simulations_url = "api/v1/simulations"
 
     # CREATE BATCH
     new_simulation = dict(name=batch_name, project_uuid=project_uuid)
     response = api.post(f"{simulations_url}/batches", new_simulation)
-    assert (
-        response.status_code == 201
-    ), f"Expectend batch to be created but got {response.content}"
+    response.raise_for_status()
     simulation = response.json().get("batch")
     batch_uuid = simulation.get("uuid")
-    logger.info("Simulation batch creation successful")
-
-    # UPDATE BATCH WITH MODELS
-    sim_batch_url = f"{simulations_url}/{batch_uuid}"
-    mod_simulation = dict(
-        pressure_model_uuid=pressure_model_uuid,
-        swat_model_uuid=swat_model_uuid,
-        set_status="typed",
-    )
-    response = api.put(sim_batch_url, mod_simulation)
-    assert (
-        response.status_code == 200
-    ), f"Expectend batch to be created but got {response.content}"
-    logger.info("Simulation batch models updated")
     return batch_uuid
 
 
@@ -87,10 +89,9 @@ def upload_file_to_batch(url, source_path, filepath):
                 url, filepath, content=source, modified=modified
             )
             response_json = response.json()
-            assert "case" in response_json
             return response_json.get("case")
     except FileNotFoundError:
-        print(f"File not found: {source_path}")
+        logger.error(f"File not found: {source_path}", exc_info=False)
         return False
 
 
@@ -114,7 +115,10 @@ def provide_batch_initial_state(batch_url, missing_expression, source_folder):
     extension = missing_expression.replace("*", "")
     for source_path in find_files(source_folder, extension):
         filepath = source_path.replace(f"{source_folder}/", "")
-        upload_file_to_batch(batch_url, source_path, filepath)
+        try:
+            upload_file_to_batch(batch_url, source_path, filepath)
+        except FileNotFoundError:
+            upload_file_to_batch(batch_url, source_path, filepath)
     else:
         return False
     return True
@@ -134,14 +138,8 @@ def provide_batch_dependencies(batch_url, dependencies, source_folder):
         dependencies_progress.set_description(
             f"uploading dependency {filepath}"
         )
-        provided = False
-        if filepath in ["*.X0000", "*.EGRID"]:
-            provided = provide_batch_initial_state(
-                batch_url, filepath, source_folder
-            )
-        else:
-            source_path = f"{source_folder}/{filepath}"
-            provided = upload_file_to_batch(batch_url, source_path, filepath)
+        source_path = f"{source_folder}/{filepath}"
+        provided = upload_file_to_batch(batch_url, source_path, filepath)
         if not provided:
             missing_count += 1
             dependencies_progress.set_description(
@@ -202,25 +200,29 @@ def upload_to_batch(source_folder, batch_uuid, reupload):
     """
     batch, batch_url = get_batch(batch_uuid)
     datafiles_progress = tqdm(find_files(source_folder, ".DATA"))
+    from .opm import run_opm_flow_on
+
     for source_path in datafiles_progress:
         # Upload the .DATA file
         filepath, has_case_folder = parse_path(source_folder, source_path)
-        datafiles_progress.set_description(f"uploading DATA {filepath}")
-        case = upload_file_to_batch(batch_url, source_path, filepath)
+        datafiles_progress.set_description(
+            f"processing DATA {filepath} with OPM flow."
+        )
 
-        # Solve all dependencies
-        if "dependencies" in case:
-            dependencies = case.get("dependencies")
-            number = case.get("number")
-            dependencySolver = DependencySolver(
-                batch_url,
-                dependencies,
-                number,
-                source_folder,
-                has_case_folder,
-                reupload,
+        # Upload accesories to .DATA file
+        for source_inits_filepath in run_opm_flow_on(source_path):
+            # provide_balanced_state(batch_url, source_path, filepath):
+            target_inits_filepath, _has_case_folder = parse_path(
+                source_folder, source_inits_filepath
             )
-            dependencySolver.solve_dependencies()
+            datafiles_progress.set_description(
+                f"uploading inits {source_inits_filepath}"
+            )
+            upload_file_to_batch(
+                batch_url, source_inits_filepath, target_inits_filepath
+            )
+        datafiles_progress.set_description(f"uploading DATA {filepath}")
+        upload_file_to_batch(batch_url, source_path, filepath)
 
     # Upload any pending dependency
     batch, _ = get_batch(batch_uuid)

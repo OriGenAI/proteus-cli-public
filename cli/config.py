@@ -44,6 +44,7 @@ class Config(object):
         "minor": os.getenv("DATASET_MINOR_VERSION", 0),
         "patch": os.getenv("DATASET_PATCH_VERSION", 0),
     }
+    OPM_FLOW_PATH = os.getenv("OPM_FLOW_PATH", "/usr/bin/flow")
 
 
 class ProductionConfig(Config):

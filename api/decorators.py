@@ -35,7 +35,6 @@ def may_fail_on_http_error(exit_code=None):
                     import sys
 
                     sys.exit(exit_code)
-                raise error
 
         return wrapped
 
