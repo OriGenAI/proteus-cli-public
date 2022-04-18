@@ -10,12 +10,20 @@ def simulations():
     """
 
 
+CREATE_USAGE_ERROR = (
+    "Usage error: You may create/modify a "
+    + "simulation batch one of two ways:\n"
+    + "\n  a) use a project_uuid, a pressure_model_uuid,"
+    + " a swat_model_uuid, and a batch_name to create a new batch.\n"
+    + "\n"
+    + "  b) use a batch_uuid to modify an existing batch."
+)
+
+
 @simulations.command()
 @click.argument("source_folder")
 @click.option("--batch_uuid", prompt=False)
-@click.option("--project_uuid", prompt=False)
-@click.option("--pressure_model_uuid", prompt=False)
-@click.option("--swat_model_uuid", prompt=False)
+@click.option("--model_uuid", prompt=False)
 @click.option("--batch_name", prompt=False)
 @click.option("--reupload/--no-reupload", prompt=False, default=False)
 @may_fail_on_http_error(exit_code=1)
@@ -23,43 +31,49 @@ def simulations():
 def create(
     source_folder,
     batch_uuid=None,
-    project_uuid=None,
-    swat_model_uuid=None,
-    pressure_model_uuid=None,
     batch_name=None,
+    model_uuid=None,
     reupload=False,
 ):
     """This creates a new simulation batch and uploads the DATA files
     and related dependencies from a source folder"""
-    logger.info("Create simulation command")
-    if batch_uuid is None and (
-        swat_model_uuid is None
-        or pressure_model_uuid is None
-        or project_uuid is None
-        or batch_name is None
-    ):
-        raise click.UsageError(
-            "Useage error: You may create/modify a "
-            + "simulation batch one of two ways:"
-            + "\n  1) use a project_uuid, a pressure_model_uuid,"
-            + " a swat_model_uuid, and a batch_name to create a new batch.\n"
-            + "  2) use a batch_uuid to modify an existing batch."
-        )
-    from .create import upload_to_batch, create_batch
 
-    if swat_model_uuid is not None and pressure_model_uuid is not None:
-        if batch_name is None or len(batch_name) == 0:
-            raise click.UsageError(
-                "batch_name is mandatory to create a new batch"
+    logger.info("Create simulation command")
+    from .create import (
+        upload_to_batch,
+        create_batch,
+        set_batch_model_and_typed_status,
+    )
+
+    try:
+        if batch_uuid is None:
+            assert (
+                model_uuid is not None and batch_name is not None
+            ), CREATE_USAGE_ERROR
+
+            assert (
+                len(batch_name) > 0
+            ), "batch_name can't be empty to create a new batch"
+
+            batch_uuid = create_batch(
+                model_uuid=model_uuid,
+                batch_name=batch_name,
             )
-        batch_uuid = create_batch(
-            project_uuid=project_uuid,
-            pressure_model_uuid=pressure_model_uuid,
-            swat_model_uuid=swat_model_uuid,
-            batch_name=batch_name,
-        )
-        logger.info(
-            f'Created a new batch. to resume use --batch_uuid="{batch_uuid}"'
-        )
+            logger.info(
+                "Created a new batch. to resume use "
+                f'--batch_uuid="{batch_uuid}"'
+            )
+        set_batch_model_and_typed_status(batch_uuid, model_uuid)
+        logger.info("Simulation batch assigned to model")
+
+        from .opm import opm_flow_is_available
+
+        opm_flow_is_available()
+    except AssertionError as error:
+        raise click.UsageError(error)
+
     logger.info("Uploading files and dependencies to simulation batch")
-    upload_to_batch(source_folder, batch_uuid, reupload)
+    try:
+        upload_to_batch(source_folder, batch_uuid, reupload)
+    except AssertionError as error:
+        logger.error(f"Error during process: {error}", exc_info=False)
