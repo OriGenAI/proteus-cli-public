@@ -1,14 +1,13 @@
 from tqdm.auto import tqdm
-from proteus import Reporting, logger
+from proteus import reporting, logger
 
 
 class TqdmUpWithReport(tqdm):
     """Provides `update_with_report(n)` which uses `tqdm.update(delta_n)`
     and sends a report with upload progress."""
 
-    def __init__(self, reporting=Reporting(), **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.reporting = reporting
 
     def __enter__(self):
         logger.disabled = True
@@ -19,7 +18,7 @@ class TqdmUpWithReport(tqdm):
         super().__exit__(*args)
 
     def update_with_report(self, n=1):
-        self.reporting.send(
+        reporting.send(
             "uploading",
             status="processing",
             progress=int((self.n + n) * 100 / self.total),
