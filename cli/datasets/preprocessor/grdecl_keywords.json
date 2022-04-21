@@ -1,0 +1,49 @@
+[
+    {
+        "filename": "litho.h5",
+        "keywords": [
+            "litho"
+        ]
+    },
+    {
+        "filename": "perm.h5",
+        "keywords": [
+            "permx",
+            "permy",
+            "permz"
+        ]
+    },
+    {
+        "filename": "ntg.h5",
+        "keywords": [
+            "ntg"
+        ]
+    },
+    {
+        "filename": "nums.h5",
+        "keywords": [
+            "satnum",
+            "pvtnum",
+            "eqlnum",
+            "rocknum"
+        ]
+    },
+    {
+        "filename": "swat.h5",
+        "keywords": []
+    },
+    {
+        "filename": "poro.h5",
+        "keywords": [
+            "poro"
+        ]
+    },
+    {
+        "filename": "rockType.h5",
+        "keywords": []
+    },
+    {
+        "filename": "vClai.h5",
+        "keywords": []
+    }
+]

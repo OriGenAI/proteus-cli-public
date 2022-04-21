@@ -9,6 +9,8 @@ from ecl.eclfile import EclInitFile, EclFile
 from preprocessing.modular.egrid import preprocess as preprocess_egrid
 from preprocessing.modular.init import preprocess as preprocess_init
 from preprocessing.modular.x import preprocess as preprocess_x
+
+# from preprocessing.modular.grdecl import preprocess as preprocess_grdecl
 from preprocessing.modular.data import WellSpecsProcessor
 from preprocessing.modular.s import WellSummaryProcessor
 from preprocessing.deck.runspec import preprocess as preprocess_runspec
@@ -179,6 +181,40 @@ def export_init_properties(
         write_h5_from_dict(keywords, init_dest_loc)
 
     return init_src_loc, init_dest_loc, None
+
+
+def export_grdecl_properties(
+    case_loc,
+    case_dest_loc,
+    input_src,
+    source_url,
+    cases_url,
+    get_endpoint,
+    *args,
+):
+    grdecl_src_loc = find_ext(case_loc=case_loc, ext="GRDECL")
+
+    # with cwrap.open(f"{case_loc}/SIMULATION_1.GRDECL", "r") as f:
+    #     litho_numpy = EclKW.read_grdecl(f, "LITHO").numpy_copy().astype(int)
+    # props = preprocess_grdecl(grdecl)
+    props = {}
+
+    grdecl_keywords = []
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    with open(os.path.join(dir_path, "grdecl_keywords.json")) as file:
+        grdecl_keywords = json.load(file)
+
+    for grdecl_keyword in grdecl_keywords:
+        keywords = {}
+        for keyword in grdecl_keyword.get("keywords"):
+            keywords[keyword] = props.get(keyword, [])
+
+        grdecl_dest_loc = os.path.join(
+            case_dest_loc, grdecl_keyword.get("filename")
+        )
+        write_h5_from_dict(keywords, grdecl_dest_loc)
+
+    return grdecl_src_loc, grdecl_dest_loc, None
 
 
 def export_wellspec(case_loc, case_dest_loc, _, source_url, *args):

@@ -1,3 +1,4 @@
+import os
 import pytest
 from pytest_bdd import scenario, given, when, then, parsers
 
@@ -145,3 +146,61 @@ def process_files_with_not_found_workflow(
             workers,
             workflow,
         )
+
+
+@given("a bucket mock", target_fixture="bucket_mock")
+def bucket_mock(mocker):
+    return mocker.patch(
+        "cli.datasets.preprocessor.process_step.files_exist_in_bucket"
+    )
+
+
+@given("a download mock", target_fixture="download_mock")
+def download_mock(mocker):
+    return mocker.patch("cli.datasets.preprocessor.process_step.download_file")
+
+
+@given("a temporary dir mock", target_fixture="tmp_mock")
+def tmp_mock(mocker):
+    return mocker.patch("tempfile.TemporaryDirectory.__enter__")
+
+
+@given("setted up mocks for cnn-pca")
+def set_up_mocks_cnn(
+    bucket_mock,
+    tmp_mock,
+    download_mock,
+    tqdm_mock,
+    description_mock,
+    refresh_mock,
+):
+    bucket_mock.return_value = False
+    tmp_mock.return_value = (
+        f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing"
+    )
+    download_mock.return_value = True
+    tqdm_mock.return_value = True
+    description_mock.return_value = True
+    refresh_mock.return_value = True
+
+
+@scenario(
+    "features/process_files.feature",
+    "Process cnn-pca files",
+)
+def test_process_cnnpca_files():
+    pass
+
+
+@when("I process cnn-pca files")
+def process_cnnpca_files(
+    source_url, bucket_url, cases_url, progress, cases, workers
+):
+    process_files(
+        source_url, bucket_url, cases_url, progress, cases, workers, "cnn-pca"
+    )
+
+
+@then("the bucket mock is called")
+def bucket_mock_called(bucket_mock):
+    bucket_mock.assert_called()

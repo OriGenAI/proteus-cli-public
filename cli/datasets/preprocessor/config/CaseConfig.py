@@ -120,5 +120,60 @@ class HMCaseConfig(DefaultConfig):
 class CnnPcaCaseConfig(DefaultConfig):
     """Configuration generator for the cases"""
 
+    def step_1_grdecl_props(self):
+        """
+        List all cases and its steps to generate the .GRDECL iterator
+
+        Args: -
+
+        Returns:
+            iterator: the list of steps to preprocess
+        """
+
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        with open(os.path.join(dir_path, "../init_keywords.json")) as file:
+            grdecl_keywords = json.load(file)
+
+        return (
+            {
+                "input": [
+                    f'{case["root"]}/SIMULATION_{case["number"]}.GRDECL',
+                ],
+                "output": list(
+                    map(
+                        lambda output: f'{case["root"]}/'
+                        f'{output.get("filename")}',
+                        grdecl_keywords,
+                    )
+                ),
+                "preprocessing": "export_grdecl_properties",
+                "split": case["group"],
+                "case": case["number"],
+                "keep": True,
+                "additional_info": {"get_endpoint": self._get_endpoint},
+            }
+            for case in self.cases
+        )
+
+    def step_2_wellspecs(self):
+        """
+        List all cases and its steps to generate the Summaries iterator
+
+        Args: -
+
+        Returns:
+            iterator: the list of steps to preprocess
+        """
+        return (
+            {
+                "input": [f'{case["root"]}/SIMULATION_{case["number"]}.DATA'],
+                "output": [f'{case["root"]}/well_spec.p'],
+                "preprocessing": "export_wellspec",
+                "split": case["group"],
+                "case": case["number"],
+            }
+            for case in self.cases
+        )
+
 
 CaseConfigMapper = {"hm": HMCaseConfig, "cnn-pca": CnnPcaCaseConfig}
