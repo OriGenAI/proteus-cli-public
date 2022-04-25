@@ -8,9 +8,7 @@
     {
         "filename": "perm.h5",
         "keywords": [
-            "permx",
-            "permy",
-            "permz"
+            "permx"
         ]
     },
     {
@@ -22,15 +20,14 @@
     {
         "filename": "nums.h5",
         "keywords": [
-            "satnum",
-            "pvtnum",
-            "eqlnum",
-            "rocknum"
+            "actnum"
         ]
     },
     {
         "filename": "swat.h5",
-        "keywords": []
+        "keywords": [
+            "swat"
+        ]
     },
     {
         "filename": "poro.h5",
@@ -40,10 +37,14 @@
     },
     {
         "filename": "rockType.h5",
-        "keywords": []
+        "keywords": [
+            "rock_type"
+        ]
     },
     {
         "filename": "vClai.h5",
-        "keywords": []
+        "keywords": [
+            "v-clai"
+        ]
     }
 ]

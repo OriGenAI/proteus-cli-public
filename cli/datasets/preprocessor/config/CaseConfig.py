@@ -131,7 +131,7 @@ class CnnPcaCaseConfig(DefaultConfig):
         """
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        with open(os.path.join(dir_path, "../init_keywords.json")) as file:
+        with open(os.path.join(dir_path, "../grdecl_keywords.json")) as file:
             grdecl_keywords = json.load(file)
 
         return (
@@ -150,7 +150,7 @@ class CnnPcaCaseConfig(DefaultConfig):
                 "split": case["group"],
                 "case": case["number"],
                 "keep": True,
-                "additional_info": {"get_endpoint": self._get_endpoint},
+                "additional_info": {"get_mapping": self._get_mapping},
             }
             for case in self.cases
         )

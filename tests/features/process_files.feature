@@ -28,9 +28,11 @@ Feature: Process file uploads
         Given a bucket mock
         And a download mock
         And a temporary dir mock
+        And a dataset get mock
         And setted up mocks for cnn-pca
         When I process cnn-pca files
         Then the bucket mock is called
+        And the preprocessed files are created
 
     Scenario: Process file uploads with an unknown workflow
         Given a process mock

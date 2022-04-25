@@ -1,5 +1,7 @@
 import os
+import json
 import pytest
+from pathlib import Path
 from pytest_bdd import scenario, given, when, then, parsers
 
 from cli.datasets.upload import process_files
@@ -12,7 +14,10 @@ def cases():
         {
             "group": "training",
             "number": 1,
-            "case_url": "test-case-get",
+            "case_url": (
+                "/api/v1/datasets/"
+                "3f1b7126-95e4-4db0-b303-0ca476c28cb1/cases/validation/2"
+            ),
             "root": 1,
             "initialStep": 1,
             "finalStep": 10,
@@ -165,6 +170,22 @@ def tmp_mock(mocker):
     return mocker.patch("tempfile.TemporaryDirectory.__enter__")
 
 
+@given("a dataset get mock", target_fixture="dataset_get_mock")
+def dataset_get_mock(mocker):
+    from requests.models import Response
+
+    json = (
+        b'{"sampling": {"config": { "cnn_pca_design": { "keywords": '
+        b'[{"name": "ACTNUM", "source": "BOOLEAN"}, {"name": "LITHO",'
+        b'"source": "LITHO"}]}}}}'
+    )
+    mock = mocker.patch("proteus.api.get")
+    mock.return_value = Response()
+    mock.return_value.status_code = 200
+    mock.return_value._content = json
+    return mocker
+
+
 @given("setted up mocks for cnn-pca")
 def set_up_mocks_cnn(
     bucket_mock,
@@ -173,6 +194,7 @@ def set_up_mocks_cnn(
     tqdm_mock,
     description_mock,
     refresh_mock,
+    dataset_get_mock,
 ):
     bucket_mock.return_value = False
     tmp_mock.return_value = (
@@ -204,3 +226,25 @@ def process_cnnpca_files(
 @then("the bucket mock is called")
 def bucket_mock_called(bucket_mock):
     bucket_mock.assert_called()
+
+
+@then("the preprocessed files are created")
+def files_created():
+    keywords_path = os.path.join(
+        Path(__file__).parent.parent,
+        "cli/datasets/preprocessor/grdecl_keywords.json",
+    )
+    with open(keywords_path) as file:
+        keywords = json.load(file)
+
+    filenames = map(lambda x: x.get("filename"), keywords)
+
+    path = f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing"
+
+    for filename in filenames:
+        try:
+            file = next(Path(path).rglob(f"*/{filename}"))
+            os.remove(file)
+        except StopIteration:
+            assert False
+    assert True
