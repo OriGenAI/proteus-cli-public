@@ -26,7 +26,7 @@ class DefaultConfig(object):
         case_url = self.cases[0].get("case_url")
         dataset_url = case_url.split("/cases")[0]
         dataset = api.get(dataset_url)
-        config = dataset.json().get("sampling").get("config")
+        config = dataset.json().get("dataset").get("sampling").get("config")
         return config.get("cnn_pca_design").get("keywords")
 
     def _set_endpoint(self, endpoint):

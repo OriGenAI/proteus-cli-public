@@ -130,6 +130,12 @@ class CnnPcaCaseConfig(DefaultConfig):
             iterator: the list of steps to preprocess
         """
 
+        def _get_output(keywords, case):
+            for k in keywords:
+                for elem in self._get_mapping():
+                    if elem["name"].lower() in k["keywords"]:
+                        yield f'{case["root"]}/{k.get("filename")}'
+
         dir_path = os.path.dirname(os.path.realpath(__file__))
         with open(os.path.join(dir_path, "../grdecl_keywords.json")) as file:
             grdecl_keywords = json.load(file)
@@ -139,13 +145,7 @@ class CnnPcaCaseConfig(DefaultConfig):
                 "input": [
                     f'{case["root"]}/SIMULATION_{case["number"]}.GRDECL',
                 ],
-                "output": list(
-                    map(
-                        lambda output: f'{case["root"]}/'
-                        f'{output.get("filename")}',
-                        grdecl_keywords,
-                    )
-                ),
+                "output": [*_get_output(grdecl_keywords, case)],
                 "preprocessing": "export_grdecl_properties",
                 "split": case["group"],
                 "case": case["number"],

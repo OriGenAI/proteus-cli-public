@@ -70,8 +70,23 @@ def refresh_mock(mocker):
     return mocker.patch("tqdm.std.tqdm.refresh")
 
 
+@given("a keywords mock", target_fixture="keywords_mock")
+def keywords_mock(mocker):
+    mock = mocker.patch(
+        "cli.datasets.preprocessor.config."
+        "CaseConfig.CnnPcaCaseConfig._get_mapping"
+    )
+    mock.return_value = [
+        {"name": "ACTNUM", "source": "BOOLEAN"},
+        {"name": "LITHO", "source": "LITHO"},
+    ]
+    return mock
+
+
 @given("setted up mocks")
-def set_up_mocks(process_mock, tqdm_mock, description_mock, refresh_mock):
+def set_up_mocks(
+    process_mock, keywords_mock, tqdm_mock, description_mock, refresh_mock
+):
     process_mock.return_value = True
     tqdm_mock.return_value = True
     description_mock.return_value = True
@@ -175,15 +190,15 @@ def dataset_get_mock(mocker):
     from requests.models import Response
 
     json = (
-        b'{"sampling": {"config": { "cnn_pca_design": { "keywords": '
-        b'[{"name": "ACTNUM", "source": "BOOLEAN"}, {"name": "LITHO",'
-        b'"source": "LITHO"}]}}}}'
+        b'{"dataset": {"sampling": {"config": { "cnn_pca_design": { '
+        b'"keywords": [{"name": "ACTNUM", "source": "BOOLEAN"}, '
+        b'{"name": "LITHO","source": "LITHO"}]}}}}}'
     )
     mock = mocker.patch("proteus.api.get")
     mock.return_value = Response()
     mock.return_value.status_code = 200
     mock.return_value._content = json
-    return mocker
+    return mock
 
 
 @given("setted up mocks for cnn-pca")
@@ -194,6 +209,7 @@ def set_up_mocks_cnn(
     tqdm_mock,
     description_mock,
     refresh_mock,
+    keywords_mock,
     dataset_get_mock,
 ):
     bucket_mock.return_value = False

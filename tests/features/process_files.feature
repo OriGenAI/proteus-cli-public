@@ -9,6 +9,7 @@ Feature: Process file uploads
         And a tqdm mock
         And a description mock
         And a refresh mock
+        And a keywords mock
 
     Scenario: Process file uploads
         Given a process mock
