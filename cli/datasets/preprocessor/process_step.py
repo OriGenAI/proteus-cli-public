@@ -47,11 +47,14 @@ def process_step(step, tmpdirname, source_url, bucket_url, cases_url):
         if files_exist_in_bucket(outputs, bucket_url):
             return outputs[0]
 
-        path_name = (
-            os.path.join(tmpdirname, "cases", f"{split}/SIMULATION_{case}")
-            if (split and case)
-            else tmpdirname
-        )
+        if "cases/SIMULATION_" in outputs[0]:
+            path_name = os.path.join(tmpdirname, "cases", f"SIMULATION_{case}")
+        else:
+            path_name = (
+                os.path.join(tmpdirname, "cases", f"{split}/SIMULATION_{case}")
+                if (split and case)
+                else tmpdirname
+            )
         try:
             os.makedirs(path_name)
         except Exception:
