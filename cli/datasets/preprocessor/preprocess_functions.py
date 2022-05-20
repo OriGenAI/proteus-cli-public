@@ -12,11 +12,12 @@ from preprocessing.modular.init import preprocess as preprocess_init
 from preprocessing.modular.x import preprocess as preprocess_x
 
 from preprocessing.modular.grdecl import preprocess as preprocess_grdecl
+from preprocessing.modular.dat import preprocess as preprocess_dat
 from preprocessing.modular.data import WellSpecsProcessor
 from preprocessing.modular.s import WellSummaryProcessor
 from preprocessing.deck.runspec import preprocess as preprocess_runspec
 from preprocessing.deck.section import find_section
-from .utils import upload_file, find_ext, get_case_info
+from .utils import upload_file, find_ext, find_file, get_case_info
 
 DEFAULT_COMMON_PROPERTIES = {"max_pressure": -100000, "min_pressure": 100000}
 
@@ -190,6 +191,44 @@ def export_grdecl_properties(
         props, case_dest_loc, "grdecl_keywords.json"
     )
     return grdecl_src_loc, grdecl_dest_loc, None
+
+
+def export_dat_properties(
+    case_loc,
+    case_dest_loc,
+    input_src,
+    source_url,
+    cases_url,
+    get_mapping,
+    *args,
+):
+    dat_src_locs = [
+        str(find_file(case_loc, src.split("/")[-1])) for src in input_src
+    ]
+    mapping = [
+        *filter(
+            lambda f: f["name"].lower() not in ["litho", "actnum"],
+            get_mapping(),
+        )
+    ]
+
+    dat_files = {}
+    for keyword in mapping:
+        file = next(
+            filter(
+                lambda file: keyword["source"].lower() in file, dat_src_locs
+            ),
+            None,
+        )
+        if file:
+            dat_files[keyword["source"].lower()] = file
+
+    props = preprocess_dat(dat_files, mapping)
+
+    grdecl_dest_loc = _write_props(
+        props, case_dest_loc, "grdecl_keywords.json"
+    )
+    return dat_src_locs, grdecl_dest_loc, None
 
 
 def _write_props(props, dest_loc, keywords_file):

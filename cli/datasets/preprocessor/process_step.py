@@ -68,10 +68,16 @@ def process_step(step, tmpdirname, source_url, bucket_url, cases_url):
 
         # Process the files
         func = getattr(preprocess_functions, preprocessing_function_name)
+        func_input = None
+        if len(inputs) > 1:
+            func_input = inputs
+        if len(inputs) == 1:
+            func_input = inputs[0]
+
         source_dir, _, output = func(
             path_name,
             path_name,
-            inputs[0] if inputs else None,
+            func_input,
             source_url,
             cases_url,
             **(additional_info or {}),

@@ -8,13 +8,7 @@
     {
         "filename": "perm.h5",
         "keywords": [
-            "permx"
-        ]
-    },
-    {
-        "filename": "ntg.h5",
-        "keywords": [
-            "ntg"
+            "perm"
         ]
     },
     {
@@ -24,27 +18,15 @@
         ]
     },
     {
-        "filename": "swat.h5",
-        "keywords": [
-            "swat"
-        ]
-    },
-    {
         "filename": "poro.h5",
         "keywords": [
             "poro"
         ]
     },
     {
-        "filename": "rockType.h5",
+        "filename": "vclai.h5",
         "keywords": [
-            "rock_type"
-        ]
-    },
-    {
-        "filename": "vClai.h5",
-        "keywords": [
-            "v-clai"
+            "vclai"
         ]
     }
 ]

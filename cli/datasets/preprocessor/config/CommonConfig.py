@@ -105,5 +105,67 @@ class CnnPcaCommonConfig(DefaultConfig):
             ]
         )
 
+    def step_2_wellspec(self):
+        """
+        List all cases and its steps to generate the Summaries iterator
+
+        Args: -
+
+        Returns:
+            iterator: the list of steps to preprocess
+        """
+        first_case = self.cases[0]
+        return iter(
+            [
+                {
+                    "input": [
+                        f'{first_case["root"]}'
+                        + f'/SIMULATION_{first_case["number"]}.DATA'
+                    ],
+                    "output": ["well_spec.p"],
+                    "preprocessing": "export_wellspec",
+                    "split": first_case["group"],
+                    "case": first_case["number"],
+                }
+            ]
+        )
+
+    def step_3_dat_files(self):
+        """
+        Generate .dat iterator
+
+        Args: -
+
+        Returns:
+            iterator: the list of steps to preprocess
+        """
+
+        def _get_dat_files():
+            return filter(
+                lambda f: f["name"].lower() not in ["litho", "actnum"],
+                self._get_mapping(),
+            )
+
+        first_case = self.cases[0]
+        return iter(
+            [
+                {
+                    "input": [
+                        f'{first_case["root"]}/{f["source"].lower()}.dat'
+                        for f in _get_dat_files()
+                    ],
+                    "output": [
+                        f'{first_case["root"]}/{f["name"].lower()}.h5'
+                        for f in _get_dat_files()
+                    ],
+                    "preprocessing": "export_dat_properties",
+                    "split": first_case["group"],
+                    "case": first_case["number"],
+                    "keep": True,
+                    "additional_info": {"get_mapping": self._get_mapping},
+                }
+            ]
+        )
+
 
 CommonConfigMapper = {"hm": HMCommonConfig, "cnn-pca": CnnPcaCommonConfig}

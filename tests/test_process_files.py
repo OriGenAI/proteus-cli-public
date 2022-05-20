@@ -74,11 +74,14 @@ def refresh_mock(mocker):
 def keywords_mock(mocker):
     mock = mocker.patch(
         "cli.datasets.preprocessor.config."
-        "CaseConfig.CnnPcaCaseConfig._get_mapping"
+        "defaultConfig.DefaultConfig._get_mapping"
     )
     mock.return_value = [
         {"name": "ACTNUM", "source": "BOOLEAN"},
         {"name": "LITHO", "source": "LITHO"},
+        {"name": "PORO", "source": "PORO"},
+        {"name": "PERM", "source": "PERM"},
+        {"name": "VCLAI", "source": "VCL"},
     ]
     return mock
 
@@ -192,7 +195,10 @@ def dataset_get_mock(mocker):
     json = (
         b'{"dataset": {"sampling": {"config": { "cnn_pca_design": { '
         b'"keywords": [{"name": "ACTNUM", "source": "BOOLEAN"}, '
-        b'{"name": "LITHO","source": "LITHO"}]}}}}}'
+        b'{"name": "LITHO","source": "LITHO"}, '
+        b'{"name": "PORO", "source": "PORO"}, '
+        b'{"name": "PERM", "source": "PERM"}, '
+        b'{"name": "VCLAI", "source": "VCL"}]}}}}}'
     )
     mock = mocker.patch("proteus.api.get")
     mock.return_value = Response()

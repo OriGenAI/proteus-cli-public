@@ -155,25 +155,5 @@ class CnnPcaCaseConfig(DefaultConfig):
             for case in self.cases
         )
 
-    def step_2_wellspecs(self):
-        """
-        List all cases and its steps to generate the Summaries iterator
-
-        Args: -
-
-        Returns:
-            iterator: the list of steps to preprocess
-        """
-        return (
-            {
-                "input": [f'{case["root"]}/SIMULATION_{case["number"]}.DATA'],
-                "output": [f'{case["root"]}/well_spec.p'],
-                "preprocessing": "export_wellspec",
-                "split": case["group"],
-                "case": case["number"],
-            }
-            for case in self.cases
-        )
-
 
 CaseConfigMapper = {"hm": HMCaseConfig, "cnn-pca": CnnPcaCaseConfig}
