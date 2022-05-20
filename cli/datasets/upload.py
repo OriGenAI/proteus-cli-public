@@ -66,7 +66,11 @@ def get_total_steps(cases, workflow):
     final_step = first_case_json.get("finalStep")
     common_step = CommonConfigMapper[workflow].number_of_steps()
     cases_steps = CaseConfigMapper[workflow].number_of_steps()
-    timesteps_steps = StepConfigMapper[workflow].number_of_steps() - 1
+    timesteps_steps = (
+        StepConfigMapper[workflow].number_of_steps() - 1
+        if StepConfigMapper[workflow].number_of_steps() > 0
+        else 0
+    )
     return common_step + (
         cases_steps + timesteps_steps * (final_step - initial_step + 1)
     ) * len(cases)
