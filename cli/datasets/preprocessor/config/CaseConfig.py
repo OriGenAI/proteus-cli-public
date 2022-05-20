@@ -132,9 +132,8 @@ class CnnPcaCaseConfig(DefaultConfig):
 
         def _get_output(keywords, case):
             for k in keywords:
-                for elem in self._get_mapping():
-                    if elem["name"].lower() in k["keywords"]:
-                        yield f'{case["root"]}/{k.get("filename")}'
+                if "litho" in k["keywords"] or "actnum" in k["keywords"]:
+                    yield f'{case["root"]}/{k.get("filename")}'
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         with open(os.path.join(dir_path, "../grdecl_keywords.json")) as file:
