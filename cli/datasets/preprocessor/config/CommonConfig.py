@@ -167,5 +167,34 @@ class CnnPcaCommonConfig(DefaultConfig):
             ]
         )
 
+    def step_4_actnum_prop(self):
+        """
+        List all cases and its steps to generate the .DATA iterator
+
+        Args: -
+
+        Returns:
+            iterator: the list of steps to preprocess
+        """
+        first_case = self.cases[0]
+        return iter(
+            [
+                {
+                    "input": [
+                        (
+                            f'{first_case["root"]}/'
+                            f'SIMULATION_{first_case["number"]}.GRDECL'
+                        )
+                    ],
+                    "output": ["nums.h5"],
+                    "preprocessing": "export_actnum",
+                    "split": first_case["group"],
+                    "case": first_case["number"],
+                    "keep": True,
+                    "additional_info": {"get_mapping": self._get_mapping},
+                }
+            ]
+        )
+
 
 CommonConfigMapper = {"hm": HMCommonConfig, "cnn-pca": CnnPcaCommonConfig}

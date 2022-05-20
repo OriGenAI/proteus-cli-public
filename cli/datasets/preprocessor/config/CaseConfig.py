@@ -120,7 +120,7 @@ class HMCaseConfig(DefaultConfig):
 class CnnPcaCaseConfig(DefaultConfig):
     """Configuration generator for the cases"""
 
-    def step_1_grdecl_props(self):
+    def step_1_litho_prop(self):
         """
         List all cases and its steps to generate the .GRDECL iterator
 
@@ -130,22 +130,13 @@ class CnnPcaCaseConfig(DefaultConfig):
             iterator: the list of steps to preprocess
         """
 
-        def _get_output(keywords, case):
-            for k in keywords:
-                if "litho" in k["keywords"] or "actnum" in k["keywords"]:
-                    yield f'{case["root"]}/{k.get("filename")}'
-
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        with open(os.path.join(dir_path, "../grdecl_keywords.json")) as file:
-            grdecl_keywords = json.load(file)
-
         return (
             {
                 "input": [
                     f'{case["root"]}/SIMULATION_{case["number"]}.GRDECL',
                 ],
-                "output": [*_get_output(grdecl_keywords, case)],
-                "preprocessing": "export_grdecl_properties",
+                "output": ["litho.h5"],
+                "preprocessing": "export_litho",
                 "split": case["group"],
                 "case": case["number"],
                 "keep": True,

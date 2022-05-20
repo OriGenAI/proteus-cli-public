@@ -172,7 +172,7 @@ def export_init_properties(
     return init_src_loc, init_dest_loc, None
 
 
-def export_grdecl_properties(
+def export_litho(
     case_loc,
     case_dest_loc,
     input_src,
@@ -182,7 +182,28 @@ def export_grdecl_properties(
     *args,
 ):
     grdecl_src_loc = find_ext(case_loc=case_loc, ext="GRDECL")
-    mapping = get_mapping()
+    mapping = filter(lambda x: x["name"] == "LITHO", get_mapping())
+
+    with cwrap.open(str(grdecl_src_loc), "r") as f:
+        props = preprocess_grdecl(f, mapping)
+
+    grdecl_dest_loc = _write_props(
+        props, case_dest_loc, "grdecl_keywords.json"
+    )
+    return grdecl_src_loc, grdecl_dest_loc, None
+
+
+def export_actnum(
+    case_loc,
+    case_dest_loc,
+    input_src,
+    source_url,
+    cases_url,
+    get_mapping,
+    *args,
+):
+    grdecl_src_loc = find_ext(case_loc=case_loc, ext="GRDECL")
+    mapping = filter(lambda x: x["name"] == "ACTNUM", get_mapping())
 
     with cwrap.open(str(grdecl_src_loc), "r") as f:
         props = preprocess_grdecl(f, mapping)
