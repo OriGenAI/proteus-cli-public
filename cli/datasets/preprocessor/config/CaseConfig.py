@@ -135,9 +135,8 @@ class CnnPcaCaseConfig(DefaultConfig):
                 "input": [
                     f'{case["root"]}/SIMULATION_{case["number"]}.GRDECL',
                 ],
-                "output": ["litho.h5"],
+                "output": [f'{case["root"]}/litho.h5'],
                 "preprocessing": "export_litho",
-                "split": case["group"],
                 "case": case["number"],
                 "keep": True,
                 "additional_info": {"get_mapping": self._get_mapping},

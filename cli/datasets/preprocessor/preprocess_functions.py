@@ -208,10 +208,8 @@ def export_actnum(
     with cwrap.open(str(grdecl_src_loc), "r") as f:
         props = preprocess_grdecl(f, mapping)
 
-    grdecl_dest_loc = _write_props(
-        props, case_dest_loc, "grdecl_keywords.json"
-    )
-    return grdecl_src_loc, grdecl_dest_loc, None
+    dest_loc = _write_props(props, case_dest_loc, "grdecl_keywords.json")
+    return grdecl_src_loc, dest_loc, None
 
 
 def export_dat_properties(
@@ -246,10 +244,8 @@ def export_dat_properties(
 
     props = preprocess_dat(dat_files, mapping)
 
-    grdecl_dest_loc = _write_props(
-        props, case_dest_loc, "grdecl_keywords.json"
-    )
-    return dat_src_locs, grdecl_dest_loc, None
+    dest_loc = _write_props(props, case_dest_loc, "grdecl_keywords.json")
+    return dat_src_locs, dest_loc, None
 
 
 def _write_props(props, dest_loc, keywords_file):
@@ -259,11 +255,13 @@ def _write_props(props, dest_loc, keywords_file):
 
     for f_keyword in file_keywords:
         keywords = {
-            keyword: props.get(keyword, [])
+            keyword: props.get(keyword)
             for keyword in f_keyword.get("keywords")
+            if props.get(keyword) is not None
         }
-        file_dest_loc = os.path.join(dest_loc, f_keyword.get("filename"))
-        write_h5_from_dict(keywords, file_dest_loc)
+        if keywords:
+            file_dest_loc = os.path.join(dest_loc, f_keyword.get("filename"))
+            write_h5_from_dict(keywords, file_dest_loc)
 
     return dest_loc
 

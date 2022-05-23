@@ -98,8 +98,8 @@ class CnnPcaCommonConfig(DefaultConfig):
                     ],
                     "output": ["runspec.p"],
                     "preprocessing": "export_runspec",
-                    "split": first_case["group"],
                     "case": first_case["number"],
+                    "keep": True,
                     "additional_info": {"set_endpoint": self._set_endpoint},
                 }
             ]
@@ -124,7 +124,7 @@ class CnnPcaCommonConfig(DefaultConfig):
                     ],
                     "output": ["well_spec.p"],
                     "preprocessing": "export_wellspec",
-                    "split": first_case["group"],
+                    "keep": True,
                     "case": first_case["number"],
                 }
             ]
@@ -146,21 +146,16 @@ class CnnPcaCommonConfig(DefaultConfig):
                 self._get_mapping(),
             )
 
-        first_case = self.cases[0]
         return iter(
             [
                 {
                     "input": [
-                        f'{first_case["root"]}/{f["source"].lower()}.dat'
-                        for f in _get_dat_files()
+                        f'{f["source"].lower()}.dat' for f in _get_dat_files()
                     ],
                     "output": [
-                        f'{first_case["root"]}/{f["name"].lower()}.h5'
-                        for f in _get_dat_files()
+                        f'{f["name"].lower()}.h5' for f in _get_dat_files()
                     ],
                     "preprocessing": "export_dat_properties",
-                    "split": first_case["group"],
-                    "case": first_case["number"],
                     "keep": True,
                     "additional_info": {"get_mapping": self._get_mapping},
                 }
@@ -188,7 +183,6 @@ class CnnPcaCommonConfig(DefaultConfig):
                     ],
                     "output": ["nums.h5"],
                     "preprocessing": "export_actnum",
-                    "split": first_case["group"],
                     "case": first_case["number"],
                     "keep": True,
                     "additional_info": {"get_mapping": self._get_mapping},

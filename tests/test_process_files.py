@@ -1,6 +1,7 @@
 import os
 import json
 import pytest
+import shutil
 from pathlib import Path
 from pytest_bdd import scenario, given, when, then, parsers
 
@@ -19,6 +20,22 @@ def cases():
                 "3f1b7126-95e4-4db0-b303-0ca476c28cb1/cases/validation/2"
             ),
             "root": 1,
+            "initialStep": 1,
+            "finalStep": 10,
+        }
+    ]
+
+
+@given("a set of cases without split", target_fixture="cases_without_split")
+def cases_without_split():
+    return [
+        {
+            "number": 1,
+            "case_url": (
+                "/api/v1/datasets/"
+                "3f1b7126-95e4-4db0-b303-0ca476c28cb1/cases/SIMULATION_1"
+            ),
+            "root": "cases/SIMULATION_1",
             "initialStep": 1,
             "finalStep": 10,
         }
@@ -218,9 +235,15 @@ def set_up_mocks_cnn(
     keywords_mock,
     dataset_get_mock,
 ):
+    from distutils.dir_util import copy_tree
+
+    copy_tree(
+        f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing",
+        f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing-cp",
+    )
     bucket_mock.return_value = False
     tmp_mock.return_value = (
-        f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing"
+        f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing-cp"
     )
     download_mock.return_value = True
     tqdm_mock.return_value = True
@@ -238,10 +261,16 @@ def test_process_cnnpca_files():
 
 @when("I process cnn-pca files")
 def process_cnnpca_files(
-    source_url, bucket_url, cases_url, progress, cases, workers
+    source_url, bucket_url, cases_url, progress, cases_without_split, workers
 ):
     process_files(
-        source_url, bucket_url, cases_url, progress, cases, workers, "cnn-pca"
+        source_url,
+        bucket_url,
+        cases_url,
+        progress,
+        cases_without_split,
+        workers,
+        "cnn-pca",
     )
 
 
@@ -260,13 +289,17 @@ def files_created():
         keywords = json.load(file)
 
     filenames = map(lambda x: x.get("filename"), keywords)
+    filenames = [*filenames, "runspec.p", "well_spec.p"]
 
-    path = f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing"
+    path = f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing-cp"
 
+    are_all_present = True
     for filename in filenames:
         try:
-            file = next(Path(path).rglob(f"*/{filename}"))
-            os.remove(file)
+            file = next(Path(path).rglob(f"{filename}"))
         except StopIteration:
-            assert False
-    assert True
+            are_all_present = False
+    shutil.rmtree(
+        f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing-cp"
+    )
+    assert are_all_present
