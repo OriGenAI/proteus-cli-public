@@ -14,6 +14,7 @@ from preprocessing.modular.s import WellSummaryProcessor
 from preprocessing.deck.runspec import preprocess as preprocess_runspec
 from preprocessing.deck.section import find_section
 from .utils import upload_file, find_ext, get_case_info
+from proteus import logger
 
 DEFAULT_COMMON_PROPERTIES = {"max_pressure": -100000, "min_pressure": 100000}
 
@@ -125,6 +126,13 @@ def export_runspec(
         download_file(source_path, destination_path, source_url)
 
     data = preprocess_runspec(data_src_loc, download_func)
+    multout = data.get("multout")
+    del data["multout"]
+    if not multout:
+        logger.warning(
+            "MULTOUT not found in RUNSPEC section. This can lead to issues."
+        )
+
     write_pickle_from_dict(data, runspec_dest_loc)
 
     set_endpoint(data.get("endscale"))
