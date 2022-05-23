@@ -212,6 +212,14 @@ def export_actnum(
     return grdecl_src_loc, dest_loc, None
 
 
+def _extract_dat_mappings(mapping):
+    return [
+        *filter(
+            lambda f: f["name"].lower() not in ["litho", "actnum"], mapping
+        )
+    ]
+
+
 def export_dat_properties(
     case_loc,
     case_dest_loc,
@@ -224,19 +232,13 @@ def export_dat_properties(
     dat_src_locs = [
         str(find_file(case_loc, src.split("/")[-1])) for src in input_src
     ]
-    mapping = [
-        *filter(
-            lambda f: f["name"].lower() not in ["litho", "actnum"],
-            get_mapping(),
-        )
-    ]
+
+    mapping = _extract_dat_mappings(get_mapping())
 
     dat_files = {}
     for keyword in mapping:
         file = next(
-            filter(
-                lambda file: keyword["source"].lower() in file, dat_src_locs
-            ),
+            filter(lambda f: keyword["source"].lower() in f, dat_src_locs),
             None,
         )
         if file:
