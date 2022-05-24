@@ -181,7 +181,7 @@ class CnnPcaCommonConfig(DefaultConfig):
                             f'SIMULATION_{first_case["number"]}.GRDECL'
                         )
                     ],
-                    "output": ["nums.h5"],
+                    "output": ["actnum.h5"],
                     "preprocessing": "export_actnum",
                     "case": first_case["number"],
                     "keep": True,

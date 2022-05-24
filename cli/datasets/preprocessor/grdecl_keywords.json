@@ -6,13 +6,13 @@
         ]
     },
     {
-        "filename": "perm.h5",
+        "filename": "permx.h5",
         "keywords": [
-            "perm"
+            "permx"
         ]
     },
     {
-        "filename": "nums.h5",
+        "filename": "actnum.h5",
         "keywords": [
             "actnum"
         ]
@@ -24,9 +24,9 @@
         ]
     },
     {
-        "filename": "vclai.h5",
+        "filename": "v-clai.h5",
         "keywords": [
-            "vclai"
+            "v-clai"
         ]
     }
 ]

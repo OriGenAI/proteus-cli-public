@@ -97,8 +97,8 @@ def keywords_mock(mocker):
         {"name": "ACTNUM", "source": "BOOLEAN"},
         {"name": "LITHO", "source": "LITHO"},
         {"name": "PORO", "source": "PORO"},
-        {"name": "PERM", "source": "PERM"},
-        {"name": "VCLAI", "source": "VCL"},
+        {"name": "PERMX", "source": "PERM"},
+        {"name": "V-CLAI", "source": "VCL"},
     ]
     return mock
 
@@ -214,8 +214,8 @@ def dataset_get_mock(mocker):
         b'"keywords": [{"name": "ACTNUM", "source": "BOOLEAN"}, '
         b'{"name": "LITHO","source": "LITHO"}, '
         b'{"name": "PORO", "source": "PORO"}, '
-        b'{"name": "PERM", "source": "PERM"}, '
-        b'{"name": "VCLAI", "source": "VCL"}]}}}}}'
+        b'{"name": "PERMX", "source": "PERM"}, '
+        b'{"name": "V-CLAI", "source": "VCL"}]}}}}}'
     )
     mock = mocker.patch("proteus.api.get")
     mock.return_value = Response()
