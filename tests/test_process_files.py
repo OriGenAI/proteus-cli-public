@@ -1,4 +1,8 @@
+import os
+import json
 import pytest
+import shutil
+from pathlib import Path
 from pytest_bdd import scenario, given, when, then, parsers
 
 from cli.datasets.upload import process_files
@@ -11,8 +15,27 @@ def cases():
         {
             "group": "training",
             "number": 1,
-            "case_url": "test-case-get",
+            "case_url": (
+                "/api/v1/datasets/"
+                "3f1b7126-95e4-4db0-b303-0ca476c28cb1/cases/validation/2"
+            ),
             "root": 1,
+            "initialStep": 1,
+            "finalStep": 10,
+        }
+    ]
+
+
+@given("a set of cases without split", target_fixture="cases_without_split")
+def cases_without_split():
+    return [
+        {
+            "number": 1,
+            "case_url": (
+                "/api/v1/datasets/"
+                "3f1b7126-95e4-4db0-b303-0ca476c28cb1/cases/SIMULATION_1"
+            ),
+            "root": "cases/SIMULATION_1",
             "initialStep": 1,
             "finalStep": 10,
         }
@@ -64,8 +87,26 @@ def refresh_mock(mocker):
     return mocker.patch("tqdm.std.tqdm.refresh")
 
 
+@given("a keywords mock", target_fixture="keywords_mock")
+def keywords_mock(mocker):
+    mock = mocker.patch(
+        "cli.datasets.preprocessor.config."
+        "defaultConfig.DefaultConfig._get_mapping"
+    )
+    mock.return_value = [
+        {"name": "ACTNUM", "source": "BOOLEAN"},
+        {"name": "LITHO", "source": "LITHO"},
+        {"name": "PORO", "source": "PORO"},
+        {"name": "PERMX", "source": "PERM"},
+        {"name": "V-CLAI", "source": "VCL"},
+    ]
+    return mock
+
+
 @given("setted up mocks")
-def set_up_mocks(process_mock, tqdm_mock, description_mock, refresh_mock):
+def set_up_mocks(
+    process_mock, keywords_mock, tqdm_mock, description_mock, refresh_mock
+):
     process_mock.return_value = True
     tqdm_mock.return_value = True
     description_mock.return_value = True
@@ -145,3 +186,120 @@ def process_files_with_not_found_workflow(
             workers,
             workflow,
         )
+
+
+@given("a bucket mock", target_fixture="bucket_mock")
+def bucket_mock(mocker):
+    return mocker.patch(
+        "cli.datasets.preprocessor.process_step.files_exist_in_bucket"
+    )
+
+
+@given("a download mock", target_fixture="download_mock")
+def download_mock(mocker):
+    return mocker.patch("cli.datasets.preprocessor.process_step.download_file")
+
+
+@given("a temporary dir mock", target_fixture="tmp_mock")
+def tmp_mock(mocker):
+    return mocker.patch("tempfile.TemporaryDirectory.__enter__")
+
+
+@given("a dataset get mock", target_fixture="dataset_get_mock")
+def dataset_get_mock(mocker):
+    from requests.models import Response
+
+    json = (
+        b'{"dataset": {"sampling": {"config": { "cnn_pca_design": { '
+        b'"keywords": [{"name": "ACTNUM", "source": "BOOLEAN"}, '
+        b'{"name": "LITHO","source": "LITHO"}, '
+        b'{"name": "PORO", "source": "PORO"}, '
+        b'{"name": "PERMX", "source": "PERM"}, '
+        b'{"name": "V-CLAI", "source": "VCL"}]}}}}}'
+    )
+    mock = mocker.patch("proteus.api.get")
+    mock.return_value = Response()
+    mock.return_value.status_code = 200
+    mock.return_value._content = json
+    return mock
+
+
+@given("setted up mocks for cnn-pca")
+def set_up_mocks_cnn(
+    bucket_mock,
+    tmp_mock,
+    download_mock,
+    tqdm_mock,
+    description_mock,
+    refresh_mock,
+    keywords_mock,
+    dataset_get_mock,
+):
+    from distutils.dir_util import copy_tree
+
+    copy_tree(
+        f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing",
+        f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing-cp",
+    )
+    bucket_mock.return_value = False
+    tmp_mock.return_value = (
+        f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing-cp"
+    )
+    download_mock.return_value = True
+    tqdm_mock.return_value = True
+    description_mock.return_value = True
+    refresh_mock.return_value = True
+
+
+@scenario(
+    "features/process_files.feature",
+    "Process cnn-pca files",
+)
+def test_process_cnnpca_files():
+    pass
+
+
+@when("I process cnn-pca files")
+def process_cnnpca_files(
+    source_url, bucket_url, cases_url, progress, cases_without_split, workers
+):
+    process_files(
+        source_url,
+        bucket_url,
+        cases_url,
+        progress,
+        cases_without_split,
+        workers,
+        "cnn-pca",
+    )
+
+
+@then("the bucket mock is called")
+def bucket_mock_called(bucket_mock):
+    bucket_mock.assert_called()
+
+
+@then("the preprocessed files are created")
+def files_created():
+    keywords_path = os.path.join(
+        Path(__file__).parent.parent,
+        "cli/datasets/preprocessor/grdecl_keywords.json",
+    )
+    with open(keywords_path) as file:
+        keywords = json.load(file)
+
+    filenames = map(lambda x: x.get("filename"), keywords)
+    filenames = [*filenames, "runspec.p", "well_spec.p"]
+
+    path = f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing-cp"
+
+    are_all_present = True
+    for filename in filenames:
+        try:
+            file = next(Path(path).rglob(f"{filename}"))
+        except StopIteration:
+            are_all_present = False
+    shutil.rmtree(
+        f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing-cp"
+    )
+    assert are_all_present

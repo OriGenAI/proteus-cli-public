@@ -18,9 +18,10 @@ class TqdmUpWithReport(tqdm):
         super().__exit__(*args)
 
     def update_with_report(self, n=1):
+        status = "completed" if self.total == (self.n + n) else "processing"
         reporting.send(
             "uploading",
-            status="processing",
+            status=status,
             progress=int((self.n + n) * 100 / self.total),
             number=self.n + n,
             total=self.total,

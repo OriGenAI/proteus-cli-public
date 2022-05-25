@@ -1,4 +1,5 @@
 from itertools import chain
+from proteus import api
 
 
 class DefaultConfig(object):
@@ -20,6 +21,13 @@ class DefaultConfig(object):
 
     def _get_endpoint(self):
         return self.endpoint
+
+    def _get_mapping(self):
+        case_url = self.cases[0].get("case_url")
+        dataset_url = case_url.split("/cases")[0]
+        dataset = api.get(dataset_url)
+        config = dataset.json().get("dataset").get("sampling").get("config")
+        return config.get("cnn_pca_design").get("keywords")
 
     def _set_endpoint(self, endpoint):
         self.endpoint = endpoint

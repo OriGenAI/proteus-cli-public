@@ -2,6 +2,7 @@ import h5py
 import os
 import pickle
 import json
+import cwrap
 
 from ecl.grid import EclGrid
 from ecl.eclfile import EclInitFile, EclFile
@@ -9,11 +10,14 @@ from ecl.eclfile import EclInitFile, EclFile
 from preprocessing.modular.egrid import preprocess as preprocess_egrid
 from preprocessing.modular.init import preprocess as preprocess_init
 from preprocessing.modular.x import preprocess as preprocess_x
+
+from preprocessing.modular.grdecl import preprocess as preprocess_grdecl
+from preprocessing.modular.dat import preprocess as preprocess_dat
 from preprocessing.modular.data import WellSpecsProcessor
 from preprocessing.modular.s import WellSummaryProcessor
 from preprocessing.deck.runspec import preprocess as preprocess_runspec
 from preprocessing.deck.section import find_section
-from .utils import upload_file, find_ext, get_case_info
+from .utils import upload_file, find_ext, find_file, get_case_info
 from proteus import logger
 
 DEFAULT_COMMON_PROPERTIES = {"max_pressure": -100000, "min_pressure": 100000}
@@ -171,22 +175,105 @@ def export_init_properties(
     endpoint_scaling = get_endpoint()
     props = preprocess_init(init, endpoint_scaling)
 
-    init_keywords = []
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    with open(os.path.join(dir_path, "init_keywords.json")) as file:
-        init_keywords = json.load(file)
-
-    for init_keyword in init_keywords:
-        keywords = {}
-        for keyword in init_keyword.get("keywords"):
-            keywords[keyword] = props.get(keyword, [])
-
-        init_dest_loc = os.path.join(
-            case_dest_loc, init_keyword.get("filename")
-        )
-        write_h5_from_dict(keywords, init_dest_loc)
+    init_dest_loc = _write_props(props, case_dest_loc, "init_keywords.json")
 
     return init_src_loc, init_dest_loc, None
+
+
+def export_litho(
+    case_loc,
+    case_dest_loc,
+    input_src,
+    source_url,
+    cases_url,
+    get_mapping,
+    *args,
+):
+    grdecl_src_loc = find_ext(case_loc=case_loc, ext="GRDECL")
+    mapping = filter(lambda x: x["name"] == "LITHO", get_mapping())
+
+    with cwrap.open(str(grdecl_src_loc), "r") as f:
+        props = preprocess_grdecl(f, mapping)
+
+    grdecl_dest_loc = _write_props(
+        props, case_dest_loc, "grdecl_keywords.json"
+    )
+    return grdecl_src_loc, grdecl_dest_loc, None
+
+
+def export_actnum(
+    case_loc,
+    case_dest_loc,
+    input_src,
+    source_url,
+    cases_url,
+    get_mapping,
+    *args,
+):
+    grdecl_src_loc = find_ext(case_loc=case_loc, ext="GRDECL")
+    mapping = filter(lambda x: x["name"] == "ACTNUM", get_mapping())
+
+    with cwrap.open(str(grdecl_src_loc), "r") as f:
+        props = preprocess_grdecl(f, mapping)
+
+    dest_loc = _write_props(props, case_dest_loc, "grdecl_keywords.json")
+    return grdecl_src_loc, dest_loc, None
+
+
+def _extract_dat_mappings(mapping):
+    return [
+        *filter(
+            lambda f: f["name"].lower() not in ["litho", "actnum"], mapping
+        )
+    ]
+
+
+def export_dat_properties(
+    case_loc,
+    case_dest_loc,
+    input_src,
+    source_url,
+    cases_url,
+    get_mapping,
+    *args,
+):
+    dat_src_locs = [
+        str(find_file(case_loc, src.split("/")[-1])) for src in input_src
+    ]
+
+    mapping = _extract_dat_mappings(get_mapping())
+
+    dat_files = {}
+    for keyword in mapping:
+        file = next(
+            filter(lambda f: keyword["source"].lower() in f, dat_src_locs),
+            None,
+        )
+        if file:
+            dat_files[keyword["source"].lower()] = file
+
+    props = preprocess_dat(dat_files, mapping)
+
+    dest_loc = _write_props(props, case_dest_loc, "grdecl_keywords.json")
+    return dat_src_locs, dest_loc, None
+
+
+def _write_props(props, dest_loc, keywords_file):
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    with open(os.path.join(dir_path, keywords_file)) as file:
+        file_keywords = json.load(file)
+
+    for f_keyword in file_keywords:
+        keywords = {
+            keyword: props.get(keyword)
+            for keyword in f_keyword.get("keywords")
+            if props.get(keyword) is not None
+        }
+        if keywords:
+            file_dest_loc = os.path.join(dest_loc, f_keyword.get("filename"))
+            write_h5_from_dict(keywords, file_dest_loc)
+
+    return dest_loc
 
 
 def export_wellspec(case_loc, case_dest_loc, _, source_url, *args):

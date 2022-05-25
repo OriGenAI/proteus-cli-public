@@ -115,6 +115,18 @@ def find_ext(case_loc, ext):
     return next(Path(case_loc).rglob(f"*.{ext}"))
 
 
+def find_file(case_loc, name):
+    """
+    Finds if file exists in the directory
+    Args:
+        case_loc (string): Path of the folder
+        name (string): File name plus extension
+
+    Returns: file_path (string): Path of the file if exists
+    """
+    return next(Path(case_loc).rglob(name))
+
+
 def wait_until_file_is_downloaded(file_path, period=5, timeout=500):
     """
     Waits until the file is completely downloaded

@@ -1,0 +1,32 @@
+[
+    {
+        "filename": "litho.h5",
+        "keywords": [
+            "litho"
+        ]
+    },
+    {
+        "filename": "permx.h5",
+        "keywords": [
+            "permx"
+        ]
+    },
+    {
+        "filename": "actnum.h5",
+        "keywords": [
+            "actnum"
+        ]
+    },
+    {
+        "filename": "poro.h5",
+        "keywords": [
+            "poro"
+        ]
+    },
+    {
+        "filename": "v-clai.h5",
+        "keywords": [
+            "v-clai"
+        ]
+    }
+]
