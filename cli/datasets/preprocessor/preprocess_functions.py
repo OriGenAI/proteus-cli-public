@@ -175,9 +175,18 @@ def export_init_properties(
     endpoint_scaling = get_endpoint()
     props = preprocess_init(init, endpoint_scaling)
 
-    init_dest_loc = _write_props(props, case_dest_loc, "init_keywords.json")
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    with open(os.path.join(dir_path, "init_keywords.json")) as file:
+        init_keywords = json.load(file)
 
-    return init_src_loc, init_dest_loc, None
+    for init_keyword in init_keywords:
+        keywords = {k: props.get(k, []) for k in init_keyword.get("keywords")}
+        file_dest_loc = os.path.join(
+            case_dest_loc, init_keyword.get("filename")
+        )
+        write_h5_from_dict(keywords, file_dest_loc)
+
+    return init_src_loc, case_dest_loc, None
 
 
 def export_litho(
@@ -195,10 +204,8 @@ def export_litho(
     with cwrap.open(str(grdecl_src_loc), "r") as f:
         props = preprocess_grdecl(f, mapping)
 
-    grdecl_dest_loc = _write_props(
-        props, case_dest_loc, "grdecl_keywords.json"
-    )
-    return grdecl_src_loc, grdecl_dest_loc, None
+    _write_keywords_to_h5(props, case_dest_loc)
+    return grdecl_src_loc, case_dest_loc, None
 
 
 def export_actnum(
@@ -216,8 +223,8 @@ def export_actnum(
     with cwrap.open(str(grdecl_src_loc), "r") as f:
         props = preprocess_grdecl(f, mapping)
 
-    dest_loc = _write_props(props, case_dest_loc, "grdecl_keywords.json")
-    return grdecl_src_loc, dest_loc, None
+    _write_keywords_to_h5(props, case_dest_loc)
+    return grdecl_src_loc, case_dest_loc, None
 
 
 def _extract_dat_mappings(mapping):
@@ -254,26 +261,15 @@ def export_dat_properties(
 
     props = preprocess_dat(dat_files, mapping)
 
-    dest_loc = _write_props(props, case_dest_loc, "grdecl_keywords.json")
-    return dat_src_locs, dest_loc, None
+    _write_keywords_to_h5(props, case_dest_loc)
+
+    return dat_src_locs, case_dest_loc, None
 
 
-def _write_props(props, dest_loc, keywords_file):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    with open(os.path.join(dir_path, keywords_file)) as file:
-        file_keywords = json.load(file)
-
-    for f_keyword in file_keywords:
-        keywords = {
-            keyword: props.get(keyword)
-            for keyword in f_keyword.get("keywords")
-            if props.get(keyword) is not None
-        }
-        if keywords:
-            file_dest_loc = os.path.join(dest_loc, f_keyword.get("filename"))
-            write_h5_from_dict(keywords, file_dest_loc)
-
-    return dest_loc
+def _write_keywords_to_h5(props, dest_loc):
+    for k, v in props.items():
+        file_dest_loc = os.path.join(dest_loc, f"{k}.h5")
+        write_h5_from_dict({k: v}, file_dest_loc)
 
 
 def export_wellspec(case_loc, case_dest_loc, _, source_url, *args):
