@@ -1,5 +1,6 @@
 import click
 from proteus import runs_authentified, logger
+from cli.config import config
 from api.decorators import may_fail_on_http_error
 
 
