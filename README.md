@@ -116,7 +116,18 @@ proteus datasets upload /home/your-user/your-data 02135a2a-7f73-4f4a-a5ef-843be8
 
 Process can be run again if failed only missing files will be uploaded
 
-### from S3
+### from Azure
+
+Once you get an Azure URI that contains the dataset input files, and choosen a dataset UUID to upload the source into simply run:
+
+```
+proteus datasets upload https://whatever-uri 02135a2a-7f73-4f4a-a5ef-843be8a8cf82
+```
+
+Process can be run again if failed only missing files will be uploaded
+
+
+### from S3 (deprecated)
 
 Once you get an S3 URI that contains the cases groups, and choosen a dataset UUID to upload the source into simply run:
 
