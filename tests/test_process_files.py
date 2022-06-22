@@ -1,5 +1,4 @@
 import os
-import json
 import pytest
 import shutil
 from pathlib import Path
@@ -281,22 +280,22 @@ def bucket_mock_called(bucket_mock):
 
 @then("the preprocessed files are created")
 def files_created():
-    keywords_path = os.path.join(
-        Path(__file__).parent.parent,
-        "cli/datasets/preprocessor/grdecl_keywords.json",
-    )
-    with open(keywords_path) as file:
-        keywords = json.load(file)
-
-    filenames = map(lambda x: x.get("filename"), keywords)
-    filenames = [*filenames, "runspec.p", "well_spec.p"]
+    filenames = [
+        "litho.h5",
+        "permx.h5",
+        "actnum.h5",
+        "poro.h5",
+        "v-clai.h5",
+        "runspec.p",
+        "well_spec.p",
+    ]
 
     path = f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing-cp"
 
     are_all_present = True
     for filename in filenames:
         try:
-            file = next(Path(path).rglob(f"{filename}"))
+            next(Path(path).rglob(f"{filename}"))
         except StopIteration:
             are_all_present = False
     shutil.rmtree(
