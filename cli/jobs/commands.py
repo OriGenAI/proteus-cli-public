@@ -18,6 +18,8 @@ def jobs():
 @click.argument(
     "job_type", type=click.Choice(["samplings", "models", "simulations"])
 )
+@click.option("--user", prompt=True, default=config.USERNAME)
+@click.option("--password", prompt=True, default=config.PASSWORD, hide_input=True)
 @may_fail_on_http_error(exit_code=1)
 @runs_authentified
 def list(job_type, *args):
@@ -30,6 +32,8 @@ def list(job_type, *args):
 
 @jobs.command()
 @click.argument("job_uuid")
+@click.option("--user", prompt=True, default=config.USERNAME)
+@click.option("--password", prompt=True, default=config.PASSWORD, hide_input=True)
 @may_fail_on_http_error(exit_code=1)
 @runs_authentified
 def status(job_uuid):

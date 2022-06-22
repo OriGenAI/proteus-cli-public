@@ -13,6 +13,8 @@ def datasets():
 
 @datasets.command()
 @click.option("--workers", prompt=config.PROMPT, default=config.WORKERS_COUNT)
+@click.option("--user", prompt=True, default=config.USERNAME)
+@click.option("--password", prompt=True, default=config.PASSWORD, hide_input=True)
 @click.argument("bucket")
 @click.argument("dataset_uuid")
 @may_fail_on_http_error(exit_code=1)

@@ -16,6 +16,8 @@ def debugger():
 @click.option(
     "--iterations", prompt=config.PROMPT, default=config.STRESS_ITERATIONS
 )
+@click.option("--user", prompt=True, default=config.USERNAME)
+@click.option("--password", prompt=True, default=config.PASSWORD, hide_input=True)
 @click.argument("bucket")
 @click.argument("parallel_method", default="threads")
 @may_fail_on_http_error(exit_code=1)
@@ -46,6 +48,8 @@ def x_stress_test(
 @click.option(
     "--iterations", prompt=config.PROMPT, default=config.STRESS_ITERATIONS
 )
+@click.option("--user", prompt=True, default=config.USERNAME)
+@click.option("--password", prompt=True, default=config.PASSWORD, hide_input=True)
 @click.argument("bucket")
 @click.argument("parallel_method", default="threads")
 @may_fail_on_http_error(exit_code=1)
