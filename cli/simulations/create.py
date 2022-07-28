@@ -85,9 +85,7 @@ def upload_file_to_batch(url, source_path, filepath):
         modification_ts = os.path.getmtime(source_path)
         modified = datetime.fromtimestamp(modification_ts, tz.tzlocal())
         with open(source_path, "rb") as source:
-            response = api.post_file(
-                url, filepath, content=source, modified=modified
-            )
+            response = api.post_file(url, filepath, content=source, modified=modified)
             response_json = response.json()
             return response_json.get("case")
     except FileNotFoundError:
@@ -135,16 +133,12 @@ def provide_batch_dependencies(batch_url, dependencies, source_folder):
     dependencies_progress = tqdm(dependencies, leave=False)
     missing_count = 0
     for filepath in dependencies_progress:
-        dependencies_progress.set_description(
-            f"uploading dependency {filepath}"
-        )
+        dependencies_progress.set_description(f"uploading dependency {filepath}")
         source_path = f"{source_folder}/{filepath}"
         provided = upload_file_to_batch(batch_url, source_path, filepath)
         if not provided:
             missing_count += 1
-            dependencies_progress.set_description(
-                f"cant provide any {filepath}"
-            )
+            dependencies_progress.set_description(f"cant provide any {filepath}")
             dependencies_progress.set_postfix({"missing": missing_count})
 
 
@@ -205,22 +199,14 @@ def upload_to_batch(source_folder, batch_uuid, reupload):
     for source_path in datafiles_progress:
         # Upload the .DATA file
         filepath, has_case_folder = parse_path(source_folder, source_path)
-        datafiles_progress.set_description(
-            f"processing DATA {filepath} with OPM flow."
-        )
+        datafiles_progress.set_description(f"processing DATA {filepath} with OPM flow.")
 
         # Upload accesories to .DATA file
         for source_inits_filepath in run_opm_flow_on(source_path):
             # provide_balanced_state(batch_url, source_path, filepath):
-            target_inits_filepath, _has_case_folder = parse_path(
-                source_folder, source_inits_filepath
-            )
-            datafiles_progress.set_description(
-                f"uploading inits {source_inits_filepath}"
-            )
-            upload_file_to_batch(
-                batch_url, source_inits_filepath, target_inits_filepath
-            )
+            target_inits_filepath, _has_case_folder = parse_path(source_folder, source_inits_filepath)
+            datafiles_progress.set_description(f"uploading inits {source_inits_filepath}")
+            upload_file_to_batch(batch_url, source_inits_filepath, target_inits_filepath)
         datafiles_progress.set_description(f"uploading DATA {filepath}")
         upload_file_to_batch(batch_url, source_path, filepath)
 

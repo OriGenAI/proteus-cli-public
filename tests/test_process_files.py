@@ -14,10 +14,7 @@ def cases():
         {
             "group": "training",
             "number": 1,
-            "case_url": (
-                "/api/v1/datasets/"
-                "3f1b7126-95e4-4db0-b303-0ca476c28cb1/cases/validation/2"
-            ),
+            "case_url": ("/api/v1/datasets/" "3f1b7126-95e4-4db0-b303-0ca476c28cb1/cases/validation/2"),
             "root": 1,
             "initialStep": 1,
             "finalStep": 10,
@@ -30,10 +27,7 @@ def cases_without_split():
     return [
         {
             "number": 1,
-            "case_url": (
-                "/api/v1/datasets/"
-                "3f1b7126-95e4-4db0-b303-0ca476c28cb1/cases/SIMULATION_1"
-            ),
+            "case_url": ("/api/v1/datasets/" "3f1b7126-95e4-4db0-b303-0ca476c28cb1/cases/SIMULATION_1"),
             "root": "cases/SIMULATION_1",
             "initialStep": 1,
             "finalStep": 10,
@@ -88,10 +82,7 @@ def refresh_mock(mocker):
 
 @given("a keywords mock", target_fixture="keywords_mock")
 def keywords_mock(mocker):
-    mock = mocker.patch(
-        "cli.datasets.preprocessor.config."
-        "defaultConfig.DefaultConfig._get_mapping"
-    )
+    mock = mocker.patch("cli.datasets.preprocessor.config." "defaultConfig.DefaultConfig._get_mapping")
     mock.return_value = [
         {"name": "ACTNUM", "source": "BOOLEAN"},
         {"name": "LITHO", "source": "LITHO"},
@@ -103,9 +94,7 @@ def keywords_mock(mocker):
 
 
 @given("setted up mocks")
-def set_up_mocks(
-    process_mock, keywords_mock, tqdm_mock, description_mock, refresh_mock
-):
+def set_up_mocks(process_mock, keywords_mock, tqdm_mock, description_mock, refresh_mock):
     process_mock.return_value = True
     tqdm_mock.return_value = True
     description_mock.return_value = True
@@ -118,47 +107,26 @@ def test_process_files():
 
 
 @when(parsers.parse("I process files with workflow {workflow}"))
-def process_file_uploads(
-    source_url, bucket_url, cases_url, progress, cases, workers, workflow
-):
-    process_files(
-        source_url, bucket_url, cases_url, progress, cases, workers, workflow
-    )
+def process_file_uploads(source_url, bucket_url, cases_url, progress, cases, workers, workflow):
+    process_files(source_url, bucket_url, cases_url, progress, cases, workers, workflow)
 
 
-@then(
-    parsers.parse(
-        "Is it {called_process_mock} that I called the process_step method"
-    )
-)
+@then(parsers.parse("Is it {called_process_mock} that I called the process_step method"))
 def process_called(process_mock, called_process_mock):
     assert process_mock.called == (called_process_mock == "True")
 
 
-@then(
-    parsers.parse(
-        "Is it {called_tqdm_mock} that I called the update_with_report method"
-    )
-)
+@then(parsers.parse("Is it {called_tqdm_mock} that I called the update_with_report method"))
 def tqdm_called(tqdm_mock, called_tqdm_mock):
     assert tqdm_mock.called == (called_tqdm_mock == "True")
 
 
-@then(
-    parsers.parse(
-        "Is it {called_description_mock} that"
-        + " I called the set_description method"
-    )
-)
+@then(parsers.parse("Is it {called_description_mock} that" + " I called the set_description method"))
 def description_called(description_mock, called_description_mock):
     assert description_mock.called == (called_description_mock == "True")
 
 
-@then(
-    parsers.parse(
-        "Is it {called_refresh_mock} that I called the refresh method"
-    )
-)
+@then(parsers.parse("Is it {called_refresh_mock} that I called the refresh method"))
 def refresh_called(refresh_mock, called_refresh_mock):
     assert refresh_mock.called == (called_refresh_mock == "True")
 
@@ -172,9 +140,7 @@ def test_process_files_failing_on_not_found_workflow():
 
 
 @then(parsers.parse("It throws a KeyError when workflow is {workflow}"))
-def process_files_with_not_found_workflow(
-    source_url, bucket_url, cases_url, progress, cases, workers, workflow
-):
+def process_files_with_not_found_workflow(source_url, bucket_url, cases_url, progress, cases, workers, workflow):
     with pytest.raises(KeyError):
         process_files(
             source_url,
@@ -189,9 +155,7 @@ def process_files_with_not_found_workflow(
 
 @given("a bucket mock", target_fixture="bucket_mock")
 def bucket_mock(mocker):
-    return mocker.patch(
-        "cli.datasets.preprocessor.process_step.files_exist_in_bucket"
-    )
+    return mocker.patch("cli.datasets.preprocessor.process_step.files_exist_in_bucket")
 
 
 @given("a download mock", target_fixture="download_mock")
@@ -241,9 +205,7 @@ def set_up_mocks_cnn(
         f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing-cp",
     )
     bucket_mock.return_value = False
-    tmp_mock.return_value = (
-        f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing-cp"
-    )
+    tmp_mock.return_value = f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing-cp"
     download_mock.return_value = True
     tqdm_mock.return_value = True
     description_mock.return_value = True
@@ -259,9 +221,7 @@ def test_process_cnnpca_files():
 
 
 @when("I process cnn-pca files")
-def process_cnnpca_files(
-    source_url, bucket_url, cases_url, progress, cases_without_split, workers
-):
+def process_cnnpca_files(source_url, bucket_url, cases_url, progress, cases_without_split, workers):
     process_files(
         source_url,
         bucket_url,
@@ -298,7 +258,5 @@ def files_created():
             next(Path(path).rglob(f"{filename}"))
         except StopIteration:
             are_all_present = False
-    shutil.rmtree(
-        f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing-cp"
-    )
+    shutil.rmtree(f"{os.path.dirname(__file__)}/files/cnn-pca-preprocessing-cp")
     assert are_all_present

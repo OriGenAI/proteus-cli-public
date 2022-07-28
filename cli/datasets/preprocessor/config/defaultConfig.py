@@ -85,8 +85,6 @@ class DefaultConfig(object):
     @classmethod
     def number_of_steps(cls):
         properties = cls.properties(cls)
-        method_list = [
-            step for step in properties if callable(getattr(cls, step))
-        ]
+        method_list = [step for step in properties if callable(getattr(cls, step))]
 
         return len(method_list)

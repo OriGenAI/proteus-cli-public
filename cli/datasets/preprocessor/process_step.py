@@ -10,9 +10,7 @@ from .utils import pluck, upload_file, download_file
 def files_exist_in_bucket(outputs, bucket_url):
     result = False
     for output in outputs:
-        response = api.get(
-            bucket_url, headers={}, stream=False, contains=output
-        )
+        response = api.get(bucket_url, headers={}, stream=False, contains=output)
         files = response.json().get("results")
         result = len(files) > 0
 
@@ -51,9 +49,7 @@ def process_step(step, tmpdirname, source_url, bucket_url, cases_url):
             path_name = os.path.join(tmpdirname, "cases", f"SIMULATION_{case}")
         else:
             path_name = (
-                os.path.join(tmpdirname, "cases", f"{split}/SIMULATION_{case}")
-                if (split and case)
-                else tmpdirname
+                os.path.join(tmpdirname, "cases", f"{split}/SIMULATION_{case}") if (split and case) else tmpdirname
             )
         try:
             os.makedirs(path_name)
@@ -62,9 +58,7 @@ def process_step(step, tmpdirname, source_url, bucket_url, cases_url):
 
         # Download the required files. Keep the file if necessary
         for input in inputs:
-            download_file(
-                f"/{input}", os.path.join(tmpdirname, input), source_url
-            )
+            download_file(f"/{input}", os.path.join(tmpdirname, input), source_url)
 
         # Process the files
         func = getattr(preprocess_functions, preprocessing_function_name)
@@ -85,9 +79,7 @@ def process_step(step, tmpdirname, source_url, bucket_url, cases_url):
 
         # Post-Process the files
         if post_processing_function_name:
-            post_func = getattr(
-                preprocess_functions, post_processing_function_name
-            )
+            post_func = getattr(preprocess_functions, post_processing_function_name)
             post_func(
                 os.path.join(tmpdirname, "cases"),
                 output,

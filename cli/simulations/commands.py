@@ -50,22 +50,15 @@ def create(
 
     try:
         if batch_uuid is None:
-            assert (
-                model_uuid is not None and batch_name is not None
-            ), CREATE_USAGE_ERROR
+            assert model_uuid is not None and batch_name is not None, CREATE_USAGE_ERROR
 
-            assert (
-                len(batch_name) > 0
-            ), "batch_name can't be empty to create a new batch"
+            assert len(batch_name) > 0, "batch_name can't be empty to create a new batch"
 
             batch_uuid = create_batch(
                 model_uuid=model_uuid,
                 batch_name=batch_name,
             )
-            logger.info(
-                "Created a new batch. to resume use "
-                f'--batch_uuid="{batch_uuid}"'
-            )
+            logger.info("Created a new batch. to resume use " f'--batch_uuid="{batch_uuid}"')
         set_batch_model_and_typed_status(batch_uuid, model_uuid)
         logger.info("Simulation batch assigned to model")
 

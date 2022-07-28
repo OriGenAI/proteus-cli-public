@@ -13,9 +13,7 @@ def debugger():
 
 @debugger.command()
 @click.option("--workers", prompt=config.PROMPT, default=config.WORKERS_COUNT)
-@click.option(
-    "--iterations", prompt=config.PROMPT, default=config.STRESS_ITERATIONS
-)
+@click.option("--iterations", prompt=config.PROMPT, default=config.STRESS_ITERATIONS)
 @click.option("--user", prompt=True, default=config.USERNAME)
 @click.option("--password", prompt=True, default=config.PASSWORD, hide_input=True)
 @click.argument("bucket")
@@ -45,9 +43,7 @@ def x_stress_test(
 
 @debugger.command()
 @click.option("--workers", prompt=config.PROMPT, default=config.WORKERS_COUNT)
-@click.option(
-    "--iterations", prompt=config.PROMPT, default=config.STRESS_ITERATIONS
-)
+@click.option("--iterations", prompt=config.PROMPT, default=config.STRESS_ITERATIONS)
 @click.option("--user", prompt=True, default=config.USERNAME)
 @click.option("--password", prompt=True, default=config.PASSWORD, hide_input=True)
 @click.argument("bucket")

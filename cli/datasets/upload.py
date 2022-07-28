@@ -29,13 +29,10 @@ PROTEUS_HOST, WORKERS_COUNT, DATASET_VERSION = (
     config.DATASET_VERSION,
 )
 
-_sheet_extension = re.compile(
-    r".*(?P<extension>DATA|EGRID|INIT|SMSPEC|GRDECL)$"
-)
+_sheet_extension = re.compile(r".*(?P<extension>DATA|EGRID|INIT|SMSPEC|GRDECL)$")
 
 case_re = re.compile(
-    r"(?P<root>.*/(?P<group>validation|training|testing)"
-    r"/SIMULATION_(?P<number>\d+))/(?P<content>.*)"
+    r"(?P<root>.*/(?P<group>validation|training|testing)" r"/SIMULATION_(?P<number>\d+))/(?P<content>.*)"
 )
 
 _timestep = re.compile(r".*(?P<extension>X\d{4}|S\d{4})$")
@@ -53,9 +50,7 @@ def set_dataset_version(dataset_uuid):
 
 
 def get_total_steps(cases, workflow):
-    training_cases = [
-        *filter(lambda c: c["group"] == "training" and c["number"] == 1, cases)
-    ]
+    training_cases = [*filter(lambda c: c["group"] == "training" and c["number"] == 1, cases)]
     if not training_cases and cases:
         first_training_case = cases[0]
     else:
@@ -67,13 +62,9 @@ def get_total_steps(cases, workflow):
     common_step = CommonConfigMapper[workflow].number_of_steps()
     cases_steps = CaseConfigMapper[workflow].number_of_steps()
     timesteps_steps = (
-        StepConfigMapper[workflow].number_of_steps() - 1
-        if StepConfigMapper[workflow].number_of_steps() > 0
-        else 0
+        StepConfigMapper[workflow].number_of_steps() - 1 if StepConfigMapper[workflow].number_of_steps() > 0 else 0
     )
-    return common_step + (
-        cases_steps + timesteps_steps * (final_step - initial_step + 1)
-    ) * len(cases)
+    return common_step + (cases_steps + timesteps_steps * (final_step - initial_step + 1)) * len(cases)
 
 
 def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
@@ -131,9 +122,7 @@ def get_source(source_uri):
             return candidate(source_uri)
 
 
-def load_from(
-    case_by_group_and_number, source_uri, progress, workers=WORKERS_COUNT
-):
+def load_from(case_by_group_and_number, source_uri, progress, workers=WORKERS_COUNT):
     skipped_count = 0
     processed = 0
     progress.update(processed)
@@ -152,9 +141,7 @@ def load_from(
 
 
 @may_insist_up_to(5, delay_in_secs=5)
-def parallelized_upload(
-    item_and_path, case_by_group_and_number, processed, skipped_count
-):
+def parallelized_upload(item_and_path, case_by_group_and_number, processed, skipped_count):
     item, path, reference = item_and_path
     matchs_as_case = case_re.match(path)
     terms = matchs_as_case.groupdict() if matchs_as_case is not None else {}
@@ -166,9 +153,7 @@ def parallelized_upload(
         matchs = _timestep.match(content) or _sheet_extension.match(content)
         if matchs:
             if is_pending(matchs, target):
-                done, skipped = send_as(
-                    target, item, reference, **terms, **matchs.groupdict()
-                )
+                done, skipped = send_as(target, item, reference, **terms, **matchs.groupdict())
                 processed += done
                 skipped_count += skipped
             else:
@@ -188,18 +173,14 @@ def is_pending(match, target):
     return False
 
 
-def send_as(
-    target, source, reference, group=None, number=None, extension=None, **other
-):
+def send_as(target, source, reference, group=None, number=None, extension=None, **other):
     target_url = target.get("case_url")
     source_path, file_size, modified, stream = source.open(reference)
     done = 0
     skipped = 0
     transfer = None
     try:
-        with tqdm(
-            total=file_size, unit="B", unit_scale=True, unit_divisor=1024
-        ) as progress:
+        with tqdm(total=file_size, unit="B", unit_scale=True, unit_divisor=1024) as progress:
             progress.set_description(f"uploading {source_path}")
             wrapped_file = CallbackIOWrapper(progress.update, stream, "read")
             transfer = api.post_file(
@@ -243,9 +224,7 @@ def process_files(
 
     # Generate all the files-pairs with a generator
     sortedCases = sorted(cases, key=lambda d: d["root"])
-    config = Config(
-        cases=sortedCases, common_data=common_content, workflow=workflow
-    )
+    config = Config(cases=sortedCases, common_data=common_content, workflow=workflow)
     steps = config.return_iterator()
 
     # Create temporary folder

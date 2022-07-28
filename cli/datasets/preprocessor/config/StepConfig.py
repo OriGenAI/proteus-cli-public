@@ -56,10 +56,7 @@ class HMStepConfig(DefaultConfig):
 
         def step_terms(case, step):
             return {
-                "input": [
-                    f'{case["root"]}/'
-                    f'SIMULATION_{case["number"]}.X{str(step).zfill(4)}'
-                ],
+                "input": [f'{case["root"]}/' f'SIMULATION_{case["number"]}.X{str(step).zfill(4)}'],
                 "output": [
                     f'{case["root"]}/X{str(step).zfill(4)}_pressure.h5',
                     f'{case["root"]}/X{str(step).zfill(4)}_swat.h5',
@@ -75,10 +72,7 @@ class HMStepConfig(DefaultConfig):
             }
 
         for case in self.cases:
-            steps = [
-                step_terms(case, step)
-                for step in range(case["initialStep"], case["finalStep"])
-            ]
+            steps = [step_terms(case, step) for step in range(case["initialStep"], case["finalStep"])]
             result.extend(steps)
 
         return iter(result)

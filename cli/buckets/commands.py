@@ -25,14 +25,8 @@ def buckets():
 @click.option("--password", prompt=True, default=config.PASSWORD, hide_input=True)
 @may_fail_on_http_error(exit_code=1)
 @runs_authentified
-def download(
-    bucket_uuid, folder, workers=WORKERS_COUNT, replace=False, **search
-):
+def download(bucket_uuid, folder, workers=WORKERS_COUNT, replace=False, **search):
     """downloads a bucket's content to de specified folder"""
     from .download import download as download_bucket
 
-    click.echo(
-        download_bucket(
-            bucket_uuid, folder, workers=workers, replace=replace, **search
-        )
-    )
+    click.echo(download_bucket(bucket_uuid, folder, workers=workers, replace=replace, **search))

@@ -33,14 +33,9 @@ def keyword_check(
         print(f"This process will use {workers} simultaneous threads.")
         start = time.time()
         items = list_bucket_files(bucket, file_ext, iterations=iterations)
-        count_success = download_files(
-            items, parallel_method, workers=workers, iterations=iterations
-        )
+        count_success = download_files(items, parallel_method, workers=workers, iterations=iterations)
         end = time.time()
-        print(
-            f"Succesful downloads: {count_success} of {iterations}, "
-            + f"took: {end - start:.2f} seconds"
-        )
+        print(f"Succesful downloads: {count_success} of {iterations}, " + f"took: {end - start:.2f} seconds")
         return "Done"
     except KeyboardInterrupt:
         pass
@@ -88,14 +83,9 @@ def list_bucket_files(bucket_uuid, file_ext, iterations=10):
     os.mkdir(FILES_PATH)
 
     search = {"contains": file_ext}
-    response = api.get(
-        f"/api/v1/buckets/{bucket_uuid}/files", **search, per_page=1
-    )
+    response = api.get(f"/api/v1/buckets/{bucket_uuid}/files", **search, per_page=1)
 
-    return [
-        {"num": i, **response.json().get("results")[0]}
-        for i in range(iterations)
-    ]
+    return [{"num": i, **response.json().get("results")[0]} for i in range(iterations)]
 
 
 def download_files(items, parallel_method, workers=3, iterations=10):

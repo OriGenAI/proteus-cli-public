@@ -105,10 +105,6 @@ def list_job_status(uuid):
             url = prev_
         data = api_load(url)
         page, pages = data["page"], data["pages"]
-        print(
-            "\n"
-            f"Listing job status page {page} of {pages}"
-            f", {COMMANDS_TEXT}"
-        )
+        print("\n" f"Listing job status page {page} of {pages}" f", {COMMANDS_TEXT}")
         view(data, render_row=job_status_as_row, headers=job_status_headers)
         command = receive_command()

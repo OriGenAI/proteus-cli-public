@@ -24,9 +24,7 @@ def report_mock(mocker):
     report_mock.return_value = True
 
     cases_mock = mocker.patch("cli.datasets.upload.get_cases")
-    cases_mock.return_value = [
-        {"root": "", "group": 1, "number": 2, "initialStep": 1, "finalStep": 2}
-    ]
+    cases_mock.return_value = [{"root": "", "group": 1, "number": 2, "initialStep": 1, "finalStep": 2}]
     total_steps_mock = mocker.patch("cli.datasets.upload.get_total_steps")
     total_steps_mock.return_value = 1
 
@@ -34,12 +32,9 @@ def report_mock(mocker):
     dataset_mock.return_value = Response()
     dataset_mock.return_value.status_code = 200
     dataset_mock.return_value._content = (
-        b'{"dataset": {"bucket_url": "",'
-        b'"cases_url": "","workflow": {"name": "hm"}}}'
+        b'{"dataset": {"bucket_url": "",' b'"cases_url": "","workflow": {"name": "hm"}}}'
     )
-    preprocess_mock = mocker.patch(
-        "cli.datasets.preprocessor.process_step.process_step"
-    )
+    preprocess_mock = mocker.patch("cli.datasets.preprocessor.process_step.process_step")
     preprocess_mock.return_value = True
 
     return report_mock
