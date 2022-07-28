@@ -1,0 +1,38 @@
+[
+  {
+    "filename": "depth.h5",
+    "keywords": ["depth"]
+  },
+  {
+    "filename": "perm.h5",
+    "keywords": ["permx", "permy", "permz"]
+  },
+  {
+    "filename": "tran.h5",
+    "keywords": ["tranx", "trany", "tranz"]
+  },
+  {
+    "filename": "poro.h5",
+    "keywords": ["poro"]
+  },
+  {
+    "filename": "porv.h5",
+    "keywords": ["porv"]
+  },
+  {
+    "filename": "ntg.h5",
+    "keywords": ["ntg"]
+  },
+  {
+    "filename": "non-orto_dims.h5",
+    "keywords": ["dx", "dy", "dz"]
+  },
+  {
+    "filename": "nums.h5",
+    "keywords": ["satnum", "pvtnum", "eqlnum", "rocknum"]
+  },
+  {
+    "filename": "enpoint_scaling.h5",
+    "keywords": ["swl", "sowcr", "swatinit"]
+  }
+]
