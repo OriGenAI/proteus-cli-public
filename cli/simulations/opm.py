@@ -62,11 +62,7 @@ def discard_till_error(data_str):
 
 def cause_of_error(process):
     outs, errs = process.communicate()
-    report = (
-        errs.decode("utf-8")
-        if len(errs) > 0
-        else discard_till_error(outs.decode("utf-8"))
-    )
+    report = errs.decode("utf-8") if len(errs) > 0 else discard_till_error(outs.decode("utf-8"))
     return report
 
 
@@ -137,20 +133,12 @@ class OPMSupervisedExecution:
 
 
 def run_opm_flow_on(data_filepath, cacheable=False):
-    assert exists_file(
-        data_filepath
-    ), f"DATA file not found at {data_filepath}"
+    assert exists_file(data_filepath), f"DATA file not found at {data_filepath}"
     grid_filepath = grid_of_datafile(data_filepath)
-    assert exists_file(
-        grid_filepath
-    ), f"GRID file not found at {grid_filepath}"
+    assert exists_file(grid_filepath), f"GRID file not found at {grid_filepath}"
     init_filepath = init_of_datafile(data_filepath)
     balance_state_filepath = balance_state_of_datafile(data_filepath)
-    if (
-        cacheable
-        and exists_file(init_filepath)
-        and exists_file(balance_state_filepath)
-    ):
+    if cacheable and exists_file(init_filepath) and exists_file(balance_state_filepath):
         return [balance_state_filepath, init_filepath, grid_filepath]
     process = subprocess.Popen(
         [
@@ -169,14 +157,9 @@ def run_opm_flow_on(data_filepath, cacheable=False):
     with OPMSupervisedExecution.on(ctx, process, breakpoint) as execution:
         exit_code = execution._exit_code
         assert exit_code in [0, -15], (
-            f"OPM flow on {data_filepath} failed with exit code {exit_code}:\n"
-            + execution.cause_of_error()
+            f"OPM flow on {data_filepath} failed with exit code {exit_code}:\n" + execution.cause_of_error()
         )
     init_filepath = init_of_datafile(data_filepath)
-    assert exists_file(
-        init_filepath
-    ), f"INIT file not found at {init_filepath} after run"
-    assert exists_file(
-        balance_state_filepath
-    ), f"X0000 file not found at {balance_state_filepath} after run"
+    assert exists_file(init_filepath), f"INIT file not found at {init_filepath} after run"
+    assert exists_file(balance_state_filepath), f"X0000 file not found at {balance_state_filepath} after run"
     return [balance_state_filepath, init_filepath, grid_filepath]

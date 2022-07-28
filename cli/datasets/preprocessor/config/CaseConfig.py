@@ -50,8 +50,7 @@ class HMCaseConfig(DefaultConfig):
                 ],
                 "output": list(
                     map(
-                        lambda output: f'{case["root"]}/'
-                        f'{output.get("filename")}',
+                        lambda output: f'{case["root"]}/' f'{output.get("filename")}',
                         init_keywords,
                     )
                 ),
@@ -81,10 +80,7 @@ class HMCaseConfig(DefaultConfig):
                     f"{case_path}.SMSPEC",
                     f"{case_path}.DATA",
                 ]
-                + [
-                    f"{case_path}.S{str(step).zfill(4)}"
-                    for step in range(case["initialStep"], case["finalStep"])
-                ],
+                + [f"{case_path}.S{str(step).zfill(4)}" for step in range(case["initialStep"], case["finalStep"])],
                 "output": [
                     f'{case["root"]}/raw_smry.h5',
                     f'{case["root"]}/preprocessed_smry.h5',

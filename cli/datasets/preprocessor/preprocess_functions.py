@@ -46,9 +46,7 @@ def write_pickle_from_dict(props, location):
         pickle.dump(props, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-def postprocess_common_file(
-    path, output, cases_url, get_common_data, set_common_data
-):
+def postprocess_common_file(path, output, cases_url, get_common_data, set_common_data):
     common_data = get_common_data()
 
     max_p = common_data["max_pressure"]
@@ -96,9 +94,7 @@ def export_common_properties(case_loc, get_common_data):
     return common_loc
 
 
-def export_deck(
-    case_loc, case_dest_loc, _, source_url, cases_url, group, number
-):
+def export_deck(case_loc, case_dest_loc, _, source_url, cases_url, group, number):
     root_folder = case_dest_loc.split("/cases/")[0]
     ecl_deck_loc = os.path.join(root_folder, "ecl_deck.p")
 
@@ -133,9 +129,7 @@ def export_runspec(
     multout = data.get("multout")
     del data["multout"]
     if not multout:
-        logger.warning(
-            "MULTOUT not found in RUNSPEC section. This can lead to issues."
-        )
+        logger.warning("MULTOUT not found in RUNSPEC section. This can lead to issues.")
 
     write_pickle_from_dict(data, runspec_dest_loc)
 
@@ -181,9 +175,7 @@ def export_init_properties(
 
     for init_keyword in init_keywords:
         keywords = {k: props.get(k, []) for k in init_keyword.get("keywords")}
-        file_dest_loc = os.path.join(
-            case_dest_loc, init_keyword.get("filename")
-        )
+        file_dest_loc = os.path.join(case_dest_loc, init_keyword.get("filename"))
         write_h5_from_dict(keywords, file_dest_loc)
 
     return init_src_loc, case_dest_loc, None
@@ -228,11 +220,7 @@ def export_actnum(
 
 
 def _extract_dat_mappings(mapping):
-    return [
-        *filter(
-            lambda f: f["name"].lower() not in ["litho", "actnum"], mapping
-        )
-    ]
+    return [*filter(lambda f: f["name"].lower() not in ["litho", "actnum"], mapping)]
 
 
 def export_dat_properties(
@@ -244,9 +232,7 @@ def export_dat_properties(
     get_mapping,
     *args,
 ):
-    dat_src_locs = [
-        str(find_file(case_loc, src.split("/")[-1])) for src in input_src
-    ]
+    dat_src_locs = [str(find_file(case_loc, src.split("/")[-1])) for src in input_src]
 
     mapping = _extract_dat_mappings(get_mapping())
 
@@ -293,9 +279,7 @@ def export_wellspec(case_loc, case_dest_loc, _, source_url, *args):
 
 
 def export_smry(case_loc, case_dest_loc, _, source_url, *args):
-    preprocessed_smry_dest_loc = os.path.join(
-        case_dest_loc, "preprocessed_smry.h5"
-    )
+    preprocessed_smry_dest_loc = os.path.join(case_dest_loc, "preprocessed_smry.h5")
     raw_smry_dest_loc = os.path.join(case_dest_loc, "raw_smry.h5")
     data_src_loc = find_ext(case_loc, "DATA")
 
@@ -312,9 +296,7 @@ def export_smry(case_loc, case_dest_loc, _, source_url, *args):
     preprocessor = WellSummaryProcessor(smry_src_loc)
     preprocessed_smry, raw_smry = preprocessor.process()
 
-    preprocessed_smry.to_hdf(
-        preprocessed_smry_dest_loc, key="df", format="fixed", mode="w"
-    )
+    preprocessed_smry.to_hdf(preprocessed_smry_dest_loc, key="df", format="fixed", mode="w")
     raw_smry.to_hdf(raw_smry_dest_loc, key="df", format="fixed", mode="w")
 
     return f"{smry_src_loc}.S????", preprocessed_smry_dest_loc, None
@@ -325,18 +307,12 @@ def export_smry(case_loc, case_dest_loc, _, source_url, *args):
 
 def export_x_file(case_src_loc, _, input, *args):
     x_src_loc = os.path.join(case_src_loc, input.split("/")[-1])
-    x_pressure_dest_loc = os.path.join(
-        case_src_loc, input.split(".")[-1] + "_pressure.h5"
-    )
-    x_swat_dest_loc = os.path.join(
-        case_src_loc, input.split(".")[-1] + "_swat.h5"
-    )
+    x_pressure_dest_loc = os.path.join(case_src_loc, input.split(".")[-1] + "_pressure.h5")
+    x_swat_dest_loc = os.path.join(case_src_loc, input.split(".")[-1] + "_swat.h5")
 
     rst = EclFile(x_src_loc)
     props = preprocess_x(rst)
-    write_h5_from_dict(
-        {"pressure": props.get("pressure")}, x_pressure_dest_loc
-    )
+    write_h5_from_dict({"pressure": props.get("pressure")}, x_pressure_dest_loc)
     write_h5_from_dict({"swat": props.get("swat")}, x_swat_dest_loc)
 
     return (

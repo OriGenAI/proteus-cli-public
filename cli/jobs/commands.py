@@ -15,9 +15,7 @@ def jobs():
 
 
 @jobs.command()
-@click.argument(
-    "job_type", type=click.Choice(["samplings", "models", "simulations"])
-)
+@click.argument("job_type", type=click.Choice(["samplings", "models", "simulations"]))
 @click.option("--user", prompt=True, default=config.USERNAME)
 @click.option("--password", prompt=True, default=config.PASSWORD, hide_input=True)
 @may_fail_on_http_error(exit_code=1)

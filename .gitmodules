@@ -1,7 +1,0 @@
-[submodule "requirements/preprocessing"]
-	path = requirements/preprocessing
-	url = git@github.com:OriGenAI/preprocessing.git
-
-[submodule "requirements/proteus-report"]
-	path = requirements/proteus-report
-	url = ${GITHUB_TOKEN}@github.com:OriGenAI/proteus-report.git
