@@ -82,7 +82,9 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
         dataset_json = response.json().get("dataset")
         bucket_url = dataset_json.get("bucket_url")
         cases_url = dataset_json.get("cases_url")
-        workflow = dataset_json.get("workflow").get("name")
+        # workflow = dataset_json.get("workflow").get("name")
+        # TODO: Remove
+        workflow = "well-model"
 
         total_steps = get_total_steps(cases, workflow)
 

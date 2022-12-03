@@ -1,0 +1,26 @@
+[
+  {
+    "filename": "depth.h5",
+    "keywords": ["depth"]
+  },
+  {
+    "filename": "perm.h5",
+    "keywords": ["permx", "permy", "permz"]
+  },
+  {
+    "filename": "tran.h5",
+    "keywords": ["tranx", "trany", "tranz"]
+  },
+  {
+    "filename": "poro.h5",
+    "keywords": ["poro"]
+  },
+  {
+    "filename": "porv.h5",
+    "keywords": ["porv"]
+  },
+  {
+    "filename": "nums.h5",
+    "keywords": ["satnum", "actnum"]
+  }
+]
