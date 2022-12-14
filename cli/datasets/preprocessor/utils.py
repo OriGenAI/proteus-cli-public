@@ -1,6 +1,6 @@
-import platform
-import os
 import datetime
+import os
+import platform
 import time
 from pathlib import Path
 
@@ -62,10 +62,10 @@ def download_file(source_path, destination_path, source_url):
         Path(f"{destination_path}.tmp").touch()
 
         _, _, reference = next(items_and_paths)
-        stream = source.download(reference)
 
         with open(f"{destination_path}.tmp", "wb") as file:
-            file.write(stream)
+            for chunk in source.chunks(reference):
+                file.write(chunk)
 
         os.rename(f"{destination_path}.tmp", destination_path)
 

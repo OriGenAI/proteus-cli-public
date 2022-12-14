@@ -54,13 +54,18 @@ class AZSource(Source):
         stream.seek(0)
         return reference_path, file_size, modified, stream
 
-    def download(self, reference):
+    def _download_blob(self, reference):
         container = reference.get("container")
         reference_path = reference.get("name")
 
-        blob_client = BlobClient.from_connection_string(
+        return BlobClient.from_connection_string(
             conn_str=config.AZURE_STORAGE_CONNECTION_STRING,
             container_name=container,
             blob_name=reference_path,
-        )
-        return blob_client.download_blob().readall()
+        ).download_blob()
+
+    def download(self, reference):
+        return self._download_blob(reference).readall()
+
+    def chunks(self, reference):
+        return self._download_blob(reference).chunks()
