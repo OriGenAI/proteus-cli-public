@@ -163,7 +163,6 @@ class WellModelCaseConfig(DefaultConfig):
                 "input": [
                     f'{case["root"]}/SIMULATION_{case["number"]}.INIT',
                     f'{case["root"]}/SIMULATION_{case["number"]}.EGRID',
-
                 ],
                 "output": list(
                     map(
@@ -195,7 +194,11 @@ class WellModelCaseConfig(DefaultConfig):
                     f'{case["root"]}/SIMULATION_{case["number"]}.SMSPEC',
                     f'{case["root"]}/SIMULATION_{case["number"]}.EGRID',
                     f'{case["root"]}/SIMULATION_{case["number"]}.X{str(case["finalStep"]).zfill(4)}',
-                ] + [f'{case["root"]}/SIMULATION_{case["number"]}.S{str(step).zfill(4)}' for step in range(case["initialStep"], case["finalStep"])],
+                ]
+                + [
+                    f'{case["root"]}/SIMULATION_{case["number"]}.S{str(step).zfill(4)}'
+                    for step in range(case["initialStep"], case["finalStep"])
+                ],
                 "output": [f'cases/training/{case["root"]}/well_loc.h5'],
                 "preprocessing": "export_smspec",
                 "split": case["group"],

@@ -339,7 +339,7 @@ def export_smspec(case_loc, case_dest_loc, input_src, source_url, *args):
     last_x = sorted([*filter(lambda x: ".X" in x, input_src)])[-1]
     restart_path = find_ext(case_loc=case_loc, ext=last_x.split(".")[-1])
     smspec_path = find_ext(case_loc=case_loc, ext="SMSPEC")
-    grid = EclGrid(str(grid_src_loc)) 
+    grid = EclGrid(str(grid_src_loc))
     winfo = WellInfo(grid, str(restart_path))
     smry = EclSum(str(smspec_path))
 
@@ -352,17 +352,17 @@ def export_smspec(case_loc, case_dest_loc, input_src, source_url, *args):
         well_types.append(str(wstate.wellType()))
 
     for key in ["WOPR", "WOPRH", "WWPR", "WGPR", "WWIR", "WBHP", "WBHPH"]:
-        with h5py.File(os.path.join(case_dest_loc, f"{key}.h5"), 'w') as h5f:
+        with h5py.File(os.path.join(case_dest_loc, f"{key}.h5"), "w") as h5f:
             for i, w in enumerate(wnames):
-                if 'INJECTOR' not in well_types[i]:
+                if "INJECTOR" not in well_types[i]:
                     try:
-                        data = smry.numpy_vector(f'{key}:{w}', report_only=True)
+                        data = smry.numpy_vector(f"{key}:{w}", report_only=True)
                         h5f.create_dataset(w, data=data)
                     except KeyError:
                         """Some keywords may be missing, the correct behaviour is to not create a dataset"""
 
     for key in ["FOPR", "FWPR", "FGPR", "FOPRH", "FWPRH", "FGPRH"]:
-        with h5py.File(os.path.join(case_dest_loc, f"{key}.h5"), 'w') as h5f:
+        with h5py.File(os.path.join(case_dest_loc, f"{key}.h5"), "w") as h5f:
             data = smry.numpy_vector(key, report_only=True)
             h5f.create_dataset(key, data=data)
 
