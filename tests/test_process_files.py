@@ -1,7 +1,7 @@
 import pytest
+from cli.datasets.upload import process_files
 from pytest_bdd import scenario, given, when, then, parsers
 
-from cli.datasets.upload import process_files
 from api.hooks import TqdmUpWithReport
 
 
@@ -31,6 +31,7 @@ def keywords_mock(mocker):
     mock.return_value = [
         {"name": "ACTNUM", "source": "BOOLEAN"},
         {"name": "LITHO", "source": "LITHO"},
+        {"name": "LITHO_INPUT", "source": "LITHO_INPUT"},
         {"name": "PORO", "source": "PORO"},
         {"name": "PERMX", "source": "PERM"},
         {"name": "V-CLAI", "source": "VCL"},

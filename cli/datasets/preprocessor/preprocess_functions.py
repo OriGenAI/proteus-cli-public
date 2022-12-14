@@ -1,24 +1,23 @@
-import h5py
+import json
 import os
 import pickle
-import json
+
 import cwrap
-
-from ecl.grid import EclGrid
+import h5py
 from ecl.eclfile import EclInitFile, EclFile
-
-from preprocessing.modular.egrid import preprocess as preprocess_egrid
-from preprocessing.modular.init import preprocess as preprocess_init
-from preprocessing.modular.x import preprocess as preprocess_x
-
-from preprocessing.modular.grdecl import preprocess as preprocess_grdecl
-from preprocessing.modular.dat import preprocess as preprocess_dat
-from preprocessing.modular.data import WellSpecsProcessor
-from preprocessing.modular.s import WellSummaryProcessor
+from ecl.grid import EclGrid
 from preprocessing.deck.runspec import preprocess as preprocess_runspec
 from preprocessing.deck.section import find_section
-from .utils import upload_file, find_ext, find_file, get_case_info
+from preprocessing.modular.dat import preprocess as preprocess_dat
+from preprocessing.modular.data import WellSpecsProcessor
+from preprocessing.modular.egrid import preprocess as preprocess_egrid
+from preprocessing.modular.grdecl import preprocess as preprocess_grdecl
+from preprocessing.modular.init import preprocess as preprocess_init
+from preprocessing.modular.s import WellSummaryProcessor
+from preprocessing.modular.x import preprocess as preprocess_x
+
 from proteus import logger
+from .utils import upload_file, find_ext, find_file, get_case_info
 
 DEFAULT_COMMON_PROPERTIES = {"max_pressure": -100000, "min_pressure": 100000}
 
@@ -191,7 +190,7 @@ def export_litho(
     *args,
 ):
     grdecl_src_loc = find_ext(case_loc=case_loc, ext="GRDECL")
-    mapping = filter(lambda x: x["name"] == "LITHO", get_mapping())
+    mapping = filter(lambda x: x["name"] == "LITHO_INPUT", get_mapping())
 
     with cwrap.open(str(grdecl_src_loc), "r") as f:
         props = preprocess_grdecl(f, mapping)
