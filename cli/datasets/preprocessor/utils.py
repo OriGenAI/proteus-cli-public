@@ -61,9 +61,15 @@ def download_file(source_path, destination_path, source_url):
         try:
             _, _, reference = next(items_and_paths)
 
+            stream = source.download(reference)
+
             with open(f"{destination_path}.tmp", "wb") as file:
-                for chunk in source.chunks(reference):
-                    file.write(chunk)
+                file.write(stream)
+
+            # FIXME: Having issues with local files
+            # with open(f"{destination_path}.tmp", "wb") as file:
+            #     for chunk in source.chunks(reference):
+            #         file.write(chunk)
 
             os.rename(f"{destination_path}.tmp", destination_path)
         except StopIteration:
