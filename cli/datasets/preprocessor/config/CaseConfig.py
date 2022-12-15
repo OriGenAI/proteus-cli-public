@@ -3,6 +3,9 @@ import json
 
 from .defaultConfig import DefaultConfig
 
+SMSPEC_WELL_KEYWORDS = ["WOPR", "WOPRH", "WWPR", "WWPRH", "WGPR", "WWIR", "WBHP", "WBHPH"]
+SMSPEC_FIELD_KEYWORDS = ["FOPR", "FWPR", "FGPR", "FOPRH", "FWPRH", "FGPRH"]
+
 
 class HMCaseConfig(DefaultConfig):
     """Configuration generator for the cases"""
@@ -199,7 +202,7 @@ class WellModelCaseConfig(DefaultConfig):
                     f'{case["root"]}/SIMULATION_{case["number"]}.S{str(step).zfill(4)}'
                     for step in range(case["initialStep"], case["finalStep"])
                 ],
-                "output": [f'cases/training/{case["root"]}/well_loc.h5'],
+                "output": [f'{case["root"]}/{k}.h5' for k in SMSPEC_WELL_KEYWORDS + SMSPEC_FIELD_KEYWORDS],
                 "preprocessing": "export_smspec",
                 "split": case["group"],
                 "case": case["number"],

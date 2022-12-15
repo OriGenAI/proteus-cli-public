@@ -59,6 +59,9 @@ def get_total_steps(cases, workflow):
     first_case_json = first_case_response.json().get("case")
     initial_step = first_case_json.get("initialStep")
     final_step = first_case_json.get("finalStep")
+    # TODO: Remove (testing purposes)
+    # initial_step = 1
+    # final_step = 2877
     common_step = CommonConfigMapper[workflow].number_of_steps()
     cases_steps = CaseConfigMapper[workflow].number_of_steps()
     timesteps_steps = (
@@ -82,9 +85,9 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
         dataset_json = response.json().get("dataset")
         bucket_url = dataset_json.get("bucket_url")
         cases_url = dataset_json.get("cases_url")
-        # workflow = dataset_json.get("workflow").get("name")
-        # TODO: Remove
-        workflow = "well-model"
+        workflow = dataset_json.get("workflow").get("name")
+        # TODO: Remove (testing purposes)
+        # workflow = "well-model"
 
         total_steps = get_total_steps(cases, workflow)
 

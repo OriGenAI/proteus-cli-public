@@ -21,6 +21,7 @@ from preprocessing.modular.s import WellSummaryProcessor
 from preprocessing.deck.runspec import preprocess as preprocess_runspec
 from preprocessing.deck.section import find_section
 from .utils import upload_file, find_ext, find_file, get_case_info
+from .config.CaseConfig import SMSPEC_WELL_KEYWORDS, SMSPEC_FIELD_KEYWORDS
 from proteus import logger
 
 DEFAULT_COMMON_PROPERTIES = {"max_pressure": -100000, "min_pressure": 100000}
@@ -351,7 +352,7 @@ def export_smspec(case_loc, case_dest_loc, input_src, source_url, *args):
         wstate = wtimeline[0]
         well_types.append(str(wstate.wellType()))
 
-    for key in ["WOPR", "WOPRH", "WWPR", "WGPR", "WWIR", "WBHP", "WBHPH"]:
+    for key in SMSPEC_WELL_KEYWORDS:
         with h5py.File(os.path.join(case_dest_loc, f"{key}.h5"), "w") as h5f:
             for i, w in enumerate(wnames):
                 if "INJECTOR" not in well_types[i]:
@@ -361,7 +362,7 @@ def export_smspec(case_loc, case_dest_loc, input_src, source_url, *args):
                     except KeyError:
                         """Some keywords may be missing, the correct behaviour is to not create a dataset"""
 
-    for key in ["FOPR", "FWPR", "FGPR", "FOPRH", "FWPRH", "FGPRH"]:
+    for key in SMSPEC_FIELD_KEYWORDS:
         with h5py.File(os.path.join(case_dest_loc, f"{key}.h5"), "w") as h5f:
             data = smry.numpy_vector(key, report_only=True)
             h5f.create_dataset(key, data=data)
