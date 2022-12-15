@@ -1,8 +1,9 @@
-import h5py
+import json
 import os
 import pickle
-import json
+
 import cwrap
+import h5py
 import numpy as np
 
 from ecl.grid import EclGrid
@@ -22,6 +23,7 @@ from preprocessing.deck.runspec import preprocess as preprocess_runspec
 from preprocessing.deck.section import find_section
 from .utils import upload_file, find_ext, find_file, get_case_info
 from .config.CaseConfig import SMSPEC_WELL_KEYWORDS, SMSPEC_FIELD_KEYWORDS
+
 from proteus import logger
 
 DEFAULT_COMMON_PROPERTIES = {"max_pressure": -100000, "min_pressure": 100000}
@@ -224,7 +226,7 @@ def export_litho(
     *args,
 ):
     grdecl_src_loc = find_ext(case_loc=case_loc, ext="GRDECL")
-    mapping = filter(lambda x: x["name"] == "LITHO", get_mapping())
+    mapping = filter(lambda x: x["name"] == "LITHO_INPUT", get_mapping())
 
     with cwrap.open(str(grdecl_src_loc), "r") as f:
         props = preprocess_grdecl(f, mapping)
