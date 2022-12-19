@@ -82,4 +82,8 @@ class CnnPcaStepConfig(DefaultConfig):
     """Configuration generator for the steps"""
 
 
-StepConfigMapper = {"hm": HMStepConfig, "cnn-pca": CnnPcaStepConfig}
+class WellModelStepConfig(DefaultConfig):
+    """Configuration generator for the steps"""
+
+
+StepConfigMapper = {"hm": HMStepConfig, "cnn-pca": CnnPcaStepConfig, "well-model": WellModelStepConfig}

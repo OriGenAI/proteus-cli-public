@@ -4,7 +4,7 @@ import platform
 import time
 from pathlib import Path
 
-from proteus import api
+from proteus import api, logger
 from ..upload import get_source
 
 
@@ -49,10 +49,7 @@ def download_file(source_path, destination_path, source_url):
     items_and_paths = source.list_contents(starts_with=source_path)
 
     path_list = destination_path.split("/")[0:-1]
-    try:
-        os.makedirs("/".join(path_list))
-    except Exception:
-        pass
+    Path("/".join(path_list)).mkdir(parents=True, exist_ok=True)
 
     if os.path.isfile(destination_path):
         return
@@ -61,13 +58,22 @@ def download_file(source_path, destination_path, source_url):
     else:
         Path(f"{destination_path}.tmp").touch()
 
-        _, _, reference = next(items_and_paths)
+        try:
+            _, _, reference = next(items_and_paths)
 
-        with open(f"{destination_path}.tmp", "wb") as file:
-            for chunk in source.chunks(reference):
-                file.write(chunk)
+            stream = source.download(reference)
 
-        os.rename(f"{destination_path}.tmp", destination_path)
+            with open(f"{destination_path}.tmp", "wb") as file:
+                file.write(stream)
+
+            # FIXME: Having issues with local files
+            # with open(f"{destination_path}.tmp", "wb") as file:
+            #     for chunk in source.chunks(reference):
+            #         file.write(chunk)
+
+            os.rename(f"{destination_path}.tmp", destination_path)
+        except StopIteration:
+            logger.info(f"The following file was not found: {source_path}")
 
 
 def upload_file(source_path, file_path, url):

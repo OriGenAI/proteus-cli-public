@@ -4,20 +4,27 @@ import pickle
 
 import cwrap
 import h5py
-from ecl.eclfile import EclInitFile, EclFile
+import numpy as np
+
 from ecl.grid import EclGrid
-from preprocessing.deck.runspec import preprocess as preprocess_runspec
-from preprocessing.deck.section import find_section
-from preprocessing.modular.dat import preprocess as preprocess_dat
-from preprocessing.modular.data import WellSpecsProcessor
+from ecl.eclfile import EclInitFile, EclFile
+from ecl.well import WellInfo
+from ecl.summary import EclSum
+
 from preprocessing.modular.egrid import preprocess as preprocess_egrid
-from preprocessing.modular.grdecl import preprocess as preprocess_grdecl
 from preprocessing.modular.init import preprocess as preprocess_init
-from preprocessing.modular.s import WellSummaryProcessor
 from preprocessing.modular.x import preprocess as preprocess_x
 
-from proteus import logger
+from preprocessing.modular.grdecl import preprocess as preprocess_grdecl
+from preprocessing.modular.dat import preprocess as preprocess_dat
+from preprocessing.modular.data import WellSpecsProcessor
+from preprocessing.modular.s import WellSummaryProcessor
+from preprocessing.deck.runspec import preprocess as preprocess_runspec
+from preprocessing.deck.section import find_section
 from .utils import upload_file, find_ext, find_file, get_case_info
+from .config.CaseConfig import SMSPEC_WELL_KEYWORDS, SMSPEC_FIELD_KEYWORDS
+
+from proteus import logger
 
 DEFAULT_COMMON_PROPERTIES = {"max_pressure": -100000, "min_pressure": 100000}
 
@@ -180,6 +187,35 @@ def export_init_properties(
     return init_src_loc, case_dest_loc, None
 
 
+def export_well_init_properties(
+    case_loc,
+    case_dest_loc,
+    input_src,
+    source_url,
+    cases_url,
+    get_endpoint,
+    *args,
+):
+    grid_src_loc = find_ext(case_loc=case_loc, ext="EGRID")
+    init_src_loc = find_ext(case_loc=case_loc, ext="INIT")
+
+    grid = EclGrid(str(grid_src_loc))
+    init = EclInitFile(grid, str(init_src_loc))
+    endpoint_scaling = get_endpoint()
+    props = preprocess_init(init, endpoint_scaling)
+
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    with open(os.path.join(dir_path, "well_init_keywords.json")) as file:
+        init_keywords = json.load(file)
+
+    for init_keyword in init_keywords:
+        keywords = {k: props.get(k, []) for k in init_keyword.get("keywords")}
+        file_dest_loc = os.path.join(case_dest_loc, init_keyword.get("filename"))
+        write_h5_from_dict(keywords, file_dest_loc)
+
+    return init_src_loc, case_dest_loc, None
+
+
 def export_litho(
     case_loc,
     case_dest_loc,
@@ -299,6 +335,41 @@ def export_smry(case_loc, case_dest_loc, _, source_url, *args):
     raw_smry.to_hdf(raw_smry_dest_loc, key="df", format="fixed", mode="w")
 
     return f"{smry_src_loc}.S????", preprocessed_smry_dest_loc, None
+
+
+def export_smspec(case_loc, case_dest_loc, input_src, source_url, *args):
+    grid_src_loc = find_ext(case_loc=case_loc, ext="EGRID")
+    last_x = sorted([*filter(lambda x: ".X" in x, input_src)])[-1]
+    restart_path = find_ext(case_loc=case_loc, ext=last_x.split(".")[-1])
+    smspec_path = find_ext(case_loc=case_loc, ext="SMSPEC")
+    grid = EclGrid(str(grid_src_loc))
+    winfo = WellInfo(grid, str(restart_path))
+    smry = EclSum(str(smspec_path))
+
+    wnames = np.array(list(smry.wells()))
+
+    well_types = []
+    for w in wnames:
+        wtimeline = winfo[w]
+        wstate = wtimeline[0]
+        well_types.append(str(wstate.wellType()))
+
+    for key in SMSPEC_WELL_KEYWORDS:
+        with h5py.File(os.path.join(case_dest_loc, f"{key}.h5"), "w") as h5f:
+            for i, w in enumerate(wnames):
+                if "INJECTOR" not in well_types[i]:
+                    try:
+                        data = smry.numpy_vector(f"{key}:{w}", report_only=True)
+                        h5f.create_dataset(w, data=data)
+                    except KeyError:
+                        """Some keywords may be missing, the correct behaviour is to not create a dataset"""
+
+    for key in SMSPEC_FIELD_KEYWORDS:
+        with h5py.File(os.path.join(case_dest_loc, f"{key}.h5"), "w") as h5f:
+            data = smry.numpy_vector(key, report_only=True)
+            h5f.create_dataset(key, data=data)
+
+    return smspec_path, None, None
 
 
 """ Steps preprocessing """

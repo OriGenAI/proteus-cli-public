@@ -8,13 +8,13 @@ from .utils import pluck, upload_file, download_file
 
 
 def files_exist_in_bucket(outputs, bucket_url):
-    result = False
     for output in outputs:
         response = api.get(bucket_url, headers={}, stream=False, contains=output)
         files = response.json().get("results")
-        result = len(files) > 0
+        if len(files) == 0:
+            return False
 
-    return result
+    return True
 
 
 def process_step(step, tmpdirname, source_url, bucket_url, cases_url):
