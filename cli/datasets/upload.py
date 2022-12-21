@@ -243,11 +243,11 @@ def process_files(
             )
             for res in pool.imap_unordered(process_step_partial, steps):
                 for output in res[:-1]:
-                    progress.update(n=1/len(res))
+                    progress.update(n=1 / len(res))
                     progress.set_description(f"File uploaded: {output}")
                     time.sleep(1)
                 progress.set_description(f"File uploaded: {res[-1]}")
-                progress.update_with_report(n=1/len(res))
+                progress.update_with_report(n=1 / len(res))
                 progress.refresh()
 
 

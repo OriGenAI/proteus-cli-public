@@ -35,7 +35,7 @@ def report_mock(mocker):
         b'{"dataset": {"bucket_url": "",' b'"cases_url": "","workflow": {"name": "hm"}}}'
     )
     preprocess_mock = mocker.patch("cli.datasets.preprocessor.process_step.process_step")
-    preprocess_mock.return_value = True
+    preprocess_mock.return_value = ["dims.h5"]
 
     return report_mock
 
