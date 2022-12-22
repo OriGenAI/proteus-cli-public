@@ -17,7 +17,7 @@ def files_exist_in_bucket(outputs, bucket_url):
     return True
 
 
-def process_step(step, tmpdirname, source_url, bucket_url, cases_url):
+def process_step(step, tmpdirname, source_url, bucket_url, cases_url, replace=False):
 
     (
         inputs,
@@ -42,15 +42,13 @@ def process_step(step, tmpdirname, source_url, bucket_url, cases_url):
         "post_processing_function_name",
     )
 
-    if files_exist_in_bucket(outputs, bucket_url):
-        return outputs[0]
+    if not replace and files_exist_in_bucket(outputs, bucket_url):
+        return outputs
 
     if "cases/SIMULATION_" in outputs[0]:
         path_name = os.path.join(tmpdirname, "cases", f"SIMULATION_{case}")
     else:
-        path_name = (
-            os.path.join(tmpdirname, "cases", f"{split}/SIMULATION_{case}") if (split and case) else tmpdirname
-        )
+        path_name = os.path.join(tmpdirname, "cases", f"{split}/SIMULATION_{case}") if (split and case) else tmpdirname
     try:
         os.makedirs(path_name)
     except Exception:
@@ -103,4 +101,4 @@ def process_step(step, tmpdirname, source_url, bucket_url, cases_url):
     for output in outputs:
         upload_file(output, os.path.join(tmpdirname, output), cases_url)
 
-    return output
+    return outputs

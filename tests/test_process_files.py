@@ -1,3 +1,4 @@
+
 import pytest
 from cli.datasets.upload import process_files
 from pytest_bdd import scenario, given, when, then, parsers
@@ -7,7 +8,7 @@ from api.hooks import TqdmUpWithReport
 
 @pytest.fixture
 def process_mock(mocker):
-    return mocker.patch("cli.datasets.preprocessor.process_step.process_step", return_value=True)
+    return mocker.patch("cli.datasets.preprocessor.process_step.process_step", return_value=["dims.h5"])
 
 
 @pytest.fixture

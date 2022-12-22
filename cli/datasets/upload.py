@@ -1,5 +1,6 @@
 import re
 import tempfile
+import time
 from functools import partial
 import numpy as np
 
@@ -59,9 +60,6 @@ def get_total_steps(cases, workflow):
     first_case_json = first_case_response.json().get("case")
     initial_step = first_case_json.get("initialStep")
     final_step = first_case_json.get("finalStep")
-    # TODO: Remove (testing purposes)
-    # initial_step = 1
-    # final_step = 2877
     common_step = CommonConfigMapper[workflow].number_of_steps()
     cases_steps = CaseConfigMapper[workflow].number_of_steps()
     timesteps_steps = (
@@ -70,7 +68,7 @@ def get_total_steps(cases, workflow):
     return common_step + (cases_steps + timesteps_steps * (final_step - initial_step + 1)) * len(cases)
 
 
-def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
+def upload(bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False):
     assert api.auth.access_token is not None
     set_dataset_version(dataset_uuid)
 
@@ -86,8 +84,6 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
         bucket_url = dataset_json.get("bucket_url")
         cases_url = dataset_json.get("cases_url")
         workflow = dataset_json.get("workflow").get("name")
-        # TODO: Remove (testing purposes)
-        # workflow = "well-model"
 
         total_steps = get_total_steps(cases, workflow)
 
@@ -102,6 +98,7 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT):
             cases=cases,
             workers=workers,
             workflow=workflow,
+            replace=replace,
         )
 
 
@@ -220,6 +217,7 @@ def process_files(
     cases=[],
     workers=WORKERS_COUNT,
     workflow="hm",
+    replace=False,
 ):
     from .preprocessor.config import Config
     from .preprocessor.process_step import process_step
@@ -241,10 +239,15 @@ def process_files(
                 source_url=source_url,
                 bucket_url=bucket_url,
                 cases_url=cases_url,
+                replace=replace,
             )
             for res in pool.imap_unordered(process_step_partial, steps):
-                progress.update_with_report()
-                progress.set_description(f"File uploaded: {res}")
+                for output in res[:-1]:
+                    progress.update(n=1 / len(res))
+                    progress.set_description(f"File uploaded: {output}")
+                    time.sleep(1)
+                progress.set_description(f"File uploaded: {res[-1]}")
+                progress.update_with_report(n=1 / len(res))
                 progress.refresh()
 
 
