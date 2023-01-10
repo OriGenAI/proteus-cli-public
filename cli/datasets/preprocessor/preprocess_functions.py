@@ -5,26 +5,23 @@ import pickle
 import cwrap
 import h5py
 import numpy as np
-
-from ecl.grid import EclGrid
 from ecl.eclfile import EclInitFile, EclFile
-from ecl.well import WellInfo
+from ecl.grid import EclGrid
 from ecl.summary import EclSum
-
-from preprocessing.modular.egrid import preprocess as preprocess_egrid
-from preprocessing.modular.init import preprocess as preprocess_init
-from preprocessing.modular.x import preprocess as preprocess_x
-
-from preprocessing.modular.grdecl import preprocess as preprocess_grdecl
-from preprocessing.modular.dat import preprocess as preprocess_dat
-from preprocessing.modular.data import WellSpecsProcessor
-from preprocessing.modular.s import WellSummaryProcessor
+from ecl.well import WellInfo
 from preprocessing.deck.runspec import preprocess as preprocess_runspec
 from preprocessing.deck.section import find_section
-from .utils import upload_file, find_ext, find_file, get_case_info
-from .config.CaseConfig import SMSPEC_WELL_KEYWORDS, SMSPEC_FIELD_KEYWORDS
+from preprocessing.modular.dat import preprocess as preprocess_dat
+from preprocessing.modular.data import WellSpecsProcessor
+from preprocessing.modular.egrid import preprocess as preprocess_egrid
+from preprocessing.modular.grdecl import preprocess as preprocess_grdecl
+from preprocessing.modular.init import preprocess as preprocess_init
+from preprocessing.modular.s import WellSummaryProcessor
+from preprocessing.modular.x import preprocess as preprocess_x
 
-from proteus import logger
+from .config.CaseConfig import SMSPEC_WELL_KEYWORDS, SMSPEC_FIELD_KEYWORDS
+from .utils import upload_file, find_ext, find_file, get_case_info
+from ... import proteus
 
 DEFAULT_COMMON_PROPERTIES = {"max_pressure": -100000, "min_pressure": 100000}
 
@@ -135,7 +132,7 @@ def export_runspec(
     multout = data.get("multout")
     del data["multout"]
     if not multout:
-        logger.warning("MULTOUT not found in RUNSPEC section. This can lead to issues.")
+        proteus.logger.warning("MULTOUT not found in RUNSPEC section. This can lead to issues.")
 
     write_pickle_from_dict(data, runspec_dest_loc)
 
@@ -362,7 +359,8 @@ def export_smspec(case_loc, case_dest_loc, input_src, source_url, *args):
                         data = smry.numpy_vector(f"{key}:{w}", report_only=True)
                         h5f.create_dataset(w, data=data)
                     except KeyError:
-                        """Some keywords may be missing, the correct behaviour is to not create a dataset"""
+                        # Some keywords may be missing, the correct behaviour is to not create a dataset
+                        pass
 
     for key in SMSPEC_FIELD_KEYWORDS:
         with h5py.File(os.path.join(case_dest_loc, f"{key}.h5"), "w") as h5f:

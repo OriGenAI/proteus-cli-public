@@ -1,9 +1,11 @@
-from proteus import api
-from multiprocessing.dummy import Pool
-from cli.config import config
 import os
-from dateutil import tz
 from datetime import datetime
+from multiprocessing.dummy import Pool
+
+from dateutil import tz
+
+from cli.runtime import proteus
+from cli.config import config
 
 
 class DependencySolver:
@@ -50,7 +52,7 @@ class DependencySolver:
             modification_ts = os.path.getmtime(source_path)
             modified = datetime.fromtimestamp(modification_ts, tz.tzlocal())
             with open(source_path, "rb") as source:
-                response = api.post_file(self.batch_url, filepath, content=source, modified=modified)
+                response = proteus.api.post_file(self.batch_url, filepath, content=source, modified=modified)
                 response_json = response.json()
                 assert "case" in response_json
                 return response_json.get("case")
@@ -98,7 +100,7 @@ class DependencySolver:
 
         # Check for new dependencies
         simulation_case_url = f"{self.batch_url}/{self.case_number}"
-        response = api.get(simulation_case_url)
+        response = proteus.api.get(simulation_case_url)
         new_dependencies = response.json().get("dependencies")
 
         pending_dependencies = [dependency for dependency in new_dependencies if dependency.get("status") == "pending"]

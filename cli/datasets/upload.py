@@ -2,24 +2,23 @@ import re
 import tempfile
 import time
 from functools import partial
-import numpy as np
+from multiprocessing.pool import ThreadPool
 
-from proteus import api, reporting, logger
-from cli.config import config
+import numpy as np
 from tqdm import tqdm
 from tqdm.utils import CallbackIOWrapper
-from multiprocessing.pool import ThreadPool
-from proteus.oidc import may_insist_up_to
-from .sources.s3 import S3Source
-from .sources.az import AZSource
-from .sources.local import LocalSource
-from api.hooks import TqdmUpWithReport
 
+from cli.api.hooks import TqdmUpWithReport
+from cli.config import config
 from cli.datasets.preprocessor.config import (
     CaseConfigMapper,
     CommonConfigMapper,
     StepConfigMapper,
 )
+from .sources.az import AZSource
+from .sources.local import LocalSource
+from .sources.s3 import S3Source
+from .. import proteus
 
 AVAILABLE_SOURCES = [S3Source, AZSource, LocalSource]
 
@@ -47,7 +46,7 @@ def set_dataset_version(dataset_uuid):
     )
 
     dataset_version_url = f"/api/v1/datasets/{dataset_uuid}/versions"
-    api.post(dataset_version_url, new_version)
+    proteus.api.post(dataset_version_url, new_version)
 
 
 def get_total_steps(cases, workflow):
@@ -56,7 +55,7 @@ def get_total_steps(cases, workflow):
         first_training_case = cases[0]
     else:
         first_training_case = next(iter(training_cases), None)
-    first_case_response = api.get(first_training_case.get("case_url"))
+    first_case_response = proteus.api.get(first_training_case.get("case_url"))
     first_case_json = first_case_response.json().get("case")
     initial_step = first_case_json.get("initialStep")
     final_step = first_case_json.get("finalStep")
@@ -69,17 +68,17 @@ def get_total_steps(cases, workflow):
 
 
 def upload(bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False):
-    assert api.auth.access_token is not None
+    assert proteus.api.auth.access_token is not None
     set_dataset_version(dataset_uuid)
 
-    logger.info(f"This process will use {workers} simultaneous threads.")
-    reporting.send("started upload", status="processing", progress=0)
+    proteus.logger.info(f"This process will use {workers} simultaneous threads.")
+    proteus.reporting.send("started upload", status="processing", progress=0)
     with TqdmUpWithReport(total=0) as progress:
         cases = get_cases(dataset_uuid, progress)
 
         progress.set_description("Setting the dataset version")
         progress.refresh()
-        response = api.get(f"/api/v1/datasets/{dataset_uuid}")
+        response = proteus.api.get(f"/api/v1/datasets/{dataset_uuid}")
         dataset_json = response.json().get("dataset")
         bucket_url = dataset_json.get("bucket_url")
         cases_url = dataset_json.get("cases_url")
@@ -107,7 +106,7 @@ def get_cases(dataset_uuid, progress):
     progress.refresh()
 
     cases_url = f"/api/v1/datasets/{dataset_uuid}/cases"
-    response = api.get(cases_url)
+    response = proteus.api.get(cases_url)
 
     return response.json().get("cases")
 
@@ -142,7 +141,7 @@ def load_from(case_by_group_and_number, source_uri, progress, workers=WORKERS_CO
             progress.refresh()
 
 
-@may_insist_up_to(5, delay_in_secs=5)
+@proteus.may_insist_up_to(5, delay_in_secs=5)
 def parallelized_upload(item_and_path, case_by_group_and_number, processed, skipped_count):
     item, path, reference = item_and_path
     matchs_as_case = case_re.match(path)
@@ -185,7 +184,7 @@ def send_as(target, source, reference, group=None, number=None, extension=None, 
         with tqdm(total=file_size, unit="B", unit_scale=True, unit_divisor=1024) as progress:
             progress.set_description(f"uploading {source_path}")
             wrapped_file = CallbackIOWrapper(progress.update, stream, "read")
-            transfer = api.post_file(
+            transfer = proteus.api.post_file(
                 target_url,
                 source_path,
                 content=wrapped_file,
@@ -202,9 +201,9 @@ def send_as(target, source, reference, group=None, number=None, extension=None, 
             else:
                 raise Exception("transfer failed")
     except Exception as error:
-        logger.error(f"Failed upload: {source_path}")
+        proteus.logger.error(f"Failed upload: {source_path}")
         if transfer is not None:
-            logger.error(error, transfer.content)
+            proteus.logger.error(error, transfer.content)
         raise error
     return done, skipped
 
@@ -253,7 +252,7 @@ def process_files(
 
 def download_common(url):
     try:
-        r = api.get(url)
+        r = proteus.api.get(url)
         open("/tmp/common.p", "wb").write(r.content)
 
         download = np.load("/tmp/common.p", allow_pickle=True)
