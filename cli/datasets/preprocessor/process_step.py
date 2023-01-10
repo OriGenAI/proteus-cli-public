@@ -1,15 +1,15 @@
-import os
 import glob
+import os
 import shutil
 
-from proteus import api
 from . import preprocess_functions
 from .utils import pluck, upload_file, download_file
+from ... import proteus
 
 
 def files_exist_in_bucket(outputs, bucket_url):
     for output in outputs:
-        response = api.get(bucket_url, headers={}, stream=False, contains=output)
+        response = proteus.api.get(bucket_url, headers={}, stream=False, contains=output)
         files = response.json().get("results")
         if len(files) == 0:
             return False

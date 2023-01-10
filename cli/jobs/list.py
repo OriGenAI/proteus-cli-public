@@ -1,6 +1,7 @@
-from proteus import api
-from tabulate import tabulate
 import readchar
+from tabulate import tabulate
+
+from cli.runtime import proteus
 
 job_columns = [
     {"label": "Creation", "field": "created"},
@@ -44,7 +45,7 @@ def has_prev(data):
 
 
 def api_load(url):
-    response = api.get(url)
+    response = proteus.api.get(url)
     response.raise_for_status()
     return response.json()
 

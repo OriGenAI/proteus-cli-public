@@ -4,8 +4,8 @@ import platform
 import time
 from pathlib import Path
 
-from proteus import api, logger
 from ..upload import get_source
+from ... import proteus
 
 
 def get_creation_date(path_to_file):
@@ -73,7 +73,7 @@ def download_file(source_path, destination_path, source_url):
 
             os.rename(f"{destination_path}.tmp", destination_path)
         except StopIteration:
-            logger.info(f"The following file was not found: {source_path}")
+            proteus.logger.info(f"The following file was not found: {source_path}")
 
 
 def upload_file(source_path, file_path, url):
@@ -89,7 +89,7 @@ def upload_file(source_path, file_path, url):
     """
     modified = get_creation_date(file_path)
     with open(file_path, "rb") as file_content:
-        api.post_file(
+        proteus.api.post_file(
             url,
             source_path,
             content=file_content,
@@ -153,5 +153,5 @@ def wait_until_file_is_downloaded(file_path, period=5, timeout=500):
 
 
 def get_case_info(case_url):
-    r = api.get(case_url)
+    r = proteus.api.get(case_url)
     return r.json().get("case")
