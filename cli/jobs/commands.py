@@ -1,7 +1,8 @@
 import click
+
+from cli.api.decorators import may_fail_on_http_error
 from cli.config import config
-from proteus import runs_authentified
-from api.decorators import may_fail_on_http_error
+from cli.runtime import proteus
 
 USERNAME, PASSWORD, PROMPT = config.USERNAME, config.PASSWORD, config.PROMPT
 WORKERS_COUNT = config.WORKERS_COUNT
@@ -15,13 +16,11 @@ def jobs():
 
 
 @jobs.command()
-@click.argument(
-    "job_type", type=click.Choice(["samplings", "models", "simulations"])
-)
+@click.argument("job_type", type=click.Choice(["samplings", "models", "simulations"]))
 @click.option("--user", prompt=True, default=config.USERNAME)
 @click.option("--password", prompt=True, default=config.PASSWORD, hide_input=True)
 @may_fail_on_http_error(exit_code=1)
-@runs_authentified
+@proteus.runs_authentified
 def list(job_type, *args):
     """Lists the jobs for a entity type"""
     from .list import list_jobs
@@ -35,7 +34,7 @@ def list(job_type, *args):
 @click.option("--user", prompt=True, default=config.USERNAME)
 @click.option("--password", prompt=True, default=config.PASSWORD, hide_input=True)
 @may_fail_on_http_error(exit_code=1)
-@runs_authentified
+@proteus.runs_authentified
 def status(job_uuid):
     """Lists the latests status for a given job uuid"""
     from .list import list_job_status

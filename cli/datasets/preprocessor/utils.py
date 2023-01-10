@@ -1,11 +1,11 @@
-import platform
-import os
 import datetime
+import os
+import platform
 import time
 from pathlib import Path
 
-from proteus import api
 from ..upload import get_source
+from ... import proteus
 
 
 def get_creation_date(path_to_file):
@@ -49,10 +49,7 @@ def download_file(source_path, destination_path, source_url):
     items_and_paths = source.list_contents(starts_with=source_path)
 
     path_list = destination_path.split("/")[0:-1]
-    try:
-        os.makedirs("/".join(path_list))
-    except Exception:
-        pass
+    Path("/".join(path_list)).mkdir(parents=True, exist_ok=True)
 
     if os.path.isfile(destination_path):
         return
@@ -61,13 +58,22 @@ def download_file(source_path, destination_path, source_url):
     else:
         Path(f"{destination_path}.tmp").touch()
 
-        _, _, reference = next(items_and_paths)
-        stream = source.download(reference)
+        try:
+            _, _, reference = next(items_and_paths)
 
-        with open(f"{destination_path}.tmp", "wb") as file:
-            file.write(stream)
+            stream = source.download(reference)
 
-        os.rename(f"{destination_path}.tmp", destination_path)
+            with open(f"{destination_path}.tmp", "wb") as file:
+                file.write(stream)
+
+            # FIXME: Having issues with local files
+            # with open(f"{destination_path}.tmp", "wb") as file:
+            #     for chunk in source.chunks(reference):
+            #         file.write(chunk)
+
+            os.rename(f"{destination_path}.tmp", destination_path)
+        except StopIteration:
+            proteus.logger.info(f"The following file was not found: {source_path}")
 
 
 def upload_file(source_path, file_path, url):
@@ -83,7 +89,7 @@ def upload_file(source_path, file_path, url):
     """
     modified = get_creation_date(file_path)
     with open(file_path, "rb") as file_content:
-        api.post_file(
+        proteus.api.post_file(
             url,
             source_path,
             content=file_content,
@@ -147,5 +153,5 @@ def wait_until_file_is_downloaded(file_path, period=5, timeout=500):
 
 
 def get_case_info(case_url):
-    r = api.get(case_url)
+    r = proteus.api.get(case_url)
     return r.json().get("case")

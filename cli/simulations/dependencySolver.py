@@ -1,9 +1,11 @@
-from proteus import api
-from multiprocessing.dummy import Pool
-from cli.config import config
 import os
-from dateutil import tz
 from datetime import datetime
+from multiprocessing.dummy import Pool
+
+from dateutil import tz
+
+from cli.runtime import proteus
+from cli.config import config
 
 
 class DependencySolver:
@@ -50,9 +52,7 @@ class DependencySolver:
             modification_ts = os.path.getmtime(source_path)
             modified = datetime.fromtimestamp(modification_ts, tz.tzlocal())
             with open(source_path, "rb") as source:
-                response = api.post_file(
-                    self.batch_url, filepath, content=source, modified=modified
-                )
+                response = proteus.api.post_file(self.batch_url, filepath, content=source, modified=modified)
                 response_json = response.json()
                 assert "case" in response_json
                 return response_json.get("case")
@@ -68,9 +68,7 @@ class DependencySolver:
             source_folder.replace("./", "./cases/")
 
         source_folder = source_folder.split("/")
-        source_folder = (
-            source_folder[:-1] if len(source_folder) > 1 else source_folder
-        )
+        source_folder = source_folder[:-1] if len(source_folder) > 1 else source_folder
         source_folder = "/".join(source_folder)
 
         source_path = f"{source_folder}/{filepath}"
@@ -88,14 +86,10 @@ class DependencySolver:
         ]
 
         with Pool(processes=self.workers_count) as pool:
-            for res in pool.imap_unordered(
-                self.async_dependency_upload, pending_dependencies
-            ):
+            for res in pool.imap_unordered(self.async_dependency_upload, pending_dependencies):
                 if res:
                     if "file_to_ignore" in res:
-                        self.do_not_retry_list.append(
-                            res.get("file_to_ignore")
-                        )
+                        self.do_not_retry_list.append(res.get("file_to_ignore"))
 
         return not pending_dependencies
 
@@ -106,14 +100,10 @@ class DependencySolver:
 
         # Check for new dependencies
         simulation_case_url = f"{self.batch_url}/{self.case_number}"
-        response = api.get(simulation_case_url)
+        response = proteus.api.get(simulation_case_url)
         new_dependencies = response.json().get("dependencies")
 
-        pending_dependencies = [
-            dependency
-            for dependency in new_dependencies
-            if dependency.get("status") == "pending"
-        ]
+        pending_dependencies = [dependency for dependency in new_dependencies if dependency.get("status") == "pending"]
         if pending_dependencies and not should_stop:
             self.dependencies = pending_dependencies
             self.solve_dependencies()

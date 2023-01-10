@@ -1,5 +1,7 @@
 import os
 
+from proteus import Config as ProteusConfig
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -16,9 +18,7 @@ class Config(object):
     SLEEP_TIME = 30
     PROMPT = True
     AUTH_HOST = os.getenv("AUTH_HOST", "https://auth.dev.origen.ai")
-    PROTEUS_HOST = os.getenv(
-        "PROTEUS_HOST", "https://proteus-test.dev.origen.ai"
-    )
+    PROTEUS_HOST = os.getenv("PROTEUS_HOST", "https://proteus-test.dev.origen.ai")
     USERNAME = os.getenv("PROTEUS_USERNAME", "user-not-configured")
     PASSWORD = os.getenv("PROTEUS_PASSWORD", "password-not-configured")
     REALM = os.getenv("REALM", "origen")
@@ -33,9 +33,8 @@ class Config(object):
     REFRESH_GAP = 100  # Seconds
     S3_REGION = "eu-west-3"
     WORKERS_COUNT = 5
-    AZURE_STORAGE_CONNECTION_STRING = os.getenv(
-        "AZURE_STORAGE_CONNECTION_STRING"
-    )
+    AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+    AZURE_STORAGE_ACCOUNT_URL = os.getenv("AZURE_STORAGE_ACCOUNT_URL")
 
     STRESS_ITERATIONS = 10
 
@@ -45,6 +44,18 @@ class Config(object):
         "patch": os.getenv("DATASET_PATCH_VERSION", 0),
     }
     OPM_FLOW_PATH = os.getenv("OPM_FLOW_PATH", "/usr/bin/flow")
+
+    RUNTIME_CONFIG = ProteusConfig(
+        log_loc=os.path.abspath(os.path.join(os.path.dirname(__file__), "..")),
+        client_secret=CLIENT_SECRET,
+        auth_host=AUTH_HOST,
+        api_host=PROTEUS_HOST,
+        username=USERNAME,
+        password=PASSWORD,
+        realm=REALM,
+        client_id=CLIENT_ID,
+        refresh_gap=REFRESH_GAP,
+    )
 
 
 class ProductionConfig(Config):

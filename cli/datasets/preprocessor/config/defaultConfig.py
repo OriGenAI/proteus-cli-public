@@ -1,5 +1,6 @@
 from itertools import chain
-from proteus import api
+
+from cli.runtime import proteus
 
 
 class DefaultConfig(object):
@@ -25,7 +26,7 @@ class DefaultConfig(object):
     def _get_mapping(self):
         case_url = self.cases[0].get("case_url")
         dataset_url = case_url.split("/cases")[0]
-        dataset = api.get(dataset_url)
+        dataset = proteus.api.get(dataset_url)
         config = dataset.json().get("dataset").get("sampling").get("config")
         return config.get("cnn_pca_design").get("keywords")
 
@@ -85,8 +86,6 @@ class DefaultConfig(object):
     @classmethod
     def number_of_steps(cls):
         properties = cls.properties(cls)
-        method_list = [
-            step for step in properties if callable(getattr(cls, step))
-        ]
+        method_list = [step for step in properties if callable(getattr(cls, step))]
 
         return len(method_list)

@@ -1,17 +1,18 @@
 import os
-from proteus import api, logger
-from tqdm import tqdm
 from datetime import datetime
-from dateutil import tz
-from cli.config import config
 
+from dateutil import tz
+from tqdm import tqdm
+
+from cli.runtime import proteus
+from cli.config import config
 
 WORKERS_COUNT = config.WORKERS_COUNT
 
 
 def get_project_uuid_from_model_uuid(model_uuid):
     models_url = "api/v1/models"
-    response = api.get(f"{models_url}/{model_uuid}")
+    response = proteus.api.get(f"{models_url}/{model_uuid}")
     model = response.json().get("model")
     response.raise_for_status()
     return model.get("project_uuid")
@@ -26,7 +27,7 @@ def set_batch_model_and_typed_status(batch_uuid, model_uuid):
         model_uuid=model_uuid,
         set_status="typed",
     )
-    response = api.put(sim_batch_url, update_simulation)
+    response = proteus.put(sim_batch_url, update_simulation)
     response.raise_for_status()
     return response.json()
 
@@ -48,7 +49,7 @@ def create_batch(model_uuid, batch_name):
 
     # CREATE BATCH
     new_simulation = dict(name=batch_name, project_uuid=project_uuid)
-    response = api.post(f"{simulations_url}/batches", new_simulation)
+    response = proteus.api.post(f"{simulations_url}/batches", new_simulation)
     response.raise_for_status()
     simulation = response.json().get("batch")
     batch_uuid = simulation.get("uuid")
@@ -65,7 +66,7 @@ def get_batch(batch_uuid):
             the url for this simulation batch
     """
     simulations_batch_url = f"api/v1/simulations/{batch_uuid}"
-    response = api.get(simulations_batch_url)
+    response = proteus.api.get(simulations_batch_url)
     assert "simulation_batch" in response.json()
     return response.json().get("simulation_batch"), simulations_batch_url
 
@@ -85,13 +86,11 @@ def upload_file_to_batch(url, source_path, filepath):
         modification_ts = os.path.getmtime(source_path)
         modified = datetime.fromtimestamp(modification_ts, tz.tzlocal())
         with open(source_path, "rb") as source:
-            response = api.post_file(
-                url, filepath, content=source, modified=modified
-            )
+            response = proteus.api.post_file(url, filepath, content=source, modified=modified)
             response_json = response.json()
             return response_json.get("case")
     except FileNotFoundError:
-        logger.error(f"File not found: {source_path}", exc_info=False)
+        proteus.logger.error(f"File not found: {source_path}", exc_info=False)
         return False
 
 
@@ -135,16 +134,12 @@ def provide_batch_dependencies(batch_url, dependencies, source_folder):
     dependencies_progress = tqdm(dependencies, leave=False)
     missing_count = 0
     for filepath in dependencies_progress:
-        dependencies_progress.set_description(
-            f"uploading dependency {filepath}"
-        )
+        dependencies_progress.set_description(f"uploading dependency {filepath}")
         source_path = f"{source_folder}/{filepath}"
         provided = upload_file_to_batch(batch_url, source_path, filepath)
         if not provided:
             missing_count += 1
-            dependencies_progress.set_description(
-                f"cant provide any {filepath}"
-            )
+            dependencies_progress.set_description(f"cant provide any {filepath}")
             dependencies_progress.set_postfix({"missing": missing_count})
 
 
@@ -205,22 +200,14 @@ def upload_to_batch(source_folder, batch_uuid, reupload):
     for source_path in datafiles_progress:
         # Upload the .DATA file
         filepath, has_case_folder = parse_path(source_folder, source_path)
-        datafiles_progress.set_description(
-            f"processing DATA {filepath} with OPM flow."
-        )
+        datafiles_progress.set_description(f"processing DATA {filepath} with OPM flow.")
 
         # Upload accesories to .DATA file
         for source_inits_filepath in run_opm_flow_on(source_path):
             # provide_balanced_state(batch_url, source_path, filepath):
-            target_inits_filepath, _has_case_folder = parse_path(
-                source_folder, source_inits_filepath
-            )
-            datafiles_progress.set_description(
-                f"uploading inits {source_inits_filepath}"
-            )
-            upload_file_to_batch(
-                batch_url, source_inits_filepath, target_inits_filepath
-            )
+            target_inits_filepath, _has_case_folder = parse_path(source_folder, source_inits_filepath)
+            datafiles_progress.set_description(f"uploading inits {source_inits_filepath}")
+            upload_file_to_batch(batch_url, source_inits_filepath, target_inits_filepath)
         datafiles_progress.set_description(f"uploading DATA {filepath}")
         upload_file_to_batch(batch_url, source_path, filepath)
 

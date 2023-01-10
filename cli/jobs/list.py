@@ -1,6 +1,7 @@
-from proteus import api
-from tabulate import tabulate
 import readchar
+from tabulate import tabulate
+
+from cli.runtime import proteus
 
 job_columns = [
     {"label": "Creation", "field": "created"},
@@ -44,7 +45,7 @@ def has_prev(data):
 
 
 def api_load(url):
-    response = api.get(url)
+    response = proteus.api.get(url)
     response.raise_for_status()
     return response.json()
 
@@ -105,10 +106,6 @@ def list_job_status(uuid):
             url = prev_
         data = api_load(url)
         page, pages = data["page"], data["pages"]
-        print(
-            "\n"
-            f"Listing job status page {page} of {pages}"
-            f", {COMMANDS_TEXT}"
-        )
+        print("\n" f"Listing job status page {page} of {pages}" f", {COMMANDS_TEXT}")
         view(data, render_row=job_status_as_row, headers=job_status_headers)
         command = receive_command()

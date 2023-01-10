@@ -1,0 +1,67 @@
+[tool.poetry]
+name = "proteus-cli"
+version = "0.1.1"
+description = ""
+authors = []
+packages = [
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+click = "^8.0.0"
+jwt = "^1.2.0"
+cryptography = "^3.3.2"
+pycryptodome = "^3.10.1"
+boto3 = "^1.17.79"
+tqdm = "^4.61.0"
+tabulate = "^0.8.9"
+azure-storage-blob = "^12.8.1"
+readchar = "^3.0.4"
+proteus-preprocessing = "^0.1.9"
+azure-identity = "^1.12.0"
+markupsafe = "2.0.1"
+proteus-runtime = "^0.2"
+
+[tool.poetry.dev-dependencies]
+black = "^22.1.0"
+pre-commit = "^2.9.3"
+pytest-mock = "^3.5.1"
+requests-mock = "^1.8.0"
+pytest-bdd = "^5.0.0"
+pytest-cov = "^3.0.0"
+poethepoet = "^0.16.0"
+flake8 = "^4.0.1"
+
+[tool.poetry.scripts]
+proteus-do="cli.cli:main"
+
+[tool.poe.tasks]
+    # Composing commands
+    test = ['flake8', 'black_check', 'pytest']
+    format = ["black_format"]
+
+    [tool.poe.tasks.flake8]
+        cmd="""
+            flake8 cli
+                --max-line-length=120
+        """
+        help="Check code style using flake8"
+    [tool.poe.tasks.black_check]
+        cmd="""
+            black cli --check --diff
+                --line-length=120
+        """
+        help="Check code style using black does not refactor"
+    [tool.poe.tasks.pytest]
+        cmd="pytest tests"
+        help="Run python tests"
+
+    [tool.poe.tasks.black_format]
+        cmd="""
+            black . --line-length=120
+        """
+        help="Refactor using black"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

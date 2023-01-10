@@ -1,4 +1,5 @@
 import os
+
 from cli.buckets.download import download
 from pytest_bdd import scenario, given, when, then
 
@@ -10,10 +11,7 @@ def test_download(mocked_auth):
 
 @given("an api mock", target_fixture="updated_mocked_api_get")
 def updated_mocked_api_get(mocked_api_get):
-    content = (
-        b'{"total": 1, '
-        b'"results":[{"url": "my_url", "filepath": "test-file", "size": 0}]}'
-    )
+    content = b'{"total": 1, ' b'"results":[{"url": "my_url", "filepath": "test-file", "size": 0}]}'
     mocked_api_get.return_value._content = content
     return mocked_api_get
 

@@ -62,10 +62,7 @@ class HMCommonConfig(DefaultConfig):
         return iter(
             [
                 {
-                    "input": [
-                        f'{first_case["root"]}'
-                        + f'/SIMULATION_{first_case["number"]}.DATA'
-                    ],
+                    "input": [f'{first_case["root"]}' + f'/SIMULATION_{first_case["number"]}.DATA'],
                     "output": ["runspec.p"],
                     "preprocessing": "export_runspec",
                     "split": first_case["group"],
@@ -92,10 +89,7 @@ class CnnPcaCommonConfig(DefaultConfig):
         return iter(
             [
                 {
-                    "input": [
-                        f'{first_case["root"]}'
-                        + f'/SIMULATION_{first_case["number"]}.DATA'
-                    ],
+                    "input": [f'{first_case["root"]}' + f'/SIMULATION_{first_case["number"]}.DATA'],
                     "output": ["runspec.p"],
                     "preprocessing": "export_runspec",
                     "case": first_case["number"],
@@ -118,10 +112,7 @@ class CnnPcaCommonConfig(DefaultConfig):
         return iter(
             [
                 {
-                    "input": [
-                        f'{first_case["root"]}'
-                        + f'/SIMULATION_{first_case["number"]}.DATA'
-                    ],
+                    "input": [f'{first_case["root"]}' + f'/SIMULATION_{first_case["number"]}.DATA'],
                     "output": ["well_spec.p"],
                     "preprocessing": "export_wellspec",
                     "keep": True,
@@ -149,12 +140,8 @@ class CnnPcaCommonConfig(DefaultConfig):
         return iter(
             [
                 {
-                    "input": [
-                        f'{f["source"].lower()}.dat' for f in _get_dat_files()
-                    ],
-                    "output": [
-                        f'{f["name"].lower()}.h5' for f in _get_dat_files()
-                    ],
+                    "input": [f'{f["source"].lower()}.dat' for f in _get_dat_files()],
+                    "output": [f'{f["name"].lower()}.h5' for f in _get_dat_files()],
                     "preprocessing": "export_dat_properties",
                     "keep": True,
                     "additional_info": {"get_mapping": self._get_mapping},
@@ -175,12 +162,7 @@ class CnnPcaCommonConfig(DefaultConfig):
         return iter(
             [
                 {
-                    "input": [
-                        (
-                            f'{first_case["root"]}/'
-                            f'SIMULATION_{first_case["number"]}.GRDECL'
-                        )
-                    ],
+                    "input": [(f'{first_case["root"]}/' f'SIMULATION_{first_case["number"]}.GRDECL')],
                     "output": ["actnum.h5"],
                     "preprocessing": "export_actnum",
                     "case": first_case["number"],
@@ -191,4 +173,31 @@ class CnnPcaCommonConfig(DefaultConfig):
         )
 
 
-CommonConfigMapper = {"hm": HMCommonConfig, "cnn-pca": CnnPcaCommonConfig}
+class WellModelCommonConfig(DefaultConfig):
+    """Configuration generator for the common files"""
+
+    def step_1_runspec(self):
+        """
+        List all cases and its steps to generate the .DATA iterator
+
+        Args: -
+
+        Returns:
+            iterator: the list of steps to preprocess
+        """
+        first_case = self.cases[0]
+        return iter(
+            [
+                {
+                    "input": [f'{first_case["root"]}/SIMULATION_{first_case["number"]}.DATA'],
+                    "output": ["runspec.p"],
+                    "preprocessing": "export_runspec",
+                    "split": first_case["group"],
+                    "case": first_case["number"],
+                    "additional_info": {"set_endpoint": self._set_endpoint},
+                }
+            ]
+        )
+
+
+CommonConfigMapper = {"hm": HMCommonConfig, "cnn-pca": CnnPcaCommonConfig, "well-model": WellModelCommonConfig}

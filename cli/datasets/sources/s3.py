@@ -7,9 +7,7 @@ from .common import Source, SourcedItem
 
 class S3Source(Source):
 
-    URI_re = re.compile(
-        r"^s3://(?P<bucket_name>[a-zA-Z0-9.\-_]{1,255})/(?P<prefix>.*)$"
-    )
+    URI_re = re.compile(r"^s3://(?P<bucket_name>[a-zA-Z0-9.\-_]{1,255})/(?P<prefix>.*)$")
 
     def get_client(self):
         return boto3.client(
@@ -17,9 +15,7 @@ class S3Source(Source):
             aws_access_key_id=os.getenv("AWS_SERVER_PUBLIC_KEY"),
             aws_secret_access_key=os.getenv("AWS_SERVER_SECRET_KEY"),
             region_name=config.S3_REGION,
-            config=boto3.session.Config(
-                signature_version="s3v4", s3={"addressing_style": "path"}
-            ),
+            config=boto3.session.Config(signature_version="s3v4", s3={"addressing_style": "path"}),
         )
 
     def list_contents(self, starts_with="", ends_with=""):
@@ -44,9 +40,7 @@ class S3Source(Source):
     def open(self, reference):
         client = self.get_client()
         reference_path = reference.get("Key")
-        reference_response = client.get_object(
-            Bucket="client-research-data", Key=reference_path
-        )
+        reference_response = client.get_object(Bucket="client-research-data", Key=reference_path)
         file_size = reference_response["ContentLength"]
         stream = reference_response["Body"]
         modified = reference_response["LastModified"]

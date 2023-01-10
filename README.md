@@ -18,11 +18,9 @@ git clone --recurse-submodules git@github.com:OriGenAI/proteus-cli.git
 2. Install and setup enviroment
 
 ```
-virtualenv -p /usr/bin/python3.8 venv
-source venv/bin/activate
-pip install -r requirements.txt 
-# use requirements/dev.txt if you are a developer
-pip install -e .
+poetry env use `which python3.8`
+poetry shell
+poetry install
 ```
 
 3. create an environtment var shell script to handle configurations
@@ -166,3 +164,22 @@ As easy as set bucket UUID and a target folder, it will re-create the structure 
 ```
 proteus buckets download 17ca1e74-a70c-4598-bfc3-71de915e08cb  ./target_folder  --workers 5 [--ends-with X0001]
 ```
+
+### Publishing
+
+In order to publish a package to PyPi, the following steps must be followed:
+
+- The project status that wants to be published needs to be on the private repository dev branch.
+    - The project version on pyproject should be updated, or the following steps will not work.
+- Push the dev branch to the dev-deploy branch
+    - This will trigger a GitHub action that checks the new version, and creates an squashed commit.
+    - The action will then push the squashed commit to the branch dev-release.
+    - The action will also push to the dev branch on the public repository.
+- On the public repository, on release creation, a new version of the repository will be pushed to PyPi.
+    - The release creation will trigger a GitHub action that does this process automatically.
+
+This process depends on having the following secrets on GitHub:
+#### On the private repository:
+- PUBLIC_REPO_TOKEN: Personal Access Token from GitHub. Necessary to publish to the public repository.
+#### On the public repository:
+- PYPI_API_TOKEN: PyPi token. Necessary to publish to PyPi.

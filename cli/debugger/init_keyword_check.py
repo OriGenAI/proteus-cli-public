@@ -1,15 +1,16 @@
+import logging
 import os
-import time
 import shutil
+import time
 from functools import partial
-from proteus import api
-from cli.config import config
-from tqdm import tqdm
 from multiprocessing.pool import Pool, ThreadPool
-from proteus.oidc import may_insist_up_to
+
 from ecl.eclfile import EclFile, EclInitFile
 from ecl.grid import EclGrid
+from tqdm import tqdm
 
+from cli.runtime import proteus
+from cli.config import config
 
 WORKERS_COUNT, STRESS_ITERATIONS = (
     config.WORKERS_COUNT,
@@ -29,26 +30,21 @@ def keyword_check(
     iterations=STRESS_ITERATIONS,
 ):
     try:
-        assert api.auth.access_token is not None
+        assert proteus.api.auth.access_token is not None
         print(f"This process will use {workers} simultaneous threads.")
         start = time.time()
         items = list_bucket_files(bucket, file_ext, iterations=iterations)
-        count_success = download_files(
-            items, parallel_method, workers=workers, iterations=iterations
-        )
+        count_success = download_files(items, parallel_method, workers=workers, iterations=iterations)
         end = time.time()
-        print(
-            f"Succesful downloads: {count_success} of {iterations}, "
-            + f"took: {end - start:.2f} seconds"
-        )
+        print(f"Succesful downloads: {count_success} of {iterations}, " + f"took: {end - start:.2f} seconds")
         return "Done"
     except KeyboardInterrupt:
         pass
     finally:
-        api.auth.stop()
+        proteus.api.auth.stop()
 
 
-@may_insist_up_to(5, delay_in_secs=5)
+@proteus.may_insist_up_to(5, delay_in_secs=5)
 def do_download(item, chunk_size=1024):
     url, path, size, num = (
         item["url"],
@@ -73,7 +69,7 @@ def do_download(item, chunk_size=1024):
             if ".INIT" in file_name:
                 _download_init(url, file_name)
         except Exception as e:
-            print(e)
+            logging.exception(e)
             return False
 
         file_progress.total = size
@@ -88,14 +84,9 @@ def list_bucket_files(bucket_uuid, file_ext, iterations=10):
     os.mkdir(FILES_PATH)
 
     search = {"contains": file_ext}
-    response = api.get(
-        f"/api/v1/buckets/{bucket_uuid}/files", **search, per_page=1
-    )
+    response = proteus.api.get(f"/api/v1/buckets/{bucket_uuid}/files", **search, per_page=1)
 
-    return [
-        {"num": i, **response.json().get("results")[0]}
-        for i in range(iterations)
-    ]
+    return [{"num": i, **response.json().get("results")[0]} for i in range(iterations)]
 
 
 def download_files(items, parallel_method, workers=3, iterations=10):
@@ -115,13 +106,13 @@ def download_files(items, parallel_method, workers=3, iterations=10):
 
 
 def _download_x(url, file_name):
-    _ = api.store_download(url, FILES_PATH, file_name, timeout=600)
+    _ = proteus.api.store_download(url, FILES_PATH, file_name, timeout=600)
     unrst = EclFile(f"{FILES_PATH}/{file_name}")
     _validate_x_file(unrst)
 
 
 def _download_init(url, file_name):
-    _ = api.store_download(url, FILES_PATH, file_name, timeout=600)
+    _ = proteus.api.store_download(url, FILES_PATH, file_name, timeout=600)
     grid = _get_grid(url, file_name)
     init = EclInitFile(grid, f"{FILES_PATH}/{file_name}")
     _validate_init_file(init)
@@ -142,5 +133,5 @@ def _validate_init_file(file):
 def _get_grid(url, file_name):
     egrid_url = url.replace("INIT", "EGRID")
     egrid_file_name = file_name.replace("INIT", "EGRID")
-    _ = api.store_download(egrid_url, FILES_PATH, egrid_file_name, timeout=600)
+    _ = proteus.api.store_download(egrid_url, FILES_PATH, egrid_file_name, timeout=600)
     return EclGrid(f"{FILES_PATH}/{egrid_file_name}")

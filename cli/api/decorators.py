@@ -1,7 +1,9 @@
-from functools import wraps
-from proteus import logger
-from requests.exceptions import HTTPError
 import time
+from functools import wraps
+
+from requests.exceptions import HTTPError
+
+from cli.runtime import proteus
 
 
 def message_or_content_of(http_error):
@@ -30,11 +32,8 @@ def may_fail_on_http_error(exit_code=None):
             try:
                 return fn(*args, **kwargs)
             except HTTPError as error:
-                logger.error(message_or_content_of(error))
-                if exit_code is not None:
-                    import sys
-
-                    sys.exit(exit_code)
+                proteus.logger.error(message_or_content_of(error))
+                raise
 
         return wrapped
 
@@ -53,7 +52,7 @@ def may_insist_up_to(times, delay_in_secs=0):
                 try:
                     return fn(*args, **kwargs)
                 except Exception as error:
-                    print(error)
+                    proteus.logger.error(error)
                     failures += 1
                     if failures > times:
                         raise error

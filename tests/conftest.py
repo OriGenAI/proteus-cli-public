@@ -4,7 +4,7 @@ from requests.models import Response
 
 @pytest.fixture
 def mocked_api_get(mocker):
-    mock = mocker.patch("proteus.api.get")
+    mock = mocker.patch("proteus.api.API.get")
     mock.return_value = Response()
     mock.return_value.status_code = 200
     mock.return_value._content = b"Test content"
@@ -13,7 +13,7 @@ def mocked_api_get(mocker):
 
 @pytest.fixture
 def mocked_api_post(mocker):
-    mock = mocker.patch("proteus.api.post")
+    mock = mocker.patch("proteus.api.API.post")
     mock.return_value = Response()
     mock.return_value.status_code = 200
     return mock

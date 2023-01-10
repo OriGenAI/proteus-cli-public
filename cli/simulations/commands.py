@@ -1,7 +1,8 @@
 import click
-from proteus import runs_authentified, logger
+
+from cli.api.decorators import may_fail_on_http_error
 from cli.config import config
-from api.decorators import may_fail_on_http_error
+from cli.runtime import proteus
 
 
 @click.group()
@@ -30,7 +31,7 @@ CREATE_USAGE_ERROR = (
 @click.option("--user", prompt=True, default=config.USERNAME)
 @click.option("--password", prompt=True, default=config.PASSWORD, hide_input=True)
 @may_fail_on_http_error(exit_code=1)
-@runs_authentified
+@proteus.runs_authentified
 def create(
     source_folder,
     batch_uuid=None,
@@ -41,7 +42,7 @@ def create(
     """This creates a new simulation batch and uploads the DATA files
     and related dependencies from a source folder"""
 
-    logger.info("Create simulation command")
+    proteus.logger.info("Create simulation command")
     from .create import (
         upload_to_batch,
         create_batch,
@@ -50,24 +51,17 @@ def create(
 
     try:
         if batch_uuid is None:
-            assert (
-                model_uuid is not None and batch_name is not None
-            ), CREATE_USAGE_ERROR
+            assert model_uuid is not None and batch_name is not None, CREATE_USAGE_ERROR
 
-            assert (
-                len(batch_name) > 0
-            ), "batch_name can't be empty to create a new batch"
+            assert len(batch_name) > 0, "batch_name can't be empty to create a new batch"
 
             batch_uuid = create_batch(
                 model_uuid=model_uuid,
                 batch_name=batch_name,
             )
-            logger.info(
-                "Created a new batch. to resume use "
-                f'--batch_uuid="{batch_uuid}"'
-            )
+            proteus.logger.info("Created a new batch. to resume use " f'--batch_uuid="{batch_uuid}"')
         set_batch_model_and_typed_status(batch_uuid, model_uuid)
-        logger.info("Simulation batch assigned to model")
+        proteus.logger.info("Simulation batch assigned to model")
 
         from .opm import opm_flow_is_available
 
@@ -75,8 +69,8 @@ def create(
     except AssertionError as error:
         raise click.UsageError(error)
 
-    logger.info("Uploading files and dependencies to simulation batch")
+    proteus.logger.info("Uploading files and dependencies to simulation batch")
     try:
         upload_to_batch(source_folder, batch_uuid, reupload)
     except AssertionError as error:
-        logger.error(f"Error during process: {error}", exc_info=False)
+        proteus.logger.error(f"Error during process: {error}", exc_info=False)

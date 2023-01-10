@@ -11,7 +11,7 @@ FROM python:3.8-slim-buster
 RUN mkdir /cli
 WORKDIR /cli
 
-COPY api/ api/
+COPY cli/api/ api/
 COPY cli/ cli/
 COPY setup.py project.py ./
 COPY requirements/ requirements/
