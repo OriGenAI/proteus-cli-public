@@ -9,6 +9,7 @@ from ecl.eclfile import EclInitFile, EclFile
 from ecl.grid import EclGrid
 from ecl.summary import EclSum
 from ecl.well import WellInfo
+
 from preprocessing.deck.runspec import preprocess as preprocess_runspec
 from preprocessing.deck.section import find_section
 from preprocessing.modular.dat import preprocess as preprocess_dat
@@ -18,8 +19,7 @@ from preprocessing.modular.grdecl import preprocess as preprocess_grdecl
 from preprocessing.modular.init import preprocess as preprocess_init
 from preprocessing.modular.s import WellSummaryProcessor
 from preprocessing.modular.x import preprocess as preprocess_x
-
-from .config.CaseConfig import SMSPEC_WELL_KEYWORDS, SMSPEC_FIELD_KEYWORDS
+from .config.case.well_model import SMSPEC_WELL_KEYWORDS, SMSPEC_FIELD_KEYWORDS
 from .utils import upload_file, find_ext, find_file, get_case_info
 from ... import proteus
 
@@ -146,7 +146,7 @@ def export_runspec(
 
 def export_egrid_properties(case_loc, case_dest_loc, *args):
     grid_src_loc = find_ext(case_loc=case_loc, ext="EGRID")
-    grid_dest_loc = os.path.join(case_dest_loc, "grid_props.h5")
+    grid_dest_loc = os.path.join(case_dest_loc, "grid.h5")
 
     grid = EclGrid(str(grid_src_loc))
     props = preprocess_egrid(grid)

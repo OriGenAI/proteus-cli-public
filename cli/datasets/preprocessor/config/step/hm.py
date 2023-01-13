@@ -1,4 +1,4 @@
-from .defaultConfig import DefaultConfig
+from ..default import DefaultConfig
 
 
 class HMStepConfig(DefaultConfig):
@@ -76,14 +76,3 @@ class HMStepConfig(DefaultConfig):
             result.extend(steps)
 
         return iter(result)
-
-
-class CnnPcaStepConfig(DefaultConfig):
-    """Configuration generator for the steps"""
-
-
-class WellModelStepConfig(DefaultConfig):
-    """Configuration generator for the steps"""
-
-
-StepConfigMapper = {"hm": HMStepConfig, "cnn-pca": CnnPcaStepConfig, "well-model": WellModelStepConfig}
