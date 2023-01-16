@@ -14,8 +14,8 @@ def datasets():
 
 @datasets.command()
 @click.option("--workers", prompt=config.PROMPT, default=config.WORKERS_COUNT)
-@click.option("--user", prompt=True, default=config.USERNAME)
-@click.option("--password", prompt=True, default=config.PASSWORD, hide_input=True)
+@click.option("--user", prompt=config.USERNAME is None, default=config.USERNAME)
+@click.option("--password", prompt=config.PASSWORD is None, default=config.PASSWORD, hide_input=True)
 @click.option("--replace/--no-replace", default=False)
 @click.argument("bucket")
 @click.argument("dataset_uuid")
