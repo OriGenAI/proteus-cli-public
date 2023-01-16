@@ -1,9 +1,8 @@
-
 import pytest
-from cli.datasets.upload import process_files
 from pytest_bdd import scenario, given, when, then, parsers
 
-from api.hooks import TqdmUpWithReport
+from cli.api.hooks import TqdmUpWithReport
+from cli.datasets.upload import process_files
 
 
 @pytest.fixture
@@ -13,7 +12,7 @@ def process_mock(mocker):
 
 @pytest.fixture
 def tqdm_mock(mocker):
-    return mocker.patch("api.hooks.TqdmUpWithReport.update_with_report", return_value=True)
+    return mocker.patch("cli.api.hooks.TqdmUpWithReport.update_with_report", return_value=True)
 
 
 @pytest.fixture
@@ -28,7 +27,7 @@ def refresh_mock(mocker):
 
 @pytest.fixture
 def keywords_mock(mocker):
-    mock = mocker.patch("cli.datasets.preprocessor.config.defaultConfig.DefaultConfig._get_mapping")
+    mock = mocker.patch("cli.datasets.preprocessor.config.default.DefaultConfig._get_mapping")
     mock.return_value = [
         {"name": "ACTNUM", "source": "BOOLEAN"},
         {"name": "LITHO", "source": "LITHO"},
