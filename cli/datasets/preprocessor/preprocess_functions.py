@@ -117,7 +117,9 @@ def export_runspec(
     source_url,
     cases_url,
     set_endpoint,
-    *args,
+    allow_missing_files=tuple(),
+    base_dir=None,
+    *_,
 ):
     root_folder = case_dest_loc.split("/cases/")[0]
     runspec_dest_loc = os.path.join(root_folder, "runspec.p")
@@ -128,7 +130,7 @@ def export_runspec(
 
         download_file(source_path, destination_path, source_url)
 
-    data = preprocess_runspec(data_src_loc, download_func)
+    data = preprocess_runspec(data_src_loc, download_func, allow_missing_files=allow_missing_files, base_dir=base_dir)
     multout = data.get("multout")
     del data["multout"]
     if not multout:
@@ -144,7 +146,7 @@ def export_runspec(
 """ Cases preprocessing """
 
 
-def export_egrid_properties(case_loc, case_dest_loc, *args):
+def export_egrid_properties(case_loc, case_dest_loc, *_):
     grid_src_loc = find_ext(case_loc=case_loc, ext="EGRID")
     grid_dest_loc = os.path.join(case_dest_loc, "grid.h5")
 
@@ -290,7 +292,7 @@ def _write_keywords_to_h5(props, dest_loc):
         write_h5_from_dict({k: v}, file_dest_loc)
 
 
-def export_wellspec(case_loc, case_dest_loc, _, source_url, *args):
+def export_wellspec(case_loc, case_dest_loc, _, source_url, *args, allow_missing_files=tuple(), base_dir=None):
     runspec_dest_loc = os.path.join(case_dest_loc, "well_spec.p")
     data_src_loc = find_ext(case_loc, "DATA")
 
@@ -300,7 +302,7 @@ def export_wellspec(case_loc, case_dest_loc, _, source_url, *args):
         download_file(source_path, destination_path, source_url)
 
     # Read and download data includes
-    find_section(data_src_loc, "RUNSPEC", download_func)
+    find_section(data_src_loc, "RUNSPEC", download_func, allow_missing_files=allow_missing_files, base_dir=base_dir)
 
     preprocessor = WellSpecsProcessor(data_src_loc)
     data = preprocessor.process()
@@ -310,7 +312,7 @@ def export_wellspec(case_loc, case_dest_loc, _, source_url, *args):
     return data_src_loc, runspec_dest_loc, None
 
 
-def export_smry(case_loc, case_dest_loc, _, source_url, *args):
+def export_smry(case_loc, case_dest_loc, _, source_url, *args, allow_missing_files=tuple(), base_dir=None):
     preprocessed_smry_dest_loc = os.path.join(case_dest_loc, "preprocessed_smry.h5")
     raw_smry_dest_loc = os.path.join(case_dest_loc, "raw_smry.h5")
     data_src_loc = find_ext(case_loc, "DATA")
@@ -321,7 +323,7 @@ def export_smry(case_loc, case_dest_loc, _, source_url, *args):
         download_file(source_path, destination_path, source_url)
 
     # Read and download data includes
-    find_section(data_src_loc, "RUNSPEC", download_func)
+    find_section(data_src_loc, "RUNSPEC", download_func, allow_missing_files=allow_missing_files, base_dir=base_dir)
 
     case_name = extract_casename(case_loc)
     smry_src_loc = os.path.join(case_loc, case_name)

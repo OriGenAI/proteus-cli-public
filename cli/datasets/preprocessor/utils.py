@@ -4,7 +4,6 @@ import platform
 import time
 from pathlib import Path
 
-from ..upload import get_source
 from ... import proteus
 
 
@@ -43,8 +42,11 @@ def download_file(source_path, destination_path, source_url):
 
     Returns: -
     """
+    from ..upload import get_source
+
     source = get_source(source_url)
-    source_path = source_path.replace("\\", "/")
+    # Preserve RequiredFilePath with input.__class__
+    source_path = source_path.__class__(source_path.replace("\\", "/"))
     destination_path = destination_path.replace("\\", "/")
     items_and_paths = source.list_contents(starts_with=source_path)
 
@@ -73,7 +75,9 @@ def download_file(source_path, destination_path, source_url):
 
             os.rename(f"{destination_path}.tmp", destination_path)
         except StopIteration:
-            proteus.logger.info(f"The following file was not found: {source_path}")
+            if isinstance(source_path, RequiredFilePath):
+                raise FileNotFoundError(f"Required file {source_path} is not found")
+            proteus.logger.error(f"The following file was not found: {source_path}")
 
 
 def upload_file(source_path, file_path, url):
@@ -155,3 +159,7 @@ def wait_until_file_is_downloaded(file_path, period=5, timeout=500):
 def get_case_info(case_url):
     r = proteus.api.get(case_url)
     return r.json().get("case")
+
+
+class RequiredFilePath(str):
+    pass
