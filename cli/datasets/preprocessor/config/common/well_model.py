@@ -1,4 +1,5 @@
 from ..default import DefaultConfig
+from ...utils import RequiredFilePath
 
 
 class WellModelCommonConfig(DefaultConfig):
@@ -17,7 +18,15 @@ class WellModelCommonConfig(DefaultConfig):
         return iter(
             [
                 {
-                    "input": [f'{first_case["root"]}/SIMULATION_{first_case["number"]}.DATA'],
+                    "input": [
+                        RequiredFilePath(f'{first_case["root"]}/SIMULATION_{first_case["number"]}.DATA'),
+                        # Required to extract well names
+                        RequiredFilePath(f'{first_case["root"]}/SIMULATION_{first_case["number"]}.SMSPEC'),
+                        RequiredFilePath(
+                            f'{first_case["root"]}/SIMULATION_'
+                            f'{first_case["number"]}.S{str(first_case["initialStep"]).zfill(4)}'
+                        ),
+                    ],
                     "output": ["runspec.p"],
                     "preprocessing": "export_runspec",
                     "split": first_case["group"],

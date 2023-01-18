@@ -1,4 +1,5 @@
 import glob
+import inspect
 import os
 import shutil
 
@@ -17,7 +18,7 @@ def files_exist_in_bucket(outputs, bucket_url):
     return True
 
 
-def process_step(step, tmpdirname, source_url, bucket_url, cases_url, replace=False):
+def process_step(step, tmpdirname, source_url, bucket_url, cases_url, replace=False, allow_missing_files=tuple()):
 
     (
         inputs,
@@ -42,6 +43,8 @@ def process_step(step, tmpdirname, source_url, bucket_url, cases_url, replace=Fa
         "post_processing_function_name",
     )
 
+    additional_info = additional_info or {}
+
     if not replace and files_exist_in_bucket(outputs, bucket_url):
         return outputs
 
@@ -56,7 +59,9 @@ def process_step(step, tmpdirname, source_url, bucket_url, cases_url, replace=Fa
 
     # Download the required files. Keep the file if necessary
     for input in inputs:
-        download_file(f"/{input}", os.path.join(tmpdirname, input), source_url)
+        # Preserve RequiredFilePath with input.__class__
+        source_path = input.__class__(f"/{input}")
+        download_file(source_path, os.path.join(tmpdirname, str(input)), source_url)
 
     # Process the files
     func = getattr(preprocess_functions, preprocessing_function_name)
@@ -65,6 +70,13 @@ def process_step(step, tmpdirname, source_url, bucket_url, cases_url, replace=Fa
         func_input = inputs
     if len(inputs) == 1:
         func_input = inputs[0]
+
+    # Parameters not fully supported by old preprocessing configurations
+    if "allow_missing_files" in inspect.getfullargspec(func).args:
+        additional_info["allow_missing_files"] = allow_missing_files
+
+    if "base_dir" in inspect.getfullargspec(func).args:
+        additional_info["base_dir"] = tmpdirname
 
     source_dir, _, output = func(
         path_name,

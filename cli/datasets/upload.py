@@ -67,7 +67,7 @@ def get_total_steps(cases, workflow):
     return common_step + (cases_steps + timesteps_steps * (final_step - initial_step + 1)) * len(cases)
 
 
-def upload(bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False):
+def upload(bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False, allow_missing_files=tuple()):
     assert proteus.api.auth.access_token is not None
     set_dataset_version(dataset_uuid)
 
@@ -98,6 +98,7 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False):
             workers=workers,
             workflow=workflow,
             replace=replace,
+            allow_missing_files=allow_missing_files,
         )
 
 
@@ -217,6 +218,7 @@ def process_files(
     workers=WORKERS_COUNT,
     workflow="hm",
     replace=False,
+    allow_missing_files=tuple(),
 ):
     from .preprocessor.config import Config
     from .preprocessor.process_step import process_step
@@ -239,6 +241,7 @@ def process_files(
                 bucket_url=bucket_url,
                 cases_url=cases_url,
                 replace=replace,
+                allow_missing_files=allow_missing_files,
             )
             for res in pool.imap_unordered(process_step_partial, steps):
                 for output in res[:-1]:
