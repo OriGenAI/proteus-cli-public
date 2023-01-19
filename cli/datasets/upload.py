@@ -101,6 +101,8 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False, allow_mis
             allow_missing_files=allow_missing_files,
         )
 
+    proteus.reporting.send("upload finished", status="completed", progress=100)
+
 
 def get_cases(dataset_uuid, progress):
     progress.set_description("Retrieving cases and expected files")
