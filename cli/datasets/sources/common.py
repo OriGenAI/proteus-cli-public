@@ -21,13 +21,14 @@ class Source:
 
 
 class SourcedItem:
-    def __init__(self, reference, path, source):
+    def __init__(self, reference, path, source, size):
         self.source = source
         self.path = path
         self.reference = reference
+        self.size = size
 
     def __iter__(self):
-        return iter((self.source, self.path, self.reference))
+        return iter((self.source, self.path, self.reference, self.size))
 
     def __str__(self):
         return f"< {self.path}@{self.source} >"

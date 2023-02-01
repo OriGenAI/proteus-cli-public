@@ -2,9 +2,10 @@ import glob
 import inspect
 import os
 import shutil
+from collections import OrderedDict
 
 from . import preprocess_functions
-from .utils import pluck, upload_file, download_file
+from .utils import pluck, upload_file, download_file, PathMeta
 from ... import proteus
 
 
@@ -30,6 +31,7 @@ def process_step(step, tmpdirname, source_url, bucket_url, cases_url, replace=Fa
         additional_info,
         post_processing_info,
         post_processing_function_name,
+        continue_if_missing,
     ) = pluck(
         step,
         "input",
@@ -41,6 +43,7 @@ def process_step(step, tmpdirname, source_url, bucket_url, cases_url, replace=Fa
         "additional_info",
         "post_processing_info",
         "post_processing_function_name",
+        "continue_if_missing",
     )
 
     additional_info = additional_info or {}
@@ -58,22 +61,32 @@ def process_step(step, tmpdirname, source_url, bucket_url, cases_url, replace=Fa
         pass
 
     # Download the required files. Keep the file if necessary
+    downloaded_inputs = OrderedDict()
     for input in inputs:
         # Preserve RequiredFilePath with input.__class__
-        source_path = input.__class__(f"/{input}")
-        download_file(source_path, os.path.join(tmpdirname, str(input)), source_url)
+        source_path = getattr(input, "clone", input.__class__)(f"/{input}")
+        transformed_input, output_path = download_file(source_path, os.path.join(tmpdirname, str(input)), source_url)
+        transformed_input = getattr(input, "clone", lambda x: PathMeta(x, download_name=input))(transformed_input)
+        downloaded_inputs.setdefault(getattr(input, "download_name", transformed_input), []).append(output_path)
 
     # Process the files
     func = getattr(preprocess_functions, preprocessing_function_name)
     func_input = None
     if len(inputs) > 1:
-        func_input = inputs
+        func_input = downloaded_inputs
     if len(inputs) == 1:
-        func_input = inputs[0]
+        download_name, output_path = next(iter(downloaded_inputs.items()))
+        if len(output_path) == 1:
+            output_path = output_path[0]
+
+        func_input = PathMeta(download_name, download_name=download_name, full_path=output_path)
 
     # Parameters not fully supported by old preprocessing configurations
     if "allow_missing_files" in inspect.getfullargspec(func).args:
-        additional_info["allow_missing_files"] = allow_missing_files
+        additional_info["allow_missing_files"] = list(allow_missing_files)
+
+    if continue_if_missing:
+        additional_info.setdefault("allow_missing_files", []).extend(continue_if_missing)
 
     if "base_dir" in inspect.getfullargspec(func).args:
         additional_info["base_dir"] = tmpdirname
