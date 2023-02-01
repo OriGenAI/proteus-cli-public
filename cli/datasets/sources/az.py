@@ -93,11 +93,6 @@ class AZObjectFile:
         self.block_list = []
         self.mode = mode
         self.__open__ = True
-        # if mode == 'r':
-        #     self.write = forbid('write', 'r')
-        # elif mode == 'w':
-        #     self.__iter__ = forbid('__iter__', 'w')
-        #     self.read = forbid('read', 'w')
         self.pos = 0
         self.size = size
 
