@@ -4,6 +4,8 @@ import platform
 import time
 from pathlib import Path
 
+from tqdm import tqdm
+
 from ... import proteus
 
 
@@ -48,32 +50,75 @@ def download_file(source_path, destination_path, source_url):
     # Preserve RequiredFilePath with input.__class__
     source_path = source_path.__class__(source_path.replace("\\", "/"))
     destination_path = destination_path.replace("\\", "/")
-    items_and_paths = source.list_contents(starts_with=source_path)
+    if "*" in source_path:
+        prefix, suffix = source_path.split("*", 1)
+        if "*" in suffix:
+            raise RuntimeError("A file path can not include more than one glob symbol ('*')")
+        items_and_paths = list(source.list_contents(starts_with=prefix, ends_with=suffix))
+
+        if len(items_and_paths) > 1:
+            globbed_paths = ",".join(str(x) for x in items_and_paths)
+            raise RuntimeError(f'"f{source_path}" defines more than one file: {globbed_paths}')
+
+        if len(items_and_paths) != 1:
+            raise FileNotFoundError(f'Cannot resolve glob "{source_path}"')
+
+        assert len(destination_path.split("*")) in (1, 2)
+
+        glob_replacement_in_destination_path = suffix.join(
+            items_and_paths[0].path.split(prefix, 1)[1].split(suffix)[:-1]
+        )
+
+        if "*" in destination_path:
+            destination_path_parts = destination_path.split("*")
+            destination_path = (
+                destination_path_parts[0] + glob_replacement_in_destination_path + destination_path_parts[1]
+            )
+
+        if "*" in source_path:
+            transformed_source_path = prefix + glob_replacement_in_destination_path + suffix
+        else:
+            transformed_source_path = source_path
+
+        proteus.logger.info(
+            f'Glob "{source_path}" resolved to {items_and_paths[0]}. Output path rewritten to f{destination_path}'
+        )
+
+        items_and_paths = iter(items_and_paths)
+
+    else:
+        items_and_paths = source.list_contents(starts_with=source_path)
+        transformed_source_path = source_path
 
     path_list = destination_path.split("/")[0:-1]
     Path("/".join(path_list)).mkdir(parents=True, exist_ok=True)
 
     if os.path.isfile(destination_path):
-        return
+        return transformed_source_path, destination_path
     elif os.path.isfile(f"{destination_path}.tmp"):
         wait_until_file_is_downloaded(destination_path)
+        return transformed_source_path, destination_path
     else:
         Path(f"{destination_path}.tmp").touch()
 
         try:
-            _, _, reference = next(items_and_paths)
-
-            stream = source.download(reference)
+            _, path, reference, size = next(items_and_paths)
 
             with open(f"{destination_path}.tmp", "wb") as file:
-                file.write(stream)
+                with tqdm(
+                    total=size, unit="B", unit_scale=True, unit_divisor=1024, desc=f"Retrieving file {path}"
+                ) as pbar:
+                    read = 0
+                    for chunk in source.chunks(reference):
+                        file.write(chunk)
+                        read += len(chunk)
+                        pbar.update(len(chunk))
 
-            # FIXME: Having issues with local files
-            # with open(f"{destination_path}.tmp", "wb") as file:
-            #     for chunk in source.chunks(reference):
-            #         file.write(chunk)
+                    pbar.set_description("Done")
 
             os.rename(f"{destination_path}.tmp", destination_path)
+
+            return transformed_source_path, destination_path
         except StopIteration:
             if isinstance(source_path, RequiredFilePath):
                 raise FileNotFoundError(f"Required file {source_path} is not found")
@@ -113,16 +158,39 @@ def pluck(dict, *args):
     return (dict.get(arg, None) for arg in args)
 
 
-def find_ext(case_loc, ext):
+def find_ext(case_loc, ext, required=False, one=False, first=True, last=False):
     """
     Finds if file exists in the directory
     Args:
         case_loc (string): Path of the folder
         ext (string): Extension of the file to find
+        required (bool): Fails if no file is found
+        one (bool): Fails if more than one file is found
+        first (bool): sort files alphabetically and returns the first
+        last (bool): sort files alphabetically and returns the last
 
     Returns: file_path (string): Path of the file if exists
     """
-    return next(Path(case_loc).rglob(f"*.{ext}"))
+    files = list(Path(case_loc).rglob(f"*.{ext}"))
+
+    if (one or required) and len(files) == 0:
+        raise FileNotFoundError(os.path.join(case_loc, f"*.{ext}"))
+
+    if one and len(files) > 1:
+        raise FileNotFoundError(
+            f"More than one file for {os.path.join(case_loc, f'*.{ext}')}: {','.join(str(x) for x in files)}"
+        )
+
+    if last or first:
+        files = sorted(files)
+
+    if last:
+        files = [files[-1]]
+
+    if first:
+        files = [files[0]]
+
+    return next(iter(files), None)
 
 
 def find_file(case_loc, name):
@@ -161,5 +229,21 @@ def get_case_info(case_url):
     return r.json().get("case")
 
 
-class RequiredFilePath(str):
+class PathMeta(str):
+    download_name = None
+    cloned_from = None
+    full_path = None
+
+    def __new__(cls, value, download_name=None, cloned_from=None, full_path=None):
+        path_meta = str.__new__(cls, value)
+        path_meta.download_name = download_name
+        path_meta.cloned_from = cloned_from
+        path_meta.full_path = full_path
+        return path_meta
+
+    def clone(self, value):
+        return self.__class__(value, download_name=self.download_name, cloned_from=self)
+
+
+class RequiredFilePath(PathMeta):
     pass
