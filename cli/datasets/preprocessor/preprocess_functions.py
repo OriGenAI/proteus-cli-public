@@ -127,9 +127,11 @@ def export_runspec(
     egrid_file_loc = None
     smspec_file_loc = None
     restart_file_loc = None
+    init_file_loc = None
 
     if isinstance(input_src, dict):
         data_file_loc = next(iter(input_src.get("data") or []), None)
+        init_file_loc = next(iter(input_src.get("init") or []), None)
         egrid_file_loc = next(iter(input_src.get("grid") or []), None)
         smspec_file_loc = next(iter(input_src.get("smspec") or []), None)
         restart_file_loc = next(iter(input_src.get("x") or []), None)
@@ -142,6 +144,8 @@ def export_runspec(
         smspec_file_loc = find_ext(case_loc, "SMSPEC", one=True)
     if restart_file_loc is None:
         restart_file_loc = find_ext(case_loc, "X000*", first=True)
+    if init_file_loc is None:
+        init_file_loc = find_ext(case_loc, "INIT")
 
     def download_func(source_path, destination_path):
         from .utils import download_file
@@ -154,6 +158,7 @@ def export_runspec(
         smspec_file_loc=smspec_file_loc,
         download_func=download_func,
         restart_file_loc=restart_file_loc,
+        init_file_loc=init_file_loc,
         allow_missing_files=allow_missing_files,
         base_dir=base_dir,
     )

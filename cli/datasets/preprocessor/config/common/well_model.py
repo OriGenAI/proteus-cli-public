@@ -29,6 +29,7 @@ class WellModelCommonConfig(DefaultConfig):
                         RequiredFilePath(
                             f'{first_case["root"]}/*.X{str(first_case["finalStep"]).zfill(4)}', download_name="x"
                         ),
+                        RequiredFilePath(f'{first_case["root"]}/*.INIT', download_name="init"),
                     ],
                     "continue_if_missing": [".inc", ".grdecl"],
                     "output": ["runspec.p"],
