@@ -5,7 +5,7 @@ import uuid
 from io import BytesIO
 
 from azure.identity import DefaultAzureCredential
-from azure.storage.blob import ContainerClient, BlobClient, BlobBlock
+from azure.storage.blob import ContainerClient
 
 from cli.config import config
 from .common import Source, SourcedItem
@@ -19,18 +19,25 @@ class AZSource(Source):
         r"^https:\/\/(?P<bucket_name>.*\.windows\.net)\/" r"(?P<container_name>[^\/]*)(\/)?(?P<prefix>.*)?$"
     )
 
+    def __init__(self, uri):
+        super().__init__(uri)
+        match = self.URI_re.match(uri.rstrip("/"))
+        assert match is not None, f"{uri} must be an s3 URI"
+        container_name = match.groupdict()["container_name"]
+        storage_url = f'https://{match.groupdict()["bucket_name"]}'
+        self.container_client = ContainerClient(
+            storage_url,
+            credential=DefaultAzureCredential(exclude_managed_identity_credential=True),
+            container_name=container_name,
+        )
+
     @proteus.may_insist_up_to(5, 1)
     def list_contents(self, starts_with="", ends_with=None):
         bucket_uri = self.uri
         match = self.URI_re.match(bucket_uri.rstrip("/"))
         assert match is not None, f"{bucket_uri} must be an s3 URI"
-        container_name = match.groupdict()["container_name"]
         prefix = match.groupdict()["prefix"]
-        client = ContainerClient.from_connection_string(
-            conn_str=config.AZURE_STORAGE_CONNECTION_STRING,
-            container_name=container_name,
-        )
-        for item in client.list_blobs(name_starts_with=prefix + starts_with):
+        for item in self.container_client.list_blobs(name_starts_with=prefix + starts_with):
             item_name = item["name"]
             if ends_with is None or item_name.endswith(ends_with):
                 yield SourcedItem(item, item_name, self, item.size)
@@ -39,44 +46,22 @@ class AZSource(Source):
         reference_path = reference.get("name")
         file_size = reference["size"]
         modified = reference["last_modified"]
-        blob_client = self._client(reference)
 
         stream = BytesIO()
-        streamdownloader = blob_client.download_blob(max_concurrency=4)
+        streamdownloader = self.container_client.download_blob(reference.get("name"), max_concurrency=4)
         streamdownloader.download_to_stream(stream)
         stream.seek(0)
         return reference_path, file_size, modified, stream
 
-    def _client(self, reference):
-        container = reference.get("container")
-        reference_path = reference.get("name")
-
-        if config.AZURE_STORAGE_ACCOUNT_URL:
-            blob_client = BlobClient(
-                config.AZURE_STORAGE_ACCOUNT_URL,
-                credential=DefaultAzureCredential(),
-                container_name=container,
-                blob_name=reference_path,
-            )
-        elif config.AZURE_STORAGE_CONNECTION_STRING:
-            blob_client = BlobClient.from_connection_string(
-                conn_str=config.AZURE_STORAGE_CONNECTION_STRING,
-                container_name=container,
-                blob_name=reference_path,
-            )
-
-        return blob_client
-
     @proteus.may_insist_up_to(5, 1)
     def _download_blob(self, reference):
-        return self._client(reference).download_blob(max_concurrency=3, read_timeout=8000, timeout=8000)
+        return self.container_client.download_blob(reference.get("name"), max_concurrency=3, read_timeout=8000, timeout=8000)
 
     def download(self, reference):
         return self._download_blob(reference).readall()
 
     def chunks(self, reference):
-        client = self._client(reference)
-        with AZObjectFile(client, mode="r", size=reference.size) as f:
+        with AZObjectFile(mode="r", size=reference.size, container_client=self.container_client, reference_path=reference.get("name")) as f:
             for chunk in f:
                 yield chunk
 
@@ -85,28 +70,20 @@ class AZObjectFile:
     """An ObjectFile in object storage that can be opened and closed.
     See Objects.open()"""
 
-    def __init__(self, client, mode, size):
+    def __init__(self, mode, size, container_client=None, reference_path=None):
         """Initialize the Object object with a name and a blob_client
         mode is w or r, size is the blob size.
         """
-        self.client = client
+        self.container_client = container_client
+        self.reference_path = reference_path
         self.block_list = []
         self.mode = mode
         self.__open__ = True
         self.pos = 0
         self.size = size
 
-    def write(self, chunk):
-        """Write a chunk of data (a part of the data) into the object"""
-        block_id = str(uuid.uuid4())
-        self.client.stage_block(block_id=block_id, data=chunk)
-        self.block_list.append(BlobBlock(block_id=block_id))
-        self.client.commit_block_list(self.block_list)
-
     def close(self):
         """Finalise the object"""
-        if self.mode == "w":
-            self.client.commit_block_list(self.block_list)
         self.__open__ = False
 
     def __del__(self):
@@ -134,19 +111,19 @@ class AZObjectFile:
             size = self.size - self.pos
         else:
             size = CONTENT_CHUNK_SIZE
-        self.client.download_blob(offset=self.pos, length=size).download_to_stream(data, max_concurrency=4)
+        self.container_client.download_blob(self.reference_path, offset=self.pos, length=size).download_to_stream(data, max_concurrency=16)
         self.pos += size
         return data.getvalue()
 
     def read(self, size=CONTENT_CHUNK_SIZE):
         if size is None:
-            return self.client.download_blob().readall()
+            return self.container_client.download_blob(self.reference_path).readall()
         else:
             if self.pos >= self.size:
                 return ""
             elif self.pos + size > self.size:
                 size = self.size - self.pos
             data = BytesIO()
-            self.client.download_blob(offset=self.pos, length=size).download_to_stream(data, max_concurrency=4)
+            self.container_client.download_blob(self.reference_path, offset=self.pos, length=size).download_to_stream(data, max_concurrency=4)
             self.pos += size
             return data.getvalue()

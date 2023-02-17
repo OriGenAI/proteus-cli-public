@@ -20,7 +20,7 @@ def files_exist_in_bucket(outputs, bucket_url):
     return True
 
 
-def process_step(step, tmpdirname, source_url, bucket_url, cases_url, replace=False, allow_missing_files=tuple(), download_workers=config.WORKERS_DOWNLOAD_COUNT):
+def process_step(step, tmpdirname, source, bucket_url, cases_url, replace=False, allow_missing_files=tuple(), download_workers=config.WORKERS_DOWNLOAD_COUNT):
 
     (
         inputs,
@@ -67,7 +67,7 @@ def process_step(step, tmpdirname, source_url, bucket_url, cases_url, replace=Fa
     def process_input(input):
         # Preserve RequiredFilePath with input.__class__
         source_path = getattr(input, "clone", input.__class__)(f"/{input}")
-        transformed_input, output_path = download_file(source_path, os.path.join(tmpdirname, str(input)), source_url)
+        transformed_input, output_path = download_file(source_path, os.path.join(tmpdirname, str(input)), source)
         transformed_input = getattr(input, "clone", lambda x: PathMeta(x, download_name=input))(transformed_input)
         return transformed_input, output_path
 
@@ -105,7 +105,7 @@ def process_step(step, tmpdirname, source_url, bucket_url, cases_url, replace=Fa
         path_name,
         path_name,
         func_input,
-        source_url,
+        source,
         cases_url,
         **(additional_info or {}),
     )
