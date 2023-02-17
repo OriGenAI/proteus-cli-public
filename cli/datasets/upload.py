@@ -82,7 +82,7 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False, allow_mis
         dataset_json = response.json().get("dataset")
         bucket_url = dataset_json.get("bucket_url")
         cases_url = dataset_json.get("cases_url")
-        workflow = dataset_json.get("workflow").get("name")
+        workflow = dataset_json.get("workflow").get("workflow")
 
         total_steps = get_total_steps(cases, workflow)
 
@@ -234,7 +234,7 @@ def process_files(
     steps = config.return_iterator()
 
     # Create temporary folder
-    with tempfile.TemporaryDirectory() as tmpdirname:
+    with tempfile.TemporaryDirectory(prefix='proteus-') as tmpdirname:
         with ThreadPool(processes=workers) as pool:
             process_step_partial = partial(
                 process_step,
@@ -243,7 +243,7 @@ def process_files(
                 bucket_url=bucket_url,
                 cases_url=cases_url,
                 replace=replace,
-                allow_missing_files=allow_missing_files,
+                allow_missing_files=allow_missing_files
             )
             for res in pool.imap_unordered(process_step_partial, steps):
                 for output in res[:-1]:

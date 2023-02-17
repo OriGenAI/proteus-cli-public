@@ -185,10 +185,10 @@ def find_ext(case_loc, ext, required=False, one=False, first=True, last=False):
         files = sorted(files)
 
     if last:
-        files = [files[-1]]
+        files = [next(iter(reversed(files)), None)]
 
     if first:
-        files = [files[0]]
+        files = [next(iter(files), None)]
 
     return next(iter(files), None)
 

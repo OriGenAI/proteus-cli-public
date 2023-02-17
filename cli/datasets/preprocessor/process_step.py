@@ -6,7 +6,8 @@ from collections import OrderedDict
 
 from . import preprocess_functions
 from .utils import pluck, upload_file, download_file, PathMeta
-from ... import proteus
+from ... import proteus, config
+from ...buckets.download import _each_item_parallel
 
 
 def files_exist_in_bucket(outputs, bucket_url):
@@ -19,7 +20,7 @@ def files_exist_in_bucket(outputs, bucket_url):
     return True
 
 
-def process_step(step, tmpdirname, source_url, bucket_url, cases_url, replace=False, allow_missing_files=tuple()):
+def process_step(step, tmpdirname, source_url, bucket_url, cases_url, replace=False, allow_missing_files=tuple(), download_workers=config.WORKERS_DOWNLOAD_COUNT):
 
     (
         inputs,
@@ -62,11 +63,20 @@ def process_step(step, tmpdirname, source_url, bucket_url, cases_url, replace=Fa
 
     # Download the required files. Keep the file if necessary
     downloaded_inputs = OrderedDict()
-    for input in inputs:
+
+    def process_input(input):
         # Preserve RequiredFilePath with input.__class__
         source_path = getattr(input, "clone", input.__class__)(f"/{input}")
         transformed_input, output_path = download_file(source_path, os.path.join(tmpdirname, str(input)), source_url)
         transformed_input = getattr(input, "clone", lambda x: PathMeta(x, download_name=input))(transformed_input)
+        return transformed_input, output_path
+
+    for transformed_input, output_path in _each_item_parallel(
+        total=len(inputs),
+        items=inputs,
+        each_item_fn=process_input,
+        workers=download_workers
+    ):
         downloaded_inputs.setdefault(getattr(input, "download_name", transformed_input), []).append(output_path)
 
     # Process the files

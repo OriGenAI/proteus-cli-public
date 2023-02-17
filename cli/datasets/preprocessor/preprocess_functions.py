@@ -139,13 +139,13 @@ def export_runspec(
     if data_file_loc is None:
         data_file_loc = find_ext(case_loc, "DATA", required=True, one=True)
     if egrid_file_loc is None:
-        egrid_file_loc = find_ext(case_loc, "EGRID", one=True)
+        egrid_file_loc = find_ext(case_loc, "EGRID", first=True, required=False)
     if smspec_file_loc is None:
-        smspec_file_loc = find_ext(case_loc, "SMSPEC", one=True)
+        smspec_file_loc = find_ext(case_loc, "SMSPEC", first=True, required=False)
     if restart_file_loc is None:
-        restart_file_loc = find_ext(case_loc, "X000*", first=True)
+        restart_file_loc = find_ext(case_loc, "X000*", first=True, required=False)
     if init_file_loc is None:
-        init_file_loc = find_ext(case_loc, "INIT")
+        init_file_loc = find_ext(case_loc, "INIT", required=False)
 
     def download_func(source_path, destination_path):
         from .utils import download_file
@@ -319,12 +319,13 @@ def export_dat_properties(
 
     dat_files = {}
     for keyword in mapping:
+        source = keyword.get("source", keyword["name"])
         file = next(
-            filter(lambda f: keyword["source"].lower() in f, dat_src_locs),
+            filter(lambda f: f'{source}.dat' in f, dat_src_locs),
             None,
         )
         if file:
-            dat_files[keyword["source"].lower()] = file
+            dat_files[keyword["name"].lower()] = file
 
     props = preprocess_dat(dat_files, mapping)
 

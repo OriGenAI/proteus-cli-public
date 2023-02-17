@@ -1,3 +1,5 @@
+from functools import partial
+
 from cli.runtime import proteus
 
 
@@ -11,4 +13,8 @@ def iterate_pagination(response, current=0):
         next_ = data.get("next")
         if next_ is None:
             break
-        data = proteus.api.get(next_).json()
+        data = proteus.may_insist_up_to(
+            partial(proteus.api.get, next_),
+            times=5,
+            delay_in_secs=1
+        )().json()
