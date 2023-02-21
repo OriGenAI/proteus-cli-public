@@ -29,11 +29,7 @@ class DefaultConfig(object):
     def _get_mapping(self):
         config = self._get_config()
         assert isinstance(config.get("cnn_pca_design").get("keywords"), (list,))
-        return [
-            x.setdefault('source', x['name']) and x
-            for x
-            in config.get("cnn_pca_design").get("keywords")
-        ]
+        return [x.setdefault("source", x["name"]) and x for x in config.get("cnn_pca_design").get("keywords")]
 
     @lru_cache
     def _get_config(self):

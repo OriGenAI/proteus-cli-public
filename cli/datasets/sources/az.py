@@ -1,5 +1,4 @@
 import re
-import uuid
 
 # from azure.storage.blob._models import BlobProperties as AzureBlobProperties
 from io import BytesIO
@@ -7,7 +6,6 @@ from io import BytesIO
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import ContainerClient
 
-from cli.config import config
 from .common import Source, SourcedItem
 from ... import proteus
 
@@ -38,7 +36,8 @@ class AZSource(Source):
         assert match is not None, f"{bucket_uri} must be an s3 URI"
         prefix = match.groupdict()["prefix"]
         for item in self.container_client.list_blobs(name_starts_with=prefix + starts_with):
-            item_name = item["name"]
+            item_name = f'/{item["name"]}'
+            assert item_name.startswith(prefix + starts_with)
             if ends_with is None or item_name.endswith(ends_with):
                 yield SourcedItem(item, item_name, self, item.size)
 
@@ -55,13 +54,17 @@ class AZSource(Source):
 
     @proteus.may_insist_up_to(5, 1)
     def _download_blob(self, reference):
-        return self.container_client.download_blob(reference.get("name"), max_concurrency=3, read_timeout=8000, timeout=8000)
+        return self.container_client.download_blob(
+            reference.get("name"), max_concurrency=3, read_timeout=8000, timeout=8000
+        )
 
     def download(self, reference):
         return self._download_blob(reference).readall()
 
     def chunks(self, reference):
-        with AZObjectFile(mode="r", size=reference.size, container_client=self.container_client, reference_path=reference.get("name")) as f:
+        with AZObjectFile(
+            mode="r", size=reference.size, container_client=self.container_client, reference_path=reference.get("name")
+        ) as f:
             for chunk in f:
                 yield chunk
 
@@ -111,7 +114,9 @@ class AZObjectFile:
             size = self.size - self.pos
         else:
             size = CONTENT_CHUNK_SIZE
-        self.container_client.download_blob(self.reference_path, offset=self.pos, length=size).download_to_stream(data, max_concurrency=16)
+        self.container_client.download_blob(self.reference_path, offset=self.pos, length=size).download_to_stream(
+            data, max_concurrency=16
+        )
         self.pos += size
         return data.getvalue()
 
@@ -124,6 +129,8 @@ class AZObjectFile:
             elif self.pos + size > self.size:
                 size = self.size - self.pos
             data = BytesIO()
-            self.container_client.download_blob(self.reference_path, offset=self.pos, length=size).download_to_stream(data, max_concurrency=4)
+            self.container_client.download_blob(self.reference_path, offset=self.pos, length=size).download_to_stream(
+                data, max_concurrency=4
+            )
             self.pos += size
             return data.getvalue()

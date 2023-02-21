@@ -26,5 +26,5 @@ class CnnPcaCaseConfig(DefaultConfig):
                 "additional_info": {"get_mapping": self._get_mapping},
             }
             for case in self.cases
-            if 'BASE_CASE' not in case['root']
+            if "BASE_CASE" not in str(case["root"])
         )
