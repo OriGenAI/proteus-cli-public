@@ -85,7 +85,7 @@ class WellModelCaseConfig(DefaultConfig):
                 ]
                 + [
                     RequiredFilePath(f'{case["root"]}/*.S{str(step).zfill(4)}', download_name="s")
-                    for step in range(case["initialStep"], case["finalStep"])
+                    for step in range(case["initialStep"] + 1, case["finalStep"] + 1)
                 ],
                 "output": [f'{case["root"]}/{k}.h5' for k in SMSPEC_WELL_KEYWORDS + SMSPEC_FIELD_KEYWORDS],
                 "preprocessing": "export_smspec",
