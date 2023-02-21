@@ -31,12 +31,12 @@ def get_creation_date(path_to_file):
             return datetime.datetime.fromtimestamp(stat.st_mtime)
 
 
-def download_file(source_path, destination_path, source_url):
+def download_file(source_path, destination_path, source):
     """
     Download a file from the allowed providers. Ex: local, az, etc.
 
     Args:
-        source_url (string): The url from which we are going to
+        source (string): The url from which we are going to
             download the file
         source_path (string): Path of the file inside the source
         destination_path (string): Path where we are going to
@@ -44,9 +44,6 @@ def download_file(source_path, destination_path, source_url):
 
     Returns: -
     """
-    from ..upload import get_source
-
-    source = get_source(source_url)
     # Preserve RequiredFilePath with input.__class__
     source_path = source_path.__class__(source_path.replace("\\", "/"))
     destination_path = destination_path.replace("\\", "/")
@@ -185,10 +182,10 @@ def find_ext(case_loc, ext, required=False, one=False, first=True, last=False):
         files = sorted(files)
 
     if last:
-        files = [files[-1]]
+        files = [next(iter(reversed(files)), None)]
 
     if first:
-        files = [files[0]]
+        files = [next(iter(files), None)]
 
     return next(iter(files), None)
 

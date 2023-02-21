@@ -97,7 +97,7 @@ def export_common_properties(case_loc, get_common_data):
     return common_loc
 
 
-def export_deck(case_loc, case_dest_loc, _, source_url, cases_url, group, number):
+def export_deck(case_loc, case_dest_loc, _, source, cases_url, group, number):
     root_folder = case_dest_loc.split("/cases/")[0]
     ecl_deck_loc = os.path.join(root_folder, "ecl_deck.p")
 
@@ -114,7 +114,7 @@ def export_runspec(
     case_loc,
     case_dest_loc,
     input_src,
-    source_url,
+    source,
     cases_url,
     set_endpoint,
     allow_missing_files=tuple(),
@@ -139,18 +139,18 @@ def export_runspec(
     if data_file_loc is None:
         data_file_loc = find_ext(case_loc, "DATA", required=True, one=True)
     if egrid_file_loc is None:
-        egrid_file_loc = find_ext(case_loc, "EGRID", one=True)
+        egrid_file_loc = find_ext(case_loc, "EGRID", first=True, required=False)
     if smspec_file_loc is None:
-        smspec_file_loc = find_ext(case_loc, "SMSPEC", one=True)
+        smspec_file_loc = find_ext(case_loc, "SMSPEC", first=True, required=False)
     if restart_file_loc is None:
-        restart_file_loc = find_ext(case_loc, "X000*", first=True)
+        restart_file_loc = find_ext(case_loc, "X000*", first=True, required=False)
     if init_file_loc is None:
-        init_file_loc = find_ext(case_loc, "INIT")
+        init_file_loc = find_ext(case_loc, "INIT", required=False)
 
     def download_func(source_path, destination_path):
         from .utils import download_file
 
-        download_file(source_path, destination_path, source_url)
+        download_file(source_path, destination_path, source)
 
     data = preprocess_runspec(
         data_file_loc,
@@ -198,7 +198,7 @@ def export_init_properties(
     case_loc,
     case_dest_loc,
     input_src,
-    source_url,
+    source,
     cases_url,
     get_endpoint,
     *args,
@@ -227,7 +227,7 @@ def export_well_init_properties(
     case_loc,
     case_dest_loc,
     input_src,
-    source_url,
+    source,
     cases_url,
     get_endpoint,
     *args,
@@ -266,7 +266,7 @@ def export_litho(
     case_loc,
     case_dest_loc,
     input_src,
-    source_url,
+    source,
     cases_url,
     get_mapping,
     *args,
@@ -285,7 +285,7 @@ def export_actnum(
     case_loc,
     case_dest_loc,
     input_src,
-    source_url,
+    source,
     cases_url,
     get_mapping,
     *args,
@@ -308,7 +308,7 @@ def export_dat_properties(
     case_loc,
     case_dest_loc,
     input_src,
-    source_url,
+    source,
     cases_url,
     get_mapping,
     *args,
@@ -319,12 +319,13 @@ def export_dat_properties(
 
     dat_files = {}
     for keyword in mapping:
+        source = keyword.get("source", keyword["name"])
         file = next(
-            filter(lambda f: keyword["source"].lower() in f, dat_src_locs),
+            filter(lambda f: f"{source}.dat" in f, dat_src_locs),
             None,
         )
         if file:
-            dat_files[keyword["source"].lower()] = file
+            dat_files[keyword["name"].lower()] = file
 
     props = preprocess_dat(dat_files, mapping)
 
@@ -339,14 +340,14 @@ def _write_keywords_to_h5(props, dest_loc):
         write_h5_from_dict({k: v}, file_dest_loc)
 
 
-def export_wellspec(case_loc, case_dest_loc, _, source_url, *args, allow_missing_files=tuple(), base_dir=None):
+def export_wellspec(case_loc, case_dest_loc, _, source, *args, allow_missing_files=tuple(), base_dir=None):
     runspec_dest_loc = os.path.join(case_dest_loc, "well_spec.p")
     data_src_loc = find_ext(case_loc, "DATA")
 
     def download_func(source_path, destination_path):
         from .utils import download_file
 
-        download_file(source_path, destination_path, source_url)
+        download_file(source_path, destination_path, source)
 
     # Read and download data includes
     find_section(data_src_loc, "RUNSPEC", download_func, allow_missing_files=allow_missing_files, base_dir=base_dir)
@@ -359,7 +360,7 @@ def export_wellspec(case_loc, case_dest_loc, _, source_url, *args, allow_missing
     return data_src_loc, runspec_dest_loc, None
 
 
-def export_smry(case_loc, case_dest_loc, _, source_url, *args, allow_missing_files=tuple(), base_dir=None):
+def export_smry(case_loc, case_dest_loc, _, source, *args, allow_missing_files=tuple(), base_dir=None):
     preprocessed_smry_dest_loc = os.path.join(case_dest_loc, "preprocessed_smry.h5")
     raw_smry_dest_loc = os.path.join(case_dest_loc, "raw_smry.h5")
     data_src_loc = find_ext(case_loc, "DATA")
@@ -367,7 +368,7 @@ def export_smry(case_loc, case_dest_loc, _, source_url, *args, allow_missing_fil
     def download_func(source_path, destination_path):
         from .utils import download_file
 
-        download_file(source_path, destination_path, source_url)
+        download_file(source_path, destination_path, source)
 
     # Read and download data includes
     find_section(data_src_loc, "RUNSPEC", download_func, allow_missing_files=allow_missing_files, base_dir=base_dir)
@@ -383,7 +384,7 @@ def export_smry(case_loc, case_dest_loc, _, source_url, *args, allow_missing_fil
     return f"{smry_src_loc}.S????", preprocessed_smry_dest_loc, None
 
 
-def export_smspec(case_loc, case_dest_loc, input_src, source_url, *args):
+def export_smspec(case_loc, case_dest_loc, input_src, source, *args):
 
     grid_file_loc = None
     restart_file_loc = None

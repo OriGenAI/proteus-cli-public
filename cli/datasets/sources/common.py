@@ -10,7 +10,7 @@ class Source:
 
     @classmethod
     def accepts(cls, uri):
-        match = cls.URI_re.match(uri)
+        match = cls.URI_re.match(str(uri))
         return True if match is not None else False
 
     def list_contents(self, *args):
