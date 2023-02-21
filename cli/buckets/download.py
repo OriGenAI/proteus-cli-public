@@ -20,10 +20,7 @@ def _each_file_bucket(bucket_uuid, each_file_fn, workers=3, **search):
     total = response.json().get("total")
 
     for res in _each_item_parallel(
-        total,
-        items=iterate_pagination(response),
-        each_item_fn=each_file_fn,
-        workers=workers
+        total, items=iterate_pagination(response), each_item_fn=each_file_fn, workers=workers
     ):
         yield res
 
@@ -62,7 +59,6 @@ def is_file_already_present(filepath, size=None):
 
 
 def will_do_file_download(target, force_replace=False):
-    @proteus.may_insist_up_to(5, delay_in_secs=5)
     def do_download(item, chunk_size=1024):
         url, path, size = item["url"], item["filepath"], item["size"]
         target_filepath = os.path.normpath(os.path.join(target, path))
@@ -76,7 +72,7 @@ def will_do_file_download(target, force_replace=False):
             leave=False,
         ) as file_progress:
             file_progress.set_postfix_str(s=f"transfering file ...{path[-20:]}")
-            download = proteus.api.download(url, stream=True)
+            download = proteus.api.download(url, stream=True, retry=True)
             file_progress.total = size
             file_progress.refresh()
             store_stream_in(download, target_filepath, file_progress, chunk_size=chunk_size)

@@ -321,7 +321,7 @@ def export_dat_properties(
     for keyword in mapping:
         source = keyword.get("source", keyword["name"])
         file = next(
-            filter(lambda f: f'{source}.dat' in f, dat_src_locs),
+            filter(lambda f: f"{source}.dat" in f, dat_src_locs),
             None,
         )
         if file:

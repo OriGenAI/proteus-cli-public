@@ -84,7 +84,7 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False, allow_mis
         dataset_json = response.json().get("dataset")
         bucket_url = dataset_json.get("bucket_url")
         cases_url = dataset_json.get("cases_url")
-        workflow = dataset_json.get("workflow").get("workflow")
+        workflow = dataset_json.get("workflow").get("workflow") or dataset_json.get("workflow").get("name")
 
         total_steps = get_total_steps(cases, workflow)
 
@@ -128,7 +128,6 @@ def get_source(source_uri):
             return candidate(source_uri)
 
 
-@proteus.may_insist_up_to(5, delay_in_secs=5)
 def parallelized_upload(item_and_path, case_by_group_and_number, processed, skipped_count):
     item, path, reference = item_and_path
     matchs_as_case = case_re.match(path)
@@ -172,10 +171,7 @@ def send_as(target, source, reference, group=None, number=None, extension=None, 
             progress.set_description(f"uploading {source_path}")
             wrapped_file = CallbackIOWrapper(progress.update, stream, "read")
             transfer = proteus.api.post_file(
-                target_url,
-                source_path,
-                content=wrapped_file,
-                modified=modified,
+                target_url, source_path, content=wrapped_file, modified=modified, retry=True
             )
             progress.set_description(f"uploaded {source_path[-20:]}")
             stream.close()
@@ -218,7 +214,7 @@ def process_files(
     steps = config.return_iterator()
 
     # Create temporary folder
-    with tempfile.TemporaryDirectory(prefix='proteus-') as tmpdirname:
+    with tempfile.TemporaryDirectory(prefix="proteus-") as tmpdirname:
         with ThreadPool(processes=workers) as pool:
             process_step_partial = partial(
                 process_step,
@@ -227,7 +223,7 @@ def process_files(
                 bucket_url=bucket_url,
                 cases_url=cases_url,
                 replace=replace,
-                allow_missing_files=allow_missing_files
+                allow_missing_files=allow_missing_files,
             )
             for res in pool.imap_unordered(process_step_partial, steps):
                 for output in res[:-1]:
