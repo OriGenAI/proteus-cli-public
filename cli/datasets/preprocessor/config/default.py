@@ -1,6 +1,5 @@
+from functools import lru_cache
 from itertools import chain
-
-from cachetools.func import lru_cache
 
 from cli.runtime import proteus
 
