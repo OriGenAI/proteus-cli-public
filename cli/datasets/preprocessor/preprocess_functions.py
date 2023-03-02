@@ -9,6 +9,7 @@ from ecl.eclfile import EclInitFile, EclFile
 from ecl.grid import EclGrid
 from ecl.summary import EclSum
 from ecl.well import WellInfo
+
 from preprocessing.deck.runspec import preprocess as preprocess_runspec
 from preprocessing.deck.section import find_section
 from preprocessing.modular.dat import preprocess as preprocess_dat
@@ -18,8 +19,7 @@ from preprocessing.modular.grdecl import preprocess as preprocess_grdecl
 from preprocessing.modular.init import preprocess as preprocess_init
 from preprocessing.modular.s import WellSummaryProcessor
 from preprocessing.modular.x import preprocess as preprocess_x
-
-from .config.CaseConfig import SMSPEC_WELL_KEYWORDS, SMSPEC_FIELD_KEYWORDS
+from .config.case.well_model import SMSPEC_WELL_KEYWORDS, SMSPEC_FIELD_KEYWORDS
 from .utils import upload_file, find_ext, find_file, get_case_info
 from ... import proteus
 
@@ -97,7 +97,7 @@ def export_common_properties(case_loc, get_common_data):
     return common_loc
 
 
-def export_deck(case_loc, case_dest_loc, _, source_url, cases_url, group, number):
+def export_deck(case_loc, case_dest_loc, _, source, cases_url, group, number):
     root_folder = case_dest_loc.split("/cases/")[0]
     ecl_deck_loc = os.path.join(root_folder, "ecl_deck.p")
 
@@ -114,21 +114,55 @@ def export_runspec(
     case_loc,
     case_dest_loc,
     input_src,
-    source_url,
+    source,
     cases_url,
     set_endpoint,
-    *args,
+    allow_missing_files=tuple(),
+    base_dir=None,
+    *_,
 ):
-    root_folder = case_dest_loc.split("/cases/")[0]
-    runspec_dest_loc = os.path.join(root_folder, "runspec.p")
-    data_src_loc = find_ext(case_loc, "DATA")
+    runspec_dest_loc = os.path.join(base_dir, "runspec.p")
+
+    data_file_loc = None
+    egrid_file_loc = None
+    smspec_file_loc = None
+    restart_file_loc = None
+    init_file_loc = None
+
+    if isinstance(input_src, dict):
+        data_file_loc = next(iter(input_src.get("data") or []), None)
+        init_file_loc = next(iter(input_src.get("init") or []), None)
+        egrid_file_loc = next(iter(input_src.get("grid") or []), None)
+        smspec_file_loc = next(iter(input_src.get("smspec") or []), None)
+        restart_file_loc = next(iter(input_src.get("x") or []), None)
+
+    if data_file_loc is None:
+        data_file_loc = find_ext(case_loc, "DATA", required=True, one=True)
+    if egrid_file_loc is None:
+        egrid_file_loc = find_ext(case_loc, "EGRID", first=True, required=False)
+    if smspec_file_loc is None:
+        smspec_file_loc = find_ext(case_loc, "SMSPEC", first=True, required=False)
+    if restart_file_loc is None:
+        restart_file_loc = find_ext(case_loc, "X000*", first=True, required=False)
+    if init_file_loc is None:
+        init_file_loc = find_ext(case_loc, "INIT", required=False)
 
     def download_func(source_path, destination_path):
         from .utils import download_file
 
-        download_file(source_path, destination_path, source_url)
+        download_file(source_path, destination_path, source)
 
-    data = preprocess_runspec(data_src_loc, download_func)
+    data = preprocess_runspec(
+        data_file_loc,
+        egrid_file_loc=egrid_file_loc,
+        smspec_file_loc=smspec_file_loc,
+        download_func=download_func,
+        restart_file_loc=restart_file_loc,
+        init_file_loc=init_file_loc,
+        allow_missing_files=allow_missing_files,
+        base_dir=base_dir,
+    )
+
     multout = data.get("multout")
     del data["multout"]
     if not multout:
@@ -138,15 +172,20 @@ def export_runspec(
 
     set_endpoint(data.get("endscale"))
 
-    return data_src_loc, runspec_dest_loc, None
+    return data_file_loc, runspec_dest_loc, None
 
 
 """ Cases preprocessing """
 
 
-def export_egrid_properties(case_loc, case_dest_loc, *args):
-    grid_src_loc = find_ext(case_loc=case_loc, ext="EGRID")
-    grid_dest_loc = os.path.join(case_dest_loc, "grid_props.h5")
+def export_egrid_properties(case_loc, case_dest_loc, input_src, *_):
+
+    if getattr(input_src, "full_path", None):
+        grid_src_loc = getattr(input_src, "full_path", None)
+    else:
+        grid_src_loc = find_ext(case_loc=case_loc, ext="EGRID", required=True, one=True)
+
+    grid_dest_loc = os.path.join(case_dest_loc, "grid.h5")
 
     grid = EclGrid(str(grid_src_loc))
     props = preprocess_egrid(grid)
@@ -159,7 +198,7 @@ def export_init_properties(
     case_loc,
     case_dest_loc,
     input_src,
-    source_url,
+    source,
     cases_url,
     get_endpoint,
     *args,
@@ -188,13 +227,23 @@ def export_well_init_properties(
     case_loc,
     case_dest_loc,
     input_src,
-    source_url,
+    source,
     cases_url,
     get_endpoint,
     *args,
 ):
-    grid_src_loc = find_ext(case_loc=case_loc, ext="EGRID")
-    init_src_loc = find_ext(case_loc=case_loc, ext="INIT")
+
+    init_src_loc = None
+    grid_src_loc = None
+
+    if isinstance(input_src, dict):
+        grid_src_loc = next(iter(input_src.get("grid") or []), None)
+        init_src_loc = next(iter(input_src.get("init") or []), None)
+
+    if init_src_loc is None:
+        init_src_loc = find_ext(case_loc=case_loc, ext="INIT", required=True, one=True)
+    if grid_src_loc is None:
+        grid_src_loc = find_ext(case_loc=case_loc, ext="EGRID", required=True, one=True)
 
     grid = EclGrid(str(grid_src_loc))
     init = EclInitFile(grid, str(init_src_loc))
@@ -217,7 +266,7 @@ def export_litho(
     case_loc,
     case_dest_loc,
     input_src,
-    source_url,
+    source,
     cases_url,
     get_mapping,
     *args,
@@ -236,7 +285,7 @@ def export_actnum(
     case_loc,
     case_dest_loc,
     input_src,
-    source_url,
+    source,
     cases_url,
     get_mapping,
     *args,
@@ -259,7 +308,7 @@ def export_dat_properties(
     case_loc,
     case_dest_loc,
     input_src,
-    source_url,
+    source,
     cases_url,
     get_mapping,
     *args,
@@ -270,12 +319,13 @@ def export_dat_properties(
 
     dat_files = {}
     for keyword in mapping:
+        source = keyword.get("source", keyword["name"])
         file = next(
-            filter(lambda f: keyword["source"].lower() in f, dat_src_locs),
+            filter(lambda f: f"{source}.dat" in f, dat_src_locs),
             None,
         )
         if file:
-            dat_files[keyword["source"].lower()] = file
+            dat_files[keyword["name"].lower()] = file
 
     props = preprocess_dat(dat_files, mapping)
 
@@ -290,17 +340,17 @@ def _write_keywords_to_h5(props, dest_loc):
         write_h5_from_dict({k: v}, file_dest_loc)
 
 
-def export_wellspec(case_loc, case_dest_loc, _, source_url, *args):
+def export_wellspec(case_loc, case_dest_loc, _, source, *args, allow_missing_files=tuple(), base_dir=None):
     runspec_dest_loc = os.path.join(case_dest_loc, "well_spec.p")
     data_src_loc = find_ext(case_loc, "DATA")
 
     def download_func(source_path, destination_path):
         from .utils import download_file
 
-        download_file(source_path, destination_path, source_url)
+        download_file(source_path, destination_path, source)
 
     # Read and download data includes
-    find_section(data_src_loc, "RUNSPEC", download_func)
+    find_section(data_src_loc, "RUNSPEC", download_func, allow_missing_files=allow_missing_files, base_dir=base_dir)
 
     preprocessor = WellSpecsProcessor(data_src_loc)
     data = preprocessor.process()
@@ -310,7 +360,7 @@ def export_wellspec(case_loc, case_dest_loc, _, source_url, *args):
     return data_src_loc, runspec_dest_loc, None
 
 
-def export_smry(case_loc, case_dest_loc, _, source_url, *args):
+def export_smry(case_loc, case_dest_loc, _, source, *args, allow_missing_files=tuple(), base_dir=None):
     preprocessed_smry_dest_loc = os.path.join(case_dest_loc, "preprocessed_smry.h5")
     raw_smry_dest_loc = os.path.join(case_dest_loc, "raw_smry.h5")
     data_src_loc = find_ext(case_loc, "DATA")
@@ -318,10 +368,10 @@ def export_smry(case_loc, case_dest_loc, _, source_url, *args):
     def download_func(source_path, destination_path):
         from .utils import download_file
 
-        download_file(source_path, destination_path, source_url)
+        download_file(source_path, destination_path, source)
 
     # Read and download data includes
-    find_section(data_src_loc, "RUNSPEC", download_func)
+    find_section(data_src_loc, "RUNSPEC", download_func, allow_missing_files=allow_missing_files, base_dir=base_dir)
 
     case_name = extract_casename(case_loc)
     smry_src_loc = os.path.join(case_loc, case_name)
@@ -334,14 +384,27 @@ def export_smry(case_loc, case_dest_loc, _, source_url, *args):
     return f"{smry_src_loc}.S????", preprocessed_smry_dest_loc, None
 
 
-def export_smspec(case_loc, case_dest_loc, input_src, source_url, *args):
-    grid_src_loc = find_ext(case_loc=case_loc, ext="EGRID")
-    last_x = sorted([*filter(lambda x: ".X" in x, input_src)])[-1]
-    restart_path = find_ext(case_loc=case_loc, ext=last_x.split(".")[-1])
-    smspec_path = find_ext(case_loc=case_loc, ext="SMSPEC")
-    grid = EclGrid(str(grid_src_loc))
-    winfo = WellInfo(grid, str(restart_path))
-    smry = EclSum(str(smspec_path))
+def export_smspec(case_loc, case_dest_loc, input_src, source, *args):
+
+    grid_file_loc = None
+    restart_file_loc = None
+    smspec_file_loc = None
+
+    if isinstance(input_src, dict):
+        grid_file_loc = next(iter(input_src.get("grid") or []), None)
+        restart_file_loc = next(iter(reversed(input_src.get("x") or [])), None)
+        smspec_file_loc = next(iter(input_src.get("smspec") or []), None)
+
+    if grid_file_loc is None:
+        grid_file_loc = find_ext(case_loc=case_loc, ext="EGRID", required=True, one=True)
+    if restart_file_loc is None:
+        restart_file_loc = find_ext(case_loc=case_loc, ext="X*", last=True)
+    if smspec_file_loc is None:
+        smspec_file_loc = find_ext(case_loc=case_loc, ext="SMSPEC", required=True, one=True)
+
+    grid = EclGrid(str(grid_file_loc))
+    winfo = WellInfo(grid, str(restart_file_loc))
+    smry = EclSum(str(smspec_file_loc))
 
     wnames = np.array(list(smry.wells()))
 
@@ -354,20 +417,22 @@ def export_smspec(case_loc, case_dest_loc, input_src, source_url, *args):
     for key in SMSPEC_WELL_KEYWORDS:
         with h5py.File(os.path.join(case_dest_loc, f"{key}.h5"), "w") as h5f:
             for i, w in enumerate(wnames):
-                if "INJECTOR" not in well_types[i]:
-                    try:
-                        data = smry.numpy_vector(f"{key}:{w}", report_only=True)
-                        h5f.create_dataset(w, data=data)
-                    except KeyError:
-                        # Some keywords may be missing, the correct behaviour is to not create a dataset
-                        pass
+                try:
+                    data = smry.numpy_vector(f"{key}:{w}", report_only=True)
+                    h5f.create_dataset(w, data=data)
+                except KeyError:
+                    # Some keywords may be missing, the correct behaviour is to not create a dataset
+                    pass
 
     for key in SMSPEC_FIELD_KEYWORDS:
         with h5py.File(os.path.join(case_dest_loc, f"{key}.h5"), "w") as h5f:
-            data = smry.numpy_vector(key, report_only=True)
-            h5f.create_dataset(key, data=data)
+            try:
+                data = smry.numpy_vector(key, report_only=True)
+                h5f.create_dataset(key, data=data)
+            except KeyError:
+                pass
 
-    return smspec_path, None, None
+    return smspec_file_loc, None, None
 
 
 """ Steps preprocessing """

@@ -1,4 +1,8 @@
-name: Create Tag/Release
+# Triggered when a push is made to the branch dev-deploy, it runs tests on that branch
+# checks if the version as been bumped and, if so, squash the changes into the branch
+# dev-release and push branch dev-release to OriGenAI/cli-public#public
+
+name: Release & push to public repository
 on:
   push:
     branches:
@@ -8,32 +12,54 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # pyproject.toml specified python 3.8
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      # Install poetry (to obtain version and run tests) and virtualenv (to ensure poetry creates its virtual
+      # environment inside this path)
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install poetry
+          pip install poetry virtualenv
+
+      # Checkout the dev-release path to know which was the last version that was released
       - uses: actions/checkout@v3
         with:
           persist-credentials: false
           fetch-depth: 0
           ref: dev-release
-      - name: Bump last released version
+
+      - name: Obtain the last released version
         run: |
           echo "release_proj_version=`poetry version -s`" >> $GITHUB_ENV
+
+      # Go back to this workflow's branch
       - uses: actions/checkout@v3
         with:
           persist-credentials: false
           fetch-depth: 0
-          ref: dev-deploy
-      - name: Bump version
+
+      - name: Obtain the version want to release now
         run: |
           echo "proj_version=`poetry version -s`" >> $GITHUB_ENV
-      - name: Match versioning
+
+      - name: Check if version has been bumped
         if: ${{ env.release_proj_version == env.proj_version }}
         run: |
-          echo "The last released version is the same as the new one, please update the version on project.py"
+          echo "The last released version is the same as the new one, please update the version on project.py: ${{ env.release_proj_version }} vs ${{ env.proj_version }}"
           exit 1
-      - name: Run squash
+
+      - name: Run tests
+        run: |
+          virtualenv .env
+          poetry env use ./.env/bin/python
+          poetry config virtualenvs.create false
+          poetry install
+          poetry run poe test
+          rm -rf .env
+
+      - name: Squash changes and store into release
         run: |
           git config --local user.name $GITHUB_USERNAME
           git config --local user.email $GITHUB_EMAIL
@@ -49,14 +75,31 @@ jobs:
         env:
           GITHUB_USERNAME: github-actions[bot]
           GITHUB_EMAIL: github-actions[bot]@users.noreply.github.com
+
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: dev-release
+
+      - uses: actions/checkout@v3
+        with:
+          repository: OriGenAI/cli-public
+          persist-credentials: true
+          ssh-key: ${{ secrets.PROTEUS_CLI_PUBLIC_SSH_DEPLOYMENT_KEY }}
+          ref: dev
+
+      - name: Merge Upstream
+        uses: exions/merge-upstream@v1
+        with:
+          upstream: OriGenAI/cli
+          upstream-branch: dev-release
+          branch: dev
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:
-          github_token: ${{ secrets.PUBLIC_CLI_REPO_TOKEN }}
-          repository: OriGenAI/proteus-cli-public
-          branch: "dev"
+          ssh: true
+          repository: OriGenAI/cli-public
+          branch: dev

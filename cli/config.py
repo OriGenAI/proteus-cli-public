@@ -19,8 +19,9 @@ class Config(object):
     PROMPT = True
     AUTH_HOST = os.getenv("AUTH_HOST", "https://auth.dev.origen.ai")
     PROTEUS_HOST = os.getenv("PROTEUS_HOST", "https://proteus-test.dev.origen.ai")
-    USERNAME = os.getenv("PROTEUS_USERNAME", "user-not-configured")
-    PASSWORD = os.getenv("PROTEUS_PASSWORD", "password-not-configured")
+    API_SSL_VERIFY = os.getenv("API_SSL_VERIFY", "0").lower() not in ("0", "false", "f")
+    USERNAME = os.getenv("PROTEUS_USERNAME", None)
+    PASSWORD = os.getenv("PROTEUS_PASSWORD", None)
     REALM = os.getenv("REALM", "origen")
     CLIENT_ID = os.getenv("CLIENT_ID", "proteus-front")
     CLIENT_SECRET = os.getenv("CLIENT_SECRET", None)
@@ -33,6 +34,7 @@ class Config(object):
     REFRESH_GAP = 100  # Seconds
     S3_REGION = "eu-west-3"
     WORKERS_COUNT = 5
+    WORKERS_DOWNLOAD_COUNT = 10
     AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
     AZURE_STORAGE_ACCOUNT_URL = os.getenv("AZURE_STORAGE_ACCOUNT_URL")
 
@@ -55,6 +57,7 @@ class Config(object):
         realm=REALM,
         client_id=CLIENT_ID,
         refresh_gap=REFRESH_GAP,
+        ssl_verify=API_SSL_VERIFY,
     )
 
 

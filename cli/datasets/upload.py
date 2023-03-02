@@ -59,6 +59,7 @@ def get_total_steps(cases, workflow):
     first_case_json = first_case_response.json().get("case")
     initial_step = first_case_json.get("initialStep")
     final_step = first_case_json.get("finalStep")
+    workflow = workflow.lower()
     common_step = CommonConfigMapper[workflow].number_of_steps()
     cases_steps = CaseConfigMapper[workflow].number_of_steps()
     timesteps_steps = (
@@ -67,9 +68,10 @@ def get_total_steps(cases, workflow):
     return common_step + (cases_steps + timesteps_steps * (final_step - initial_step + 1)) * len(cases)
 
 
-def upload(bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False):
+def upload(bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False, allow_missing_files=tuple()):
     assert proteus.api.auth.access_token is not None
     set_dataset_version(dataset_uuid)
+    source = get_source(bucket)
 
     proteus.logger.info(f"This process will use {workers} simultaneous threads.")
     proteus.reporting.send("started upload", status="processing", progress=0)
@@ -82,7 +84,7 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False):
         dataset_json = response.json().get("dataset")
         bucket_url = dataset_json.get("bucket_url")
         cases_url = dataset_json.get("cases_url")
-        workflow = dataset_json.get("workflow").get("name")
+        workflow = dataset_json.get("workflow").get("workflow") or dataset_json.get("workflow").get("name")
 
         total_steps = get_total_steps(cases, workflow)
 
@@ -90,15 +92,18 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False):
         progress.set_description("Starting processing files")
         progress.refresh()
         process_files(
-            bucket,
+            source,
             bucket_url,
             cases_url,
-            progress,
+            progress=progress,
             cases=cases,
             workers=workers,
             workflow=workflow,
             replace=replace,
+            allow_missing_files=allow_missing_files,
         )
+
+    proteus.reporting.send("upload finished", status="completed", progress=100)
 
 
 def get_cases(dataset_uuid, progress):
@@ -123,25 +128,6 @@ def get_source(source_uri):
             return candidate(source_uri)
 
 
-def load_from(case_by_group_and_number, source_uri, progress, workers=WORKERS_COUNT):
-    skipped_count = 0
-    processed = 0
-    progress.update(processed)
-    source = get_source(source_uri)
-    items_and_paths = source.list_contents()
-    upload_partial = partial(
-        parallelized_upload,
-        case_by_group_and_number=case_by_group_and_number,
-        processed=processed,
-        skipped_count=skipped_count,
-    )
-    with ThreadPool(processes=workers) as pool:
-        for res in pool.imap_unordered(upload_partial, items_and_paths):
-            progress.update(res if res else 0)
-            progress.refresh()
-
-
-@proteus.may_insist_up_to(5, delay_in_secs=5)
 def parallelized_upload(item_and_path, case_by_group_and_number, processed, skipped_count):
     item, path, reference = item_and_path
     matchs_as_case = case_re.match(path)
@@ -185,10 +171,7 @@ def send_as(target, source, reference, group=None, number=None, extension=None, 
             progress.set_description(f"uploading {source_path}")
             wrapped_file = CallbackIOWrapper(progress.update, stream, "read")
             transfer = proteus.api.post_file(
-                target_url,
-                source_path,
-                content=wrapped_file,
-                modified=modified,
+                target_url, source_path, content=wrapped_file, modified=modified, retry=True
             )
             progress.set_description(f"uploaded {source_path[-20:]}")
             stream.close()
@@ -209,7 +192,7 @@ def send_as(target, source, reference, group=None, number=None, extension=None, 
 
 
 def process_files(
-    source_url,
+    source,
     bucket_url,
     cases_url,
     progress,
@@ -217,6 +200,7 @@ def process_files(
     workers=WORKERS_COUNT,
     workflow="hm",
     replace=False,
+    allow_missing_files=tuple(),
 ):
     from .preprocessor.config import Config
     from .preprocessor.process_step import process_step
@@ -230,15 +214,16 @@ def process_files(
     steps = config.return_iterator()
 
     # Create temporary folder
-    with tempfile.TemporaryDirectory() as tmpdirname:
+    with tempfile.TemporaryDirectory(prefix="proteus-") as tmpdirname:
         with ThreadPool(processes=workers) as pool:
             process_step_partial = partial(
                 process_step,
                 tmpdirname=tmpdirname,
-                source_url=source_url,
+                source=source,
                 bucket_url=bucket_url,
                 cases_url=cases_url,
                 replace=replace,
+                allow_missing_files=allow_missing_files,
             )
             for res in pool.imap_unordered(process_step_partial, steps):
                 for output in res[:-1]:

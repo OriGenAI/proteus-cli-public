@@ -11,4 +11,4 @@ def iterate_pagination(response, current=0):
         next_ = data.get("next")
         if next_ is None:
             break
-        data = proteus.api.get(next_).json()
+        data = proteus.api.get(next_, retry=True).json()

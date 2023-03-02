@@ -29,8 +29,8 @@ main.add_command(debugger_commands)
 
 
 @main.command()
-@click.option("--user", prompt=True, default=USERNAME)
-@click.option("--password", prompt=True, default=PASSWORD, hide_input=True)
+@click.option("--user", prompt=USERNAME is None, default=USERNAME)
+@click.option("--password", prompt=PASSWORD is None, default=PASSWORD, hide_input=True)
 @may_fail_on_http_error(exit_code=1)
 def login(user, password):
     """Will perfom a login to test current credentials"""

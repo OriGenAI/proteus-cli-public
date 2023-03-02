@@ -1,5 +1,4 @@
 import os
-from functools import partial
 from multiprocessing.dummy import Pool
 
 from tqdm import tqdm
@@ -15,15 +14,23 @@ PROTEUS_HOST, S3_REGION, WORKERS_COUNT, AZURE_STORAGE_CONNECTION_STRING = (
 )
 
 
-def list_bucket_files(bucket_uuid, each_item, workers=3, **search):
+def _each_file_bucket(bucket_uuid, each_file_fn, workers=3, **search):
     assert proteus.api.auth.access_token is not None
     response = proteus.api.get(f"/api/v1/buckets/{bucket_uuid}/files", per_page=10, **search)
     total = response.json().get("total")
+
+    for res in _each_item_parallel(
+        total, items=iterate_pagination(response), each_item_fn=each_file_fn, workers=workers
+    ):
+        yield res
+
+
+def _each_item_parallel(total, items, each_item_fn, workers=3):
     progress = tqdm(total=total)
-    download_partial = partial(each_item)
     with Pool(processes=workers) as pool:
-        for res in pool.imap(download_partial, iterate_pagination(response)):
+        for res in pool.imap(each_item_fn, items):
             progress.update(1)
+            yield res
 
 
 def store_stream_in(stream, filepath, progress, chunk_size=1024):
@@ -52,7 +59,6 @@ def is_file_already_present(filepath, size=None):
 
 
 def will_do_file_download(target, force_replace=False):
-    @proteus.may_insist_up_to(5, delay_in_secs=5)
     def do_download(item, chunk_size=1024):
         url, path, size = item["url"], item["filepath"], item["size"]
         target_filepath = os.path.normpath(os.path.join(target, path))
@@ -66,7 +72,7 @@ def will_do_file_download(target, force_replace=False):
             leave=False,
         ) as file_progress:
             file_progress.set_postfix_str(s=f"transfering file ...{path[-20:]}")
-            download = proteus.api.download(url, stream=True)
+            download = proteus.api.download(url, stream=True, retry=True)
             file_progress.total = size
             file_progress.refresh()
             store_stream_in(download, target_filepath, file_progress, chunk_size=chunk_size)
@@ -79,4 +85,5 @@ def download(bucket_uuid, target_folder, workers=WORKERS_COUNT, replace=False, *
     proteus.logger.info(f"This process will use {workers} simultaneous threads. {replacement}")
     do_download = will_do_file_download(target_folder, force_replace=replace)
 
-    list_bucket_files(bucket_uuid, do_download, workers=workers, **search)
+    for file in _each_file_bucket(bucket_uuid, do_download, workers=workers, **search):
+        yield file

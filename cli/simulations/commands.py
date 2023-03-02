@@ -28,8 +28,8 @@ CREATE_USAGE_ERROR = (
 @click.option("--model_uuid", prompt=False)
 @click.option("--batch_name", prompt=False)
 @click.option("--reupload/--no-reupload", prompt=False, default=False)
-@click.option("--user", prompt=True, default=config.USERNAME)
-@click.option("--password", prompt=True, default=config.PASSWORD, hide_input=True)
+@click.option("--user", prompt=config.USERNAME is None, default=config.USERNAME)
+@click.option("--password", prompt=config.PASSWORD is None, default=config.PASSWORD, hide_input=True)
 @may_fail_on_http_error(exit_code=1)
 @proteus.runs_authentified
 def create(

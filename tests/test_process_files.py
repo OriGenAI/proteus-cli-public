@@ -27,7 +27,7 @@ def refresh_mock(mocker):
 
 @pytest.fixture
 def keywords_mock(mocker):
-    mock = mocker.patch("cli.datasets.preprocessor.config.defaultConfig.DefaultConfig._get_mapping")
+    mock = mocker.patch("cli.datasets.preprocessor.config.default.DefaultConfig._get_mapping")
     mock.return_value = [
         {"name": "ACTNUM", "source": "BOOLEAN"},
         {"name": "LITHO", "source": "LITHO"},

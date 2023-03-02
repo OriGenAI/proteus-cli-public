@@ -10,7 +10,7 @@ class Source:
 
     @classmethod
     def accepts(cls, uri):
-        match = cls.URI_re.match(uri)
+        match = cls.URI_re.match(str(uri))
         return True if match is not None else False
 
     def list_contents(self, *args):
@@ -21,13 +21,14 @@ class Source:
 
 
 class SourcedItem:
-    def __init__(self, reference, path, source):
+    def __init__(self, reference, path, source, size):
         self.source = source
         self.path = path
         self.reference = reference
+        self.size = size
 
     def __iter__(self):
-        return iter((self.source, self.path, self.reference))
+        return iter((self.source, self.path, self.reference, self.size))
 
     def __str__(self):
         return f"< {self.path}@{self.source} >"

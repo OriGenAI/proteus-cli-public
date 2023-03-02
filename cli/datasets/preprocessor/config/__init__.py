@@ -1,8 +1,7 @@
-from .defaultConfig import DefaultConfig
-
-from .CaseConfig import CaseConfigMapper
-from .StepConfig import StepConfigMapper
-from .CommonConfig import CommonConfigMapper
+from .case import CaseConfigMapper
+from .common import CommonConfigMapper
+from .default import DefaultConfig
+from .step import StepConfigMapper
 
 
 # Config object wrapping all properties

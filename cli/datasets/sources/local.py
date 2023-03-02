@@ -1,6 +1,8 @@
+import os
 import re
-from pathlib import Path
 from datetime import datetime, timezone
+from pathlib import Path
+
 from .common import Source, SourcedItem
 
 
@@ -14,7 +16,7 @@ class LocalSource(Source):
         starts_with = starts_with.lstrip("/")
 
         for item in Path(source_uri).rglob(f"{starts_with}*{ends_with}"):
-            yield SourcedItem(item, str(item), self)
+            yield SourcedItem(item, str(item), self, os.path.getsize(str(item)))
 
     def open(self, reference):
         stats = reference.stat()
@@ -26,3 +28,7 @@ class LocalSource(Source):
     def download(self, reference):
         with reference.open("rb") as file:
             return file.read()
+
+    def chunks(self, reference):
+        # FIXME: no real chunk download
+        yield self.download(reference)
