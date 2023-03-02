@@ -92,7 +92,7 @@ jobs:
       - name: Merge Upstream
         uses: exions/merge-upstream@v1
         with:
-          upstream: OriGenAI/cli
+          upstream: OriGenAI/proteus-cli
           upstream-branch: dev-release
           branch: dev
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -101,5 +101,5 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           ssh: true
-          repository: OriGenAI/cli-public
+          repository: OriGenAI/proteus-cli-public
           branch: dev
