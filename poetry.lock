@@ -1282,11 +1282,7 @@ files = [
 ]
 
 [package.dependencies]
-numpy = [
-    {version = ">=1.20.3", markers = "python_version < \"3.10\""},
-    {version = ">=1.21.0", markers = "python_version >= \"3.10\""},
-    {version = ">=1.23.2", markers = "python_version >= \"3.11\""},
-]
+numpy = {version = ">=1.20.3", markers = "python_version < \"3.10\""}
 python-dateutil = ">=2.8.1"
 pytz = ">=2020.1"
 
@@ -1482,14 +1478,14 @@ tqdm = ">=4.61.0,<5.0.0"
 
 [[package]]
 name = "proteus-runtime"
-version = "0.2.12"
+version = "0.2.14"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "proteus_runtime-0.2.12-py3-none-any.whl", hash = "sha256:461ff49430ee09da64b837191bc8563cb38f7d606b532a431640b33a8daadb93"},
-    {file = "proteus_runtime-0.2.12.tar.gz", hash = "sha256:fc8bf0cd0527f66af15177632f7ef5fe1dcd4ee464f989b7b9d2b887e4923904"},
+    {file = "proteus_runtime-0.2.14-py3-none-any.whl", hash = "sha256:a48c5a2c11af663f6e4f03f4bf00426b224034c2ebcd8fa3963bc104e1f867ac"},
+    {file = "proteus_runtime-0.2.14.tar.gz", hash = "sha256:8f83b54788866b03006d2a5e5d2330ae2b0dbd65af4793f89784b75b35aa8091"},
 ]
 
 [package.dependencies]
@@ -2118,5 +2114,5 @@ testing = ["coverage (>=6.2)", "coverage-enable-subprocess (>=1)", "flaky (>=3.7
 
 [metadata]
 lock-version = "2.0"
-python-versions = "^3.8"
-content-hash = "a5a10bb4aa4dfa99c1ad484677c8dc1ef2d59dcc7436c6533f59846c348160be"
+python-versions = "~3.8"
+content-hash = "8f9e48f58d2b5af02c59b3ab0f1eec19abe0a477ba2d0f1639efd79b0d8e82dc"
