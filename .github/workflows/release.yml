@@ -59,7 +59,7 @@ jobs:
           poetry run poe test
           rm -rf .env
 
-      - name: Squash changes and store into release
+      - name: Squash changes and store into dev/release
         run: |
           git config --local user.name $GITHUB_USERNAME
           git config --local user.email $GITHUB_EMAIL

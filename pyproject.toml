@@ -1,9 +1,11 @@
 [tool.poetry]
 name = "proteus-cli"
-version = "0.2.9"
+version = "0.2.10"
 description = ""
 authors = []
 packages = [
+    {include="cli"},
+    {include="logging.ini"}
 ]
 
 [tool.poetry.dependencies]
