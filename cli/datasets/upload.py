@@ -1,4 +1,6 @@
+import os
 import re
+import shutil
 import tempfile
 import time
 from functools import partial
@@ -215,24 +217,30 @@ def process_files(
 
     # Create temporary folder
     with tempfile.TemporaryDirectory(prefix="proteus-") as tmpdirname:
-        with ThreadPool(processes=workers) as pool:
-            process_step_partial = partial(
-                process_step,
-                tmpdirname=tmpdirname,
-                source=source,
-                bucket_url=bucket_url,
-                cases_url=cases_url,
-                replace=replace,
-                allow_missing_files=allow_missing_files,
-            )
-            for res in pool.imap_unordered(process_step_partial, steps):
-                for output in res[:-1]:
-                    progress.update(n=1 / len(res))
-                    progress.set_description(f"File uploaded: {output}")
-                    time.sleep(1)
-                progress.set_description(f"File uploaded: {res[-1]}")
-                progress.update_with_report(n=1 / len(res))
-                progress.refresh()
+        try:
+            with ThreadPool(processes=workers) as pool:
+                process_step_partial = partial(
+                    process_step,
+                    tmpdirname=tmpdirname,
+                    source=source,
+                    bucket_url=bucket_url,
+                    cases_url=cases_url,
+                    replace=replace,
+                    allow_missing_files=allow_missing_files,
+                )
+                for res in pool.imap_unordered(process_step_partial, steps):
+                    for output in res[:-1]:
+                        progress.update(n=1 / len(res))
+                        progress.set_description(f"File uploaded: {output}")
+                        time.sleep(1)
+                    progress.set_description(f"File uploaded: {res[-1]}")
+                    progress.update_with_report(n=1 / len(res))
+                    progress.refresh()
+        finally:
+            # Force destruction of temporary file. Ensure it exists after to
+            # for tmpfile cleaners to work
+            shutil.rmtree(tmpdirname)
+            os.mkdir(tmpdirname)
 
 
 def download_common(url):
