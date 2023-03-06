@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "proteus-cli"
-version = "0.2.10"
+version = "0.2.12"
 description = ""
 authors = []
 packages = [
@@ -35,7 +35,7 @@ poethepoet = "^0.16.0"
 flake8 = "^4.0.1"
 
 [tool.poetry.scripts]
-proteus-do="cli.cli:main"
+proteus-do="cli:main"
 
 [tool.poe.tasks]
     # Composing commands
