@@ -25,6 +25,14 @@ class LocalSource(Source):
         file_size = stats.st_size
         return reference_path, file_size, modified, reference.open("rb")
 
+    def fastcopy(self, reference, destination):
+        try:
+            os.symlink(reference, destination)
+        except BaseException:
+            return False
+
+        return True
+
     def download(self, reference):
         with reference.open("rb") as file:
             return file.read()

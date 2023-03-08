@@ -96,27 +96,30 @@ def download_file(source_path, destination_path, source, progress=False):
         wait_until_file_is_downloaded(destination_path)
         return transformed_source_path, destination_path
     else:
-        Path(f"{destination_path}.tmp").touch()
-
         try:
             _, path, reference, size = next(items_and_paths)
 
-            with open(f"{destination_path}.tmp", "wb") as file:
-                with tqdm(
-                    total=size,
-                    unit="B",
-                    unit_scale=True,
-                    unit_divisor=1024,
-                    desc=f"Retrieving file {path}",
-                    disable=not progress,
-                ) as pbar:
-                    read = 0
-                    for chunk in source.chunks(reference):
-                        file.write(chunk)
-                        read += len(chunk)
-                        pbar.update(len(chunk))
+            destination_file = f"{destination_path}.tmp"
 
-                    pbar.set_description("Done")
+            if not source.fastcopy(reference, destination_file):
+                Path(f"{destination_path}.tmp").touch()
+
+                with open(f"{destination_path}.tmp", "wb") as file:
+                    with tqdm(
+                        total=size,
+                        unit="B",
+                        unit_scale=True,
+                        unit_divisor=1024,
+                        desc=f"Retrieving file {path}",
+                        disable=not progress,
+                    ) as pbar:
+                        read = 0
+                        for chunk in source.chunks(reference):
+                            file.write(chunk)
+                            read += len(chunk)
+                            pbar.update(len(chunk))
+
+                        pbar.set_description("Done")
 
             os.rename(f"{destination_path}.tmp", destination_path)
 
