@@ -31,7 +31,7 @@ def get_creation_date(path_to_file):
             return datetime.datetime.fromtimestamp(stat.st_mtime)
 
 
-def download_file(source_path, destination_path, source):
+def download_file(source_path, destination_path, source, progress=False):
     """
     Download a file from the allowed providers. Ex: local, az, etc.
 
@@ -103,7 +103,12 @@ def download_file(source_path, destination_path, source):
 
             with open(f"{destination_path}.tmp", "wb") as file:
                 with tqdm(
-                    total=size, unit="B", unit_scale=True, unit_divisor=1024, desc=f"Retrieving file {path}"
+                    total=size,
+                    unit="B",
+                    unit_scale=True,
+                    unit_divisor=1024,
+                    desc=f"Retrieving file {path}",
+                    disable=not progress,
                 ) as pbar:
                     read = 0
                     for chunk in source.chunks(reference):

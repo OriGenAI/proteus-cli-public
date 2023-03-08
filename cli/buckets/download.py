@@ -1,10 +1,10 @@
 import os
 from multiprocessing.dummy import Pool
 
+from cli.api import iterate_pagination
 from tqdm import tqdm
 
 from cli import config, proteus
-from cli.api import iterate_pagination
 
 PROTEUS_HOST, S3_REGION, WORKERS_COUNT, AZURE_STORAGE_CONNECTION_STRING = (
     config.PROTEUS_HOST,
@@ -41,7 +41,8 @@ def store_stream_in(stream, filepath, progress, chunk_size=1024):
         os.remove(temp_filepath)
     except OSError:
         pass
-    with open(temp_filepath, "wb") as _file:
+    os.makedirs(os.path.dirname(temp_filepath), exist_ok=True)
+    with open(temp_filepath, "wb+") as _file:
         for data in stream.iter_content(chunk_size):
             progress.update(len(data))
             _file.write(data)
