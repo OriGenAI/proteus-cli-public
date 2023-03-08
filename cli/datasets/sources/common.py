@@ -19,6 +19,9 @@ class Source:
     def open(self, reference):
         raise NotImplementedError()
 
+    def fastcopy(self, reference, destination):
+        return False
+
 
 class SourcedItem:
     def __init__(self, reference, path, source, size):
