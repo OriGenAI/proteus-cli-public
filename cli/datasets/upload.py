@@ -216,7 +216,7 @@ def process_files(
     steps = config.return_iterator()
 
     # Create temporary folder
-    with tempfile.TemporaryDirectory(prefix="proteus-") as tmpdirname:
+    with tempfile.TemporaryDirectory(prefix="proteus-", suffix=bucket_url.split("/")[-1]) as tmpdirname:
         try:
             with ThreadPool(processes=workers) as pool:
                 process_step_partial = partial(
@@ -228,7 +228,7 @@ def process_files(
                     replace=replace,
                     allow_missing_files=allow_missing_files,
                 )
-                for res in pool.imap_unordered(process_step_partial, steps):
+                for res in pool.imap(process_step_partial, steps):
                     for output in res[:-1]:
                         progress.update(n=1 / len(res))
                         progress.set_description(f"File uploaded: {output}")
@@ -236,11 +236,10 @@ def process_files(
                     progress.set_description(f"File uploaded: {res[-1]}")
                     progress.update_with_report(n=1 / len(res))
                     progress.refresh()
-        finally:
-            # Force destruction of temporary file. Ensure it exists after to
-            # for tmpfile cleaners to work
             shutil.rmtree(tmpdirname)
             os.mkdir(tmpdirname)
+        except Exception as e :
+            raise e
 
 
 def download_common(url):

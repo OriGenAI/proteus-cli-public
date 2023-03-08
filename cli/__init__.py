@@ -2,12 +2,12 @@ import click
 
 from cli.api.decorators import may_fail_on_http_error  # noqa: E402
 from cli.runtime import proteus
-from .buckets.commands import buckets as buckets_commands
-from .config import config
-from .datasets.commands import datasets as datasets_commands
-from .debugger.commands import debugger as debugger_commands
-from .jobs.commands import jobs as jobs_commands
-from .simulations.commands import simulations as simulations_commands
+from cli.buckets.commands import buckets as buckets_commands
+from cli.config import config
+from cli.datasets.commands import datasets as datasets_commands
+from cli.debugger.commands import debugger as debugger_commands
+from cli.jobs.commands import jobs as jobs_commands
+from cli.simulations.commands import simulations as simulations_commands
 
 USERNAME, PASSWORD, PROMPT = config.USERNAME, config.PASSWORD, config.PROMPT
 WORKERS_COUNT = config.WORKERS_COUNT

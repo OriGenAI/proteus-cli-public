@@ -140,6 +140,7 @@ def upload_file(source_path, file_path, url):
             source_path,
             content=file_content,
             modified=modified,
+            retry=True
         )
     try:
         if not os.path.isdir(file_path):

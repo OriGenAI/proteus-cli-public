@@ -80,8 +80,6 @@ class WellModelCaseConfig(DefaultConfig):
             {
                 "input": [
                     RequiredFilePath(f'{case["root"]}/*.SMSPEC', download_name="smspec"),
-                    RequiredFilePath(f'{case["root"]}/*.EGRID', download_name="grid"),
-                    RequiredFilePath(f'{case["root"]}/*.X{str(case["finalStep"]).zfill(4)}', download_name="x"),
                 ]
                 + [
                     RequiredFilePath(f'{case["root"]}/*.S{str(step).zfill(4)}', download_name="s")
