@@ -61,7 +61,12 @@ def is_file_already_present(filepath, size=None):
 
 def will_do_file_download(target, force_replace=False):
     def do_download(item, chunk_size=1024):
-        url, path, size = item["url"], item["filepath"], item["size"]
+        url, path, size, ready = item["url"], item["filepath"], item["size"], item["ready"]
+
+        if not ready:
+            proteus.logger.warning(f'File {path} is not ready, skipping')
+            return
+
         target_filepath = os.path.normpath(os.path.join(target, path))
         if not force_replace and is_file_already_present(target_filepath, size=size):
             return False

@@ -104,6 +104,9 @@ def download_file(source_path, destination_path, source, progress=False):
             if not source.fastcopy(reference, destination_file):
                 Path(f"{destination_path}.tmp").touch()
 
+                if callable(size):
+                    size = callable(size)
+
                 with open(f"{destination_path}.tmp", "wb") as file:
                     with tqdm(
                         total=size,
