@@ -12,10 +12,15 @@ class LocalSource(Source):
 
     def list_contents(self, starts_with="", ends_with=""):
         source_uri = self.uri
-
         starts_with = starts_with.lstrip("/")
+        if starts_with:
+            source_uri = os.path.join(source_uri, starts_with)
+        source_uri = Path(source_uri)
 
-        for item in Path(source_uri).rglob(f"{starts_with}*{ends_with}"):
+        if source_uri.exists() and source_uri.is_file():
+            yield SourcedItem(source_uri, str(source_uri), self, os.path.getsize(str(source_uri)))
+
+        for item in source_uri.rglob(f"*{ends_with}"):
             yield SourcedItem(item, str(item), self, os.path.getsize(str(item)))
 
     def open(self, reference):

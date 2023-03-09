@@ -58,6 +58,8 @@ class Config(object):
         client_id=CLIENT_ID,
         refresh_gap=REFRESH_GAP,
         ssl_verify=API_SSL_VERIFY,
+        default_retry_times=10,
+        default_retry_wait=20
     )
 
 

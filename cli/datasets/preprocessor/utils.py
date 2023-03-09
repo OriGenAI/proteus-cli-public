@@ -6,7 +6,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from ... import proteus
+from ... import proteus, config
 
 
 def get_creation_date(path_to_file):
@@ -130,6 +130,7 @@ def download_file(source_path, destination_path, source, progress=False):
             proteus.logger.error(f"The following file was not found: {source_path}")
 
 
+@proteus.may_insist_up_to()
 def upload_file(source_path, file_path, url):
     """
     Upload a file to proteus
@@ -148,7 +149,7 @@ def upload_file(source_path, file_path, url):
             source_path,
             content=file_content,
             modified=modified,
-            retry=True
+            retry=False
         )
     try:
         if not os.path.isdir(file_path):
