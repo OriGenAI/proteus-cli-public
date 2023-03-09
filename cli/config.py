@@ -47,6 +47,11 @@ class Config(object):
     }
     OPM_FLOW_PATH = os.getenv("OPM_FLOW_PATH", "/usr/bin/flow")
 
+    if not API_SSL_VERIFY:
+        import urllib3
+
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
     RUNTIME_CONFIG = ProteusConfig(
         log_loc=os.path.abspath(os.path.join(os.path.dirname(__file__), "..")),
         client_secret=CLIENT_SECRET,
@@ -58,6 +63,8 @@ class Config(object):
         client_id=CLIENT_ID,
         refresh_gap=REFRESH_GAP,
         ssl_verify=API_SSL_VERIFY,
+        default_retry_times=10,
+        default_retry_wait=20,
     )
 
 

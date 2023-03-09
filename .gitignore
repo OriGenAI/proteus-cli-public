@@ -137,3 +137,5 @@ tests/files/cnn-pca-preprocessing
 config.*.env
 proteus-do
 input_*
+.idea
+config.env

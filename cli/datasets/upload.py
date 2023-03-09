@@ -70,7 +70,9 @@ def get_total_steps(cases, workflow):
     return common_step + (cases_steps + timesteps_steps * (final_step - initial_step + 1)) * len(cases)
 
 
-def upload(bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False, allow_missing_files=tuple()):
+def upload(
+    bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False, allow_missing_files=tuple(), temp_folder_override=False
+):
     assert proteus.api.auth.access_token is not None
     set_dataset_version(dataset_uuid)
     source = get_source(bucket)
@@ -103,6 +105,7 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False, allow_mis
             workflow=workflow,
             replace=replace,
             allow_missing_files=allow_missing_files,
+            temp_folder_override=temp_folder_override,
         )
 
     proteus.reporting.send("upload finished", status="completed", progress=100)
@@ -203,6 +206,7 @@ def process_files(
     workflow="hm",
     replace=False,
     allow_missing_files=tuple(),
+    temp_folder_override=False,
 ):
     from .preprocessor.config import Config
     from .preprocessor.process_step import process_step
@@ -216,31 +220,35 @@ def process_files(
     steps = config.return_iterator()
 
     # Create temporary folder
-    with tempfile.TemporaryDirectory(prefix="proteus-") as tmpdirname:
-        try:
-            with ThreadPool(processes=workers) as pool:
-                process_step_partial = partial(
-                    process_step,
-                    tmpdirname=tmpdirname,
-                    source=source,
-                    bucket_url=bucket_url,
-                    cases_url=cases_url,
-                    replace=replace,
-                    allow_missing_files=allow_missing_files,
-                )
-                for res in pool.imap_unordered(process_step_partial, steps):
-                    for output in res[:-1]:
-                        progress.update(n=1 / len(res))
-                        progress.set_description(f"File uploaded: {output}")
-                        time.sleep(1)
-                    progress.set_description(f"File uploaded: {res[-1]}")
-                    progress.update_with_report(n=1 / len(res))
-                    progress.refresh()
-        finally:
-            # Force destruction of temporary file. Ensure it exists after to
-            # for tmpfile cleaners to work
-            shutil.rmtree(tmpdirname)
-            os.mkdir(tmpdirname)
+    tmpdirname = None
+    try:
+        tmpdirname = (
+            tempfile.TemporaryDirectory(prefix="proteus-", suffix=bucket_url.split("/")[-1]).name
+            if not temp_folder_override
+            else temp_folder_override
+        )
+        os.makedirs(tmpdirname, exist_ok=True)
+        with ThreadPool(processes=workers) as pool:
+            process_step_partial = partial(
+                process_step,
+                tmpdirname=tmpdirname,
+                source=source,
+                bucket_url=bucket_url,
+                cases_url=cases_url,
+                replace=replace,
+                allow_missing_files=allow_missing_files,
+            )
+            for res in pool.imap(process_step_partial, steps):
+                for output in res[:-1]:
+                    progress.update(n=1 / len(res))
+                    progress.set_description(f"File uploaded: {output}")
+                    time.sleep(1)
+                progress.set_description(f"File uploaded: {res[-1]}")
+                progress.update_with_report(n=1 / len(res))
+                progress.refresh()
+    finally:
+        if tmpdirname and not temp_folder_override:
+            shutil.rmtree(tmpdirname, ignore_errors=True)
 
 
 def download_common(url):

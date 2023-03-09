@@ -16,7 +16,7 @@ def buckets():
 
 
 @buckets.command()
-@click.option("--workers", prompt=PROMPT, default=WORKERS_COUNT)
+@click.option("--workers", prompt=False, default=WORKERS_COUNT)
 @click.argument("bucket_uuid")
 @click.argument("folder")
 @click.option("--replace/--no-replace", default=False)
@@ -30,4 +30,5 @@ def download(bucket_uuid, folder, workers=WORKERS_COUNT, replace=False, **search
     """downloads a bucket's content to de specified folder"""
     from .download import download as download_bucket
 
-    click.echo(download_bucket(bucket_uuid, folder, workers=workers, replace=replace, **search))
+    for file in download_bucket(bucket_uuid, folder, workers=workers, replace=replace, **search):
+        pass

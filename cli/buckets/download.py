@@ -1,10 +1,10 @@
 import os
 from multiprocessing.dummy import Pool
 
+from cli.api import iterate_pagination
 from tqdm import tqdm
 
 from cli import config, proteus
-from cli.api import iterate_pagination
 
 PROTEUS_HOST, S3_REGION, WORKERS_COUNT, AZURE_STORAGE_CONNECTION_STRING = (
     config.PROTEUS_HOST,
@@ -41,7 +41,8 @@ def store_stream_in(stream, filepath, progress, chunk_size=1024):
         os.remove(temp_filepath)
     except OSError:
         pass
-    with open(temp_filepath, "wb") as _file:
+    os.makedirs(os.path.dirname(temp_filepath), exist_ok=True)
+    with open(temp_filepath, "wb+") as _file:
         for data in stream.iter_content(chunk_size):
             progress.update(len(data))
             _file.write(data)
@@ -60,7 +61,12 @@ def is_file_already_present(filepath, size=None):
 
 def will_do_file_download(target, force_replace=False):
     def do_download(item, chunk_size=1024):
-        url, path, size = item["url"], item["filepath"], item["size"]
+        url, path, size, ready = item["url"], item["filepath"], item["size"], item["ready"]
+
+        if not ready:
+            proteus.logger.warning(f"File {path} is not ready, skipping")
+            return
+
         target_filepath = os.path.normpath(os.path.join(target, path))
         if not force_replace and is_file_already_present(target_filepath, size=size):
             return False

@@ -8,7 +8,6 @@ import numpy as np
 from ecl.eclfile import EclInitFile, EclFile
 from ecl.grid import EclGrid
 from ecl.summary import EclSum
-from ecl.well import WellInfo
 
 from preprocessing.deck.runspec import preprocess as preprocess_runspec
 from preprocessing.deck.section import find_section
@@ -126,7 +125,6 @@ def export_runspec(
     data_file_loc = None
     egrid_file_loc = None
     smspec_file_loc = None
-    restart_file_loc = None
     init_file_loc = None
 
     if isinstance(input_src, dict):
@@ -134,7 +132,6 @@ def export_runspec(
         init_file_loc = next(iter(input_src.get("init") or []), None)
         egrid_file_loc = next(iter(input_src.get("grid") or []), None)
         smspec_file_loc = next(iter(input_src.get("smspec") or []), None)
-        restart_file_loc = next(iter(input_src.get("x") or []), None)
 
     if data_file_loc is None:
         data_file_loc = find_ext(case_loc, "DATA", required=True, one=True)
@@ -142,8 +139,6 @@ def export_runspec(
         egrid_file_loc = find_ext(case_loc, "EGRID", first=True, required=False)
     if smspec_file_loc is None:
         smspec_file_loc = find_ext(case_loc, "SMSPEC", first=True, required=False)
-    if restart_file_loc is None:
-        restart_file_loc = find_ext(case_loc, "X000*", first=True, required=False)
     if init_file_loc is None:
         init_file_loc = find_ext(case_loc, "INIT", required=False)
 
@@ -157,7 +152,6 @@ def export_runspec(
         egrid_file_loc=egrid_file_loc,
         smspec_file_loc=smspec_file_loc,
         download_func=download_func,
-        restart_file_loc=restart_file_loc,
         init_file_loc=init_file_loc,
         allow_missing_files=allow_missing_files,
         base_dir=base_dir,
@@ -386,33 +380,17 @@ def export_smry(case_loc, case_dest_loc, _, source, *args, allow_missing_files=t
 
 def export_smspec(case_loc, case_dest_loc, input_src, source, *args):
 
-    grid_file_loc = None
-    restart_file_loc = None
     smspec_file_loc = None
 
     if isinstance(input_src, dict):
-        grid_file_loc = next(iter(input_src.get("grid") or []), None)
-        restart_file_loc = next(iter(reversed(input_src.get("x") or [])), None)
         smspec_file_loc = next(iter(input_src.get("smspec") or []), None)
 
-    if grid_file_loc is None:
-        grid_file_loc = find_ext(case_loc=case_loc, ext="EGRID", required=True, one=True)
-    if restart_file_loc is None:
-        restart_file_loc = find_ext(case_loc=case_loc, ext="X*", last=True)
     if smspec_file_loc is None:
         smspec_file_loc = find_ext(case_loc=case_loc, ext="SMSPEC", required=True, one=True)
 
-    grid = EclGrid(str(grid_file_loc))
-    winfo = WellInfo(grid, str(restart_file_loc))
     smry = EclSum(str(smspec_file_loc))
 
     wnames = np.array(list(smry.wells()))
-
-    well_types = []
-    for w in wnames:
-        wtimeline = winfo[w]
-        wstate = wtimeline[0]
-        well_types.append(str(wstate.wellType()))
 
     for key in SMSPEC_WELL_KEYWORDS:
         with h5py.File(os.path.join(case_dest_loc, f"{key}.h5"), "w") as h5f:
