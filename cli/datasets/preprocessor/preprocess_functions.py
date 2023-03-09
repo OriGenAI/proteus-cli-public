@@ -8,7 +8,6 @@ import numpy as np
 from ecl.eclfile import EclInitFile, EclFile
 from ecl.grid import EclGrid
 from ecl.summary import EclSum
-from ecl.well import WellInfo
 
 from preprocessing.deck.runspec import preprocess as preprocess_runspec
 from preprocessing.deck.section import find_section
@@ -435,4 +434,3 @@ def export_x_file(case_src_loc, _, input, *args):
             "min_pressure": props["pressure"].min(),
         },
     )
-

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from ... import proteus, config
+from ... import proteus
 
 
 def get_creation_date(path_to_file):
@@ -147,13 +147,7 @@ def upload_file(source_path, file_path, url):
     """
     modified = get_creation_date(file_path)
     with open(file_path, "rb") as file_content:
-        proteus.api.post_file(
-            url,
-            source_path,
-            content=file_content,
-            modified=modified,
-            retry=False
-        )
+        proteus.api.post_file(url, source_path, content=file_content, modified=modified, retry=False)
     try:
         if not os.path.isdir(file_path):
             os.remove(file_path)

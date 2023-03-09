@@ -70,7 +70,9 @@ def get_total_steps(cases, workflow):
     return common_step + (cases_steps + timesteps_steps * (final_step - initial_step + 1)) * len(cases)
 
 
-def upload(bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False, allow_missing_files=tuple(), temp_folder_override=False):
+def upload(
+    bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False, allow_missing_files=tuple(), temp_folder_override=False
+):
     assert proteus.api.auth.access_token is not None
     set_dataset_version(dataset_uuid)
     source = get_source(bucket)
@@ -103,7 +105,7 @@ def upload(bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False, allow_mis
             workflow=workflow,
             replace=replace,
             allow_missing_files=allow_missing_files,
-            temp_folder_override=temp_folder_override
+            temp_folder_override=temp_folder_override,
         )
 
     proteus.reporting.send("upload finished", status="completed", progress=100)
@@ -204,7 +206,7 @@ def process_files(
     workflow="hm",
     replace=False,
     allow_missing_files=tuple(),
-    temp_folder_override=False
+    temp_folder_override=False,
 ):
     from .preprocessor.config import Config
     from .preprocessor.process_step import process_step
@@ -220,7 +222,11 @@ def process_files(
     # Create temporary folder
     tmpdirname = None
     try:
-        tmpdirname = tempfile.TemporaryDirectory(prefix="proteus-", suffix=bucket_url.split("/")[-1]).name if not temp_folder_override else temp_folder_override
+        tmpdirname = (
+            tempfile.TemporaryDirectory(prefix="proteus-", suffix=bucket_url.split("/")[-1]).name
+            if not temp_folder_override
+            else temp_folder_override
+        )
         os.makedirs(tmpdirname, exist_ok=True)
         with ThreadPool(processes=workers) as pool:
             process_step_partial = partial(

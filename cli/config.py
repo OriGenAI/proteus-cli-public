@@ -49,6 +49,7 @@ class Config(object):
 
     if not API_SSL_VERIFY:
         import urllib3
+
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     RUNTIME_CONFIG = ProteusConfig(
@@ -63,7 +64,7 @@ class Config(object):
         refresh_gap=REFRESH_GAP,
         ssl_verify=API_SSL_VERIFY,
         default_retry_times=10,
-        default_retry_wait=20
+        default_retry_wait=20,
     )
 
 

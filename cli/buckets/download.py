@@ -64,7 +64,7 @@ def will_do_file_download(target, force_replace=False):
         url, path, size, ready = item["url"], item["filepath"], item["size"], item["ready"]
 
         if not ready:
-            proteus.logger.warning(f'File {path} is not ready, skipping')
+            proteus.logger.warning(f"File {path} is not ready, skipping")
             return
 
         target_filepath = os.path.normpath(os.path.join(target, path))

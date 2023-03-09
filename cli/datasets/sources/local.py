@@ -39,9 +39,9 @@ class LocalSource(Source):
         for file in os.listdir(source_uri):
             fq_file_path = Path(os.path.join(source_uri, file))
             files.append(fq_file_path)
-            parts = file.split('.')
+            parts = file.split(".")
             if len(parts) == 2:
-                extension = '.' + parts[1]
+                extension = "." + parts[1]
                 by_extension.setdefault(extension, []).append(fq_file_path)
 
         return files, by_extension
