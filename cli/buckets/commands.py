@@ -28,7 +28,6 @@ def buckets():
 @proteus.runs_authentified
 def download(bucket_uuid, folder, workers=WORKERS_COUNT, replace=False, **search):
     """downloads a bucket's content to de specified folder"""
-    from .download import download as download_bucket
 
-    for file in download_bucket(bucket_uuid, folder, workers=workers, replace=replace, **search):
+    for _ in proteus.bucket.download(bucket_uuid, folder, workers=workers, replace=replace, **search):
         pass

@@ -1,7 +1,7 @@
 import os
 
-from cli.buckets.download import download
 from pytest_bdd import scenario, given, when, then
+from cli.runtime import proteus
 
 
 @scenario("features/download.feature", "Download bucket")
@@ -28,7 +28,7 @@ def target_folder():
 
 @when("I download")
 def download_bucket(bucket_uuid, target_folder, updated_mocked_api_get):
-    list(download(bucket_uuid, target_folder, workers=1))
+    list(proteus.bucket.download(bucket_uuid, target_folder, workers=1))
 
 
 @then("there are logged messages")
