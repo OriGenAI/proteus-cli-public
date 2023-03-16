@@ -12,7 +12,7 @@ packages = [
 python = "~3.8"
 click = "^8.0.0"
 jwt = "^1.2.0"
-cryptography = "^3.3.2"
+cryptography = ">=3.3.2,<40.0.0"
 pycryptodome = "^3.10.1"
 boto3 = "^1.17.79"
 tqdm = "^4.61.0"
