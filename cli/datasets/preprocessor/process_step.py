@@ -97,13 +97,14 @@ def process_step(
         func_input = PathMeta(download_name, download_name=download_name, full_path=output_path)
 
     # Parameters not fully supported by old preprocessing configurations
-    if "allow_missing_files" in inspect.getfullargspec(func).args:
+    fn_args = set(inspect.getfullargspec(func).args).union(inspect.getfullargspec(func).kwonlyargs)
+    if "allow_missing_files" in fn_args:
         additional_info["allow_missing_files"] = list(allow_missing_files)
 
     if continue_if_missing:
         additional_info.setdefault("allow_missing_files", []).extend(continue_if_missing)
 
-    if "base_dir" in inspect.getfullargspec(func).args:
+    if "base_dir" in fn_args:
         additional_info["base_dir"] = tmpdirname
 
     source_dir, _, output = func(
