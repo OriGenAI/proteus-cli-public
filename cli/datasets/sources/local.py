@@ -29,20 +29,21 @@ class LocalSource(Source):
 
         else:
             for item in files:
-                if not ends_with or item.endswith(ends_with):
+                if not ends_with or str(item).endswith(ends_with):
                     yield SourcedItem(item, str(item), self, lambda: os.path.getsize(str(item)))
 
     @lru_cache(maxsize=50000)
     def _list_dir_files(self, source_uri):
         files = []
         by_extension = {}
-        for file in os.listdir(source_uri):
-            fq_file_path = Path(os.path.join(source_uri, file))
-            files.append(fq_file_path)
-            parts = file.split(".")
-            if len(parts) == 2:
-                extension = "." + parts[1]
-                by_extension.setdefault(extension, []).append(fq_file_path)
+        if os.path.isdir(source_uri):
+            for file in os.listdir(source_uri):
+                fq_file_path = Path(os.path.join(source_uri, file))
+                files.append(fq_file_path)
+                parts = file.split(".")
+                if len(parts) == 2:
+                    extension = "." + parts[1]
+                    by_extension.setdefault(extension, []).append(fq_file_path)
 
         return files, by_extension
 

@@ -78,29 +78,29 @@ class CnnPcaCommonConfig(DefaultConfig):
             ]
         )
 
-    def step_4_actnum_prop(self):
-        """
-        List all cases and its steps to generate the .DATA iterator
-
-        Args: -
-
-        Returns:
-            iterator: the list of steps to preprocess
-        """
-        first_case = self.cases[0]
-        return iter(
-            [
-                {
-                    "input": [
-                        RequiredFilePath(
-                            f'{str(first_case["root"]).rstrip("/")}/' f"*ACTNUM.GRDECL", download_name="actnum"
-                        )
-                    ],
-                    "output": ["actnum.h5"],
-                    "preprocessing": "export_actnum",
-                    "case": first_case["number"],
-                    "keep": True,
-                    "additional_info": {"get_mapping": self._get_mapping},
-                }
-            ]
-        )
+    # def step_4_actnum_prop(self):
+    #     """
+    #     List all cases and its steps to generate the .DATA iterator
+    #
+    #     Args: -
+    #
+    #     Returns:
+    #         iterator: the list of steps to preprocess
+    #     """
+    #     first_case = self.cases[0]
+    #     return iter(
+    #         [
+    #             {
+    #                 "input": [
+    #                     RequiredFilePath(
+    #                         f'{str(first_case["root"]).rstrip("/")}/' f"*ACTNUM.GRDECL", download_name="actnum"
+    #                     )
+    #                 ],
+    #                 "output": ["actnum.h5"],
+    #                 "preprocessing": "export_actnum",
+    #                 "case": first_case["number"],
+    #                 "keep": True,
+    #                 "additional_info": {"get_mapping": self._get_mapping},
+    #             }
+    #         ]
+    #     )
