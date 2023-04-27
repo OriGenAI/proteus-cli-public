@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "proteus-cli"
-version = "0.2.21"
+version = "0.2.22"
 description = ""
 authors = []
 packages = [
