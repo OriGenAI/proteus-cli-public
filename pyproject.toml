@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "proteus-cli"
-version = "0.2.20"
+version = "0.2.22"
 description = ""
 authors = []
 packages = [
@@ -21,8 +21,8 @@ azure-storage-blob = "^12.8.1"
 readchar = "^3.0.4"
 azure-identity = "^1.12.0"
 markupsafe = "2.0.1"
-proteus-runtime = "0.2.15"
-proteus-preprocessing = "0.2.10"
+proteus-runtime = "0.2.17"
+proteus-preprocessing = "0.2.11"
 
 [tool.poetry.dev-dependencies]
 black = "^22.1.0"
