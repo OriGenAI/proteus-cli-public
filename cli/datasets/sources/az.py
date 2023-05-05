@@ -3,11 +3,14 @@ import re
 # from azure.storage.blob._models import BlobProperties as AzureBlobProperties
 from io import BytesIO
 
-from azure.identity import DefaultAzureCredential
 from azure.storage.blob import ContainerClient
+from azure.core.credentials import AzureSasCredential
 
 from .common import Source, SourcedItem
 from ... import proteus
+from cli.config import config
+
+AZURE_SAS_TOKEN = config.AZURE_SAS_TOKEN
 
 CONTENT_CHUNK_SIZE = 10 * 1024 * 1024
 
@@ -25,7 +28,7 @@ class AZSource(Source):
         storage_url = f'https://{match.groupdict()["bucket_name"]}'
         self.container_client = ContainerClient(
             storage_url,
-            credential=DefaultAzureCredential(exclude_managed_identity_credential=True),
+            credential=AzureSasCredential(AZURE_SAS_TOKEN),
             container_name=container_name,
         )
 
