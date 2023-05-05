@@ -568,24 +568,22 @@ files = [
 
 [[package]]
 name = "ecl"
-version = "2.14.2"
+version = "2.13.2"
 description = "Package for reading and writing the result files from the ECLIPSE reservoir simulator"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "ecl-2.14.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:4cc15c5053a1598fbdd5c1c6c64b39135c787f5a8fa69ab1f95bc85ef477864c"},
-    {file = "ecl-2.14.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:51c384b57b39c0332979e93782edad8b60c93d93eb057c588936c0d7f5181e35"},
-    {file = "ecl-2.14.2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:097bf825b88571d9fd8e3060fbe80d4e8d72f8e18497b860e6762bd4323cfa7f"},
-    {file = "ecl-2.14.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ca4b547e27762c73bf129a22ada75d88759f4e02d2a21cad3dab58cf979f3d8b"},
-    {file = "ecl-2.14.2-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:e441243c6dd7b025dbd0d29b8a8bcdabdd569c391c27745b7a9ba187d3cb0255"},
-    {file = "ecl-2.14.2-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a775d97441efad5d03d0cbd8b996f3abaeadbb0549052d919d7f290da8ceb185"},
-    {file = "ecl-2.14.2-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:a06f801f40acbb4c0737526a01e8c917d88a4bda3e69cf3b3a9a9fcef9622f6c"},
-    {file = "ecl-2.14.2-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0f5a2ed918c134509524024612db3218bf3676fdcb994b75813f2812164f3bb8"},
-    {file = "ecl-2.14.2-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:8af5d2b3768d89cf7d8d93bae37f6c0dbeed5a0d21537fb4da58bceca96401fc"},
-    {file = "ecl-2.14.2-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5a9fa1922fe3fde64f9c5512f10969e8199524ab41119b1fe5d83c516378ec48"},
-    {file = "ecl-2.14.2-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:e02ea207cf9d7f3478659da4b151ba8faa2078e4183791a4ce6c58ef60cc8106"},
-    {file = "ecl-2.14.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:93fbe12c741e440ed46f19b1570c3f39edec8d66f42e73bb68f6296e81f462f6"},
+    {file = "ecl-2.13.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:3c978164015dd91a7118dfaba3a717da1561199a6bc0c596cae4e0af1db927c5"},
+    {file = "ecl-2.13.2-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:bbaac7979d6247ce98e2ac8028d80ddaaab19bc67cb2165c547640c9cce9f8a7"},
+    {file = "ecl-2.13.2-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:5aa1318fc75521f316ebfd0f99f23040ab11c00952105a79e423c5b6fedb3441"},
+    {file = "ecl-2.13.2-cp36-cp36m-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:2c6f9550c63df526fe619e71d15e88ac77cabcfa4fcb01af9f68faac81b6c34b"},
+    {file = "ecl-2.13.2-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:c0a0d8a993068931ee6599347d459d2c0559017ad217e1c50620c935e63cc129"},
+    {file = "ecl-2.13.2-cp37-cp37m-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:9ff28e8fa3a50c992777828cc7953a7aafc2a3729c0d0f7a7fd66b710c4b36e6"},
+    {file = "ecl-2.13.2-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:cbde059fee0757627380cfe9a8e98bcdcb490e081012614409007d225185809e"},
+    {file = "ecl-2.13.2-cp38-cp38-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:51a404db171ea512b1a66b100d534ea57f55711f3fa41de0e0aa17fd19ea3c4b"},
+    {file = "ecl-2.13.2-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:00a47f42e4bf6af08536511bfc6cb7a161dec6b97b88ff9fe85dd54fbb624497"},
+    {file = "ecl-2.13.2-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:36c91b8263fb66212ddcc0dce52e33f5240bdd1cf89a569c2b2158d8fe3ae90a"},
 ]
 
 [package.dependencies]
@@ -597,14 +595,14 @@ six = "*"
 
 [[package]]
 name = "ecl2df"
-version = "0.16.3"
+version = "0.16.1"
 description = "Convert Eclipse 100 input and output to DataFrames"
 category = "main"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.6"
 files = [
-    {file = "ecl2df-0.16.3-py2.py3-none-any.whl", hash = "sha256:ef7a517cceee0fbe51d90b3977d72280db446e24a480a8e7673a8b59d9fd3552"},
-    {file = "ecl2df-0.16.3.tar.gz", hash = "sha256:6d339a97f10949e74508c64873809942d66f53e0bff9ba374fdfc1d1d297a6fc"},
+    {file = "ecl2df-0.16.1-py2.py3-none-any.whl", hash = "sha256:57281bf450ec75310aff22a9fdde433fc68ca542ba19ca6b06ae671b0a5fbad5"},
+    {file = "ecl2df-0.16.1.tar.gz", hash = "sha256:db87e8cad12b0eaef2da57d42de06d7a9bff11af6203c3300e80dc15491d0cff"},
 ]
 
 [package.dependencies]
@@ -618,7 +616,7 @@ treelib = "*"
 
 [package.extras]
 docs = ["autoapi", "ipython", "rstcheck", "sphinx", "sphinx-argparse", "sphinx-autodoc-typehints", "sphinx-rtd-theme"]
-ert = ["ert (>=2.38.0-b5)"]
+ert = ["ert"]
 tests = ["black (>=20.8b0)", "flake8", "isort", "mypy", "networkx", "pre-commit", "pytest", "pytest-cov", "pytest-mock", "types-PyYAML", "types-pkg-resources", "types-python-dateutil"]
 
 [[package]]
@@ -811,17 +809,17 @@ cryptography = ">=3.1,<3.4.0 || >3.4.0"
 
 [[package]]
 name = "libecl"
-version = "2.14.2"
+version = "2.13.2"
 description = ""
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "libecl-2.14.2-py3-none-any.whl", hash = "sha256:6822207af52f528162267f075f8dbdce22e73ec0715d1c8c7809019e5e919bcc"},
+    {file = "libecl-2.13.2-py3-none-any.whl", hash = "sha256:1d936b29a8e37d4c6a0cdefc6d0b242547701f4f52add83fe12ed79c054a26f3"},
 ]
 
 [package.dependencies]
-ecl = "2.14.2"
+ecl = "2.13.2"
 
 [[package]]
 name = "mako"
@@ -1168,17 +1166,17 @@ files = [
 
 [[package]]
 name = "opm"
-version = "2022.10"
+version = "2022.4"
 description = "OPM-Common Python bindings"
 category = "main"
 optional = false
 python-versions = ">=3.5"
 files = [
-    {file = "opm-2022.10-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f3d3c4269738304f6d780f11a28cbe1a070e2082add6d03b83d8515d9826fd4d"},
-    {file = "opm-2022.10-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d2a3795decbc242feac2ddbe01c4773ebc1832748761b4009a171aa828738d2d"},
-    {file = "opm-2022.10-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3a40d1455443d29b2691e46656453cd1fc1eebb29b20877f6d8df9f6d1fa23e3"},
-    {file = "opm-2022.10-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1fe0b9d0d21851ecfd208f14eefc9be6bd687f4cbbc53cfc83b366b48ce7618a"},
-    {file = "opm-2022.10-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:75bc02933532d2b6c878fc4e9cbee8f1dffcb15f2865818c63c84a271993947c"},
+    {file = "opm-2022.4-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:01e40d3b53a0266efce81d35f6acca2068eaf768a8a25e38ff9970cf62e69785"},
+    {file = "opm-2022.4-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:09e5ea2317e03a3f1a12319ef9b8f7da4b6c3dc564b99508577acf267fa3228f"},
+    {file = "opm-2022.4-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b37a2b446410ec5df8dda9986f182353e1fe2d2974f2d83df05ea0437fb7e151"},
+    {file = "opm-2022.4-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e4b8287905abbb8a123fc031550876dda13777f33f6edf9ec91a55864e24eeb1"},
+    {file = "opm-2022.4-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:eeb4e8fc88f987673e81faf0f787e5ca2457ffea0398a62faaae593635587992"},
 ]
 
 [[package]]
@@ -1404,20 +1402,21 @@ virtualenv = ">=20.10.0"
 
 [[package]]
 name = "proteus-preprocessing"
-version = "0.2.11"
+version = "0.2.14"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "proteus_preprocessing-0.2.11-py3-none-any.whl", hash = "sha256:a9cf507fedaaaebb5df02eb2ff4b77e3c15ab9da941144d9e01ae1f8c448d73c"},
-    {file = "proteus_preprocessing-0.2.11.tar.gz", hash = "sha256:911329a49eefa084817f67d9b1b243269445ca430f5f190051f2fb9bcbb45e12"},
+    {file = "proteus_preprocessing-0.2.14-py3-none-any.whl", hash = "sha256:c64ef30bed172da2429fcb59d6370fccac1d05a276219894405bf0224014579e"},
+    {file = "proteus_preprocessing-0.2.14.tar.gz", hash = "sha256:ee6f64cb16eb0db7fee7fc36a6d48b83385697eefcb5d3c13c8d53b04bc21193"},
 ]
 
 [package.dependencies]
-ecl2df = ">=0.16.1,<0.17.0"
+ecl2df = "0.16.1"
 h5py = ">=3.6.0,<4.0.0"
-libecl = ">=2.13.1,<3.0.0"
+libecl = "2.13.2"
+opm = "2022.4"
 pandas = ">=1.4.1,<2.0.0"
 python-json-logger = ">=2.0.1,<3.0.0"
 readchar = ">=3.0.4,<4.0.0"
@@ -2058,4 +2057,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.3)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.8"
-content-hash = "ae2527376d714fc4db3235b64f3272ba6f4340d70753dec76cd282a429b19f90"
+content-hash = "6fecd5bff94fd4c8c221b49c2f9e6eba51621146deb9ce1c210398fe9e5a7be0"
