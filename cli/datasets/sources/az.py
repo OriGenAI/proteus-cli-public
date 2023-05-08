@@ -5,7 +5,7 @@ from io import BytesIO
 
 from azure.storage.blob import ContainerClient
 from azure.core.credentials import AzureSasCredential
-from azure.core.exceptions import HttpResponseError
+from azure.core.exceptions import HttpResponseError, ClientAuthenticationError
 from azure.identity import DefaultAzureCredential
 
 from .common import Source, SourcedItem
@@ -29,16 +29,37 @@ class AZSource(Source):
         container_name = match.groupdict()["container_name"]
         storage_url = f'https://{match.groupdict()["bucket_name"]}'
 
-        if AZURE_SAS_TOKEN:
-            credential = AzureSasCredential(AZURE_SAS_TOKEN)
-        else:
-            credential = DefaultAzureCredential(exclude_managed_identity_credential=True)
+        auth_methods = [
+            "exclude_environment_credential",
+            "exclude_cli_credential",
+            "exclude_shared_token_cache_credential",
+            "exclude_visual_studio_code_credential",
+            "exclude_interactive_browser_credential",
+            "exclude_powershell_credential",
+            "exclude_managed_identity_credential",
+        ]
 
-        self.container_client = ContainerClient(
-            storage_url,
-            credential=credential,
-            container_name=container_name,
-        )
+        if AZURE_SAS_TOKEN:
+            self.container_client = ContainerClient(
+                storage_url,
+                credential=AzureSasCredential(AZURE_SAS_TOKEN),
+                container_name=container_name,
+            )
+            return
+
+        for auth_method in auth_methods:
+            try:
+                flags = {auth: True for auth in auth_methods}
+                flags[auth_method] = False
+                self.container_client = ContainerClient(
+                    storage_url,
+                    credential=DefaultAzureCredential(**flags),
+                    container_name=container_name,
+                )
+                self.container_client.exists()
+                break
+            except ClientAuthenticationError:
+                pass
 
     @proteus.may_insist_up_to(5, 1)
     def list_contents(self, starts_with="", ends_with=None):
