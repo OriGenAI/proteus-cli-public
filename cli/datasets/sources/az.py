@@ -5,6 +5,8 @@ from io import BytesIO
 
 from azure.storage.blob import ContainerClient
 from azure.core.credentials import AzureSasCredential
+from azure.core.exceptions import HttpResponseError
+from azure.identity import DefaultAzureCredential
 
 from .common import Source, SourcedItem
 from ... import proteus
@@ -26,9 +28,15 @@ class AZSource(Source):
         assert match is not None, f"{uri} must be an s3 URI"
         container_name = match.groupdict()["container_name"]
         storage_url = f'https://{match.groupdict()["bucket_name"]}'
+
+        if AZURE_SAS_TOKEN:
+            credential = AzureSasCredential(AZURE_SAS_TOKEN)
+        else:
+            credential = DefaultAzureCredential(exclude_managed_identity_credential=True)
+
         self.container_client = ContainerClient(
             storage_url,
-            credential=AzureSasCredential(AZURE_SAS_TOKEN),
+            credential=credential,
             container_name=container_name,
         )
 
@@ -38,11 +46,18 @@ class AZSource(Source):
         match = self.URI_re.match(bucket_uri.rstrip("/"))
         assert match is not None, f"{bucket_uri} must be an s3 URI"
         prefix = match.groupdict()["prefix"]
-        for item in self.container_client.list_blobs(name_starts_with=prefix + starts_with):
-            item_name = f'/{item["name"]}'
-            assert item_name.startswith("/" + prefix + starts_with)
-            if ends_with is None or item_name.endswith(ends_with):
-                yield SourcedItem(item, item_name, self, item.size)
+        try:
+            for item in self.container_client.list_blobs(name_starts_with=prefix + starts_with):
+                item_name = f'/{item["name"]}'
+                assert item_name.startswith("/" + prefix + starts_with)
+                if ends_with is None or item_name.endswith(ends_with):
+                    yield SourcedItem(item, item_name, self, item.size)
+        except HttpResponseError as e:
+            proteus.logger.error(
+                "Missing Azure credentials to perform this operation, please "
+                "provide a SAS token or provide another authentication method on Azure"
+            )
+            raise e
 
     def open(self, reference):
         reference_path = reference.get("name")
