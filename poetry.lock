@@ -1402,14 +1402,14 @@ virtualenv = ">=20.10.0"
 
 [[package]]
 name = "proteus-preprocessing"
-version = "0.2.14"
+version = "0.2.15"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "proteus_preprocessing-0.2.14-py3-none-any.whl", hash = "sha256:c64ef30bed172da2429fcb59d6370fccac1d05a276219894405bf0224014579e"},
-    {file = "proteus_preprocessing-0.2.14.tar.gz", hash = "sha256:ee6f64cb16eb0db7fee7fc36a6d48b83385697eefcb5d3c13c8d53b04bc21193"},
+    {file = "proteus_preprocessing-0.2.15-py3-none-any.whl", hash = "sha256:71e903ac1f06fe4b18b3de8ccb6ae33be9030b07256a69579c7ffe7385c72985"},
+    {file = "proteus_preprocessing-0.2.15.tar.gz", hash = "sha256:b00420e97eb40b003cd3c08ee04cca17a3577959b62b3abd550ca1d985722796"},
 ]
 
 [package.dependencies]
@@ -1426,14 +1426,14 @@ tqdm = ">=4.61.0,<5.0.0"
 
 [[package]]
 name = "proteus-runtime"
-version = "0.2.17"
+version = "0.2.24"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "proteus_runtime-0.2.17-py3-none-any.whl", hash = "sha256:7e5d6cfc4ab10109df3bfbbccfa1ddc4c9d93748e8ab52e9bc8a8c91f3d273c0"},
-    {file = "proteus_runtime-0.2.17.tar.gz", hash = "sha256:0b0c3f667e7d8a6bdfdce662ba6e8045910ea96f0a142482c583afeb349e3301"},
+    {file = "proteus_runtime-0.2.24-py3-none-any.whl", hash = "sha256:2f56d6740caf19e290ef0019a0e7654a0d62772476f8f1b8b9b07420645cf082"},
+    {file = "proteus_runtime-0.2.24.tar.gz", hash = "sha256:411f51cb51a55c117c2a5031318d5d9b1818f807faffd80a390e95b11bda9a49"},
 ]
 
 [package.dependencies]
@@ -2057,4 +2057,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.3)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.8"
-content-hash = "6fecd5bff94fd4c8c221b49c2f9e6eba51621146deb9ce1c210398fe9e5a7be0"
+content-hash = "c7ac478d391499ec4b96b2e6622c6c447d0fa561d5be0a27ecc6aef3c81bb1ef"

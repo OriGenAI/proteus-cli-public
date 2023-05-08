@@ -1,3 +1,5 @@
+import os
+
 from pytest_bdd import scenario, given, when, then
 from requests.models import Response
 
@@ -11,7 +13,7 @@ def test_upload(mocked_auth, mocked_api_post, mocked_api_get):
 
 @given("a bucket", target_fixture="bucket")
 def bucket():
-    return None
+    return os.path.dirname(__file__)
 
 
 @given("a dataset uuid", target_fixture="dataset_uuid")
