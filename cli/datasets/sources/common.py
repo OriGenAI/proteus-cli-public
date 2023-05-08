@@ -1,3 +1,4 @@
+import os
 import re
 
 
@@ -6,7 +7,7 @@ class Source:
     URI_re = re.compile(r"^.*$")
 
     def __init__(self, uri):
-        self.uri = uri
+        self.uri = os.path.abspath(os.path.expanduser(uri))
 
     @classmethod
     def accepts(cls, uri):
