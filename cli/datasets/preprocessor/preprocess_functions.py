@@ -8,9 +8,10 @@ import numpy as np
 from ecl.eclfile import EclInitFile, EclFile
 from ecl.grid import EclGrid
 from ecl.summary import EclSum
+from preprocessing.deck import ecl_deck
 from preprocessing.deck.runspec import preprocess as preprocess_runspec
-from preprocessing.deck.section import find_section
-from preprocessing.modular.dat import preprocess as preprocess_dat
+from preprocessing.deck.section import find_section, get_includes
+from preprocessing.modular import dat
 from preprocessing.modular.data import WellSpecsProcessor
 from preprocessing.modular.egrid import preprocess as preprocess_egrid
 from preprocessing.modular.grdecl import preprocess as preprocess_grdecl
@@ -172,7 +173,35 @@ def export_runspec(
 """ Cases preprocessing """
 
 
-def export_egrid_properties(case_loc, case_dest_loc, input_src, *_):
+def export_egrid_properties(case_loc, case_dest_loc, input_src, source, *_, allow_missing_files=tuple(), base_dir=None):
+
+    if getattr(input_src, "download_name", None) == "data":
+        return _export_egrid_properties_from_data(
+            case_loc, case_dest_loc, input_src, source, *_, allow_missing_files=allow_missing_files, base_dir=base_dir
+        )
+    else:
+        return _export_egrid_properties_from_egrid(case_loc, case_dest_loc, input_src, *_)
+
+
+def _export_egrid_properties_from_data(
+    case_loc, case_dest_loc, input_src, source, *_, allow_missing_files=tuple(), base_dir=None
+):
+    def download_func(source_path, destination_path):
+        from .utils import download_file
+
+        download_file(source_path, destination_path, source)
+
+    get_includes(input_src.full_path, download_func, allow_missing_files=allow_missing_files, base_dir=base_dir)
+
+    grid = ecl_deck.extract_actnum(input_src.full_path)
+    grid_dest_loc = os.path.join(case_dest_loc, "grid.h5")
+    props = preprocess_egrid(grid)
+    write_h5_from_dict(props, grid_dest_loc)
+
+    return None, grid_dest_loc, None
+
+
+def _export_egrid_properties_from_egrid(case_loc, case_dest_loc, input_src, *_):
 
     if getattr(input_src, "full_path", None):
         grid_src_loc = getattr(input_src, "full_path", None)
@@ -316,9 +345,9 @@ def export_dat_properties(
             None,
         )
         if file:
-            dat_files[keyword["name"].lower()] = file
+            dat_files[keyword["name"]] = file
 
-    props = preprocess_dat(dat_files, mapping)
+    props = dat.preprocess(dat_files, mapping)
 
     _write_keywords_to_h5(props, case_dest_loc)
 
