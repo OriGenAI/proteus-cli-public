@@ -4,7 +4,7 @@ from requests.models import Response
 
 class FakeResponse(Response):
 
-    _override_content = ''
+    _override_content = ""
     mock = None
 
     def __init__(self, *args, mocker=None, **kwargs):
@@ -28,6 +28,7 @@ def _mock_azcopy_command(mocker):
     """
     Ensure azcopy is never really called
     """
+
     class FakeAZCopyDownload:
         def wait(self):
             pass

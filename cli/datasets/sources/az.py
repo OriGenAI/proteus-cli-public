@@ -5,7 +5,7 @@ from io import BytesIO
 
 from azure.storage.blob import ContainerClient
 from azure.core.credentials import AzureSasCredential
-from azure.core.exceptions import HttpResponseError
+from azure.core.exceptions import HttpResponseError, ClientAuthenticationError
 from azure.identity import DefaultAzureCredential
 
 from .common import Source, SourcedItem
@@ -29,16 +29,45 @@ class AZSource(Source):
         container_name = match.groupdict()["container_name"]
         storage_url = f'https://{match.groupdict()["bucket_name"]}'
 
-        if AZURE_SAS_TOKEN:
-            credential = AzureSasCredential(AZURE_SAS_TOKEN)
-        else:
-            credential = DefaultAzureCredential(exclude_managed_identity_credential=True)
+        auth_methods = [
+            "exclude_environment_credential",
+            "exclude_cli_credential",
+            "exclude_shared_token_cache_credential",
+            "exclude_visual_studio_code_credential",
+            "exclude_interactive_browser_credential",
+            "exclude_powershell_credential",
+            "exclude_managed_identity_credential",
+        ]
 
-        self.container_client = ContainerClient(
-            storage_url,
-            credential=credential,
-            container_name=container_name,
-        )
+        if AZURE_SAS_TOKEN:
+            self.container_client = ContainerClient(
+                storage_url,
+                credential=AzureSasCredential(AZURE_SAS_TOKEN),
+                container_name=container_name,
+            )
+            return
+
+        errors = []
+        login_successful = False
+        for auth_method in auth_methods:
+            try:
+                flags = {auth: True for auth in auth_methods}
+                flags[auth_method] = False
+                self.container_client = ContainerClient(
+                    storage_url,
+                    credential=DefaultAzureCredential(**flags),
+                    container_name=container_name,
+                )
+                self.container_client.exists()
+                login_successful = True
+                break
+            except ClientAuthenticationError as e:
+                errors.append(e)
+
+        if not login_successful:
+            for error in errors:
+                proteus.logger.error(error)
+            raise RuntimeError("Cannot authenticate into azure")
 
     @proteus.may_insist_up_to(5, 1)
     def list_contents(self, starts_with="", ends_with=None):
@@ -52,12 +81,12 @@ class AZSource(Source):
                 assert item_name.startswith("/" + prefix + starts_with)
                 if ends_with is None or item_name.endswith(ends_with):
                     yield SourcedItem(item, item_name, self, item.size)
-        except HttpResponseError as e:
+        except HttpResponseError:
             proteus.logger.error(
                 "Missing Azure credentials to perform this operation, please "
                 "provide a SAS token or provide another authentication method on Azure"
             )
-            raise e
+            raise
 
     def open(self, reference):
         reference_path = reference.get("name")

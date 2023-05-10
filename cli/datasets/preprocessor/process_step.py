@@ -64,10 +64,7 @@ def process_step(
         path_name = os.path.join(tmpdirname, "cases", f"SIMULATION_{case}")
     else:
         path_name = os.path.join(tmpdirname, "cases", f"{split}/SIMULATION_{case}") if (split and case) else tmpdirname
-    try:
-        os.makedirs(path_name)
-    except Exception:
-        pass
+    os.makedirs(path_name, exist_ok=True)
 
     # Download the required files. Keep the file if necessary
     downloaded_inputs = OrderedDict()
@@ -75,14 +72,28 @@ def process_step(
     def process_input(input):
         # Preserve RequiredFilePath with input.__class__
         source_path = getattr(input, "clone", input.__class__)(f"/{input}")
-        transformed_input, output_path = download_file(source_path, os.path.join(tmpdirname, str(input)), source)
-        transformed_input = getattr(input, "clone", lambda x: PathMeta(x, download_name=input))(transformed_input)
+        try:
+            transformed_input, output_path = download_file(source_path, os.path.join(tmpdirname, str(input)), source)
+        except FileNotFoundError:
+            transformed_input, output_path = None, None
+
+        if transformed_input is None and getattr(input, "replace_with", None) is not None:
+            transformed_input, output_path = process_input(input.replace_with)
+            transformed_input.replaces = input
+        elif transformed_input is not None:
+            transformed_input = getattr(input, "clone", lambda x: PathMeta(x, download_name=input))(transformed_input)
+        else:
+            transformed_input = input
+
         return transformed_input, output_path
 
     for transformed_input, output_path in proteus.bucket.each_item_parallel(
         total=len(inputs), items=inputs, each_item_fn=process_input, workers=download_workers
     ):
-        downloaded_inputs.setdefault(getattr(input, "download_name", transformed_input), []).append(output_path)
+        if output_path:
+            downloaded_inputs.setdefault(getattr(transformed_input, "download_name", transformed_input), []).append(
+                output_path
+            )
 
     # Process the files
     func = getattr(preprocess_functions, preprocessing_function_name)
@@ -90,8 +101,8 @@ def process_step(
     if len(inputs) > 1:
         func_input = downloaded_inputs
     if len(inputs) == 1:
-        download_name, output_path = next(iter(downloaded_inputs.items()))
-        if len(output_path) == 1:
+        download_name, output_path = next(iter(downloaded_inputs.items()), (inputs[0], None))
+        if output_path and len(output_path) == 1:
             output_path = output_path[0]
 
         func_input = PathMeta(download_name, download_name=download_name, full_path=output_path)

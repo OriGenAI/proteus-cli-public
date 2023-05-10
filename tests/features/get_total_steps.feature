@@ -10,7 +10,7 @@ Feature: Get total steps of a case
         Examples:
             | workflow  | expected_steps|
             |        hm |            17 |
-            |   cnn-pca |             4 |
+            |   cnn-pca |             5 |
 
     Scenario: Get total steps of a case with an unknown workflow
         Then It throws a KeyError when workflow is fail

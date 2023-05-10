@@ -52,22 +52,25 @@ def set_dataset_version(dataset_uuid):
 
 
 def get_total_steps(cases, workflow):
-    training_cases = [*filter(lambda c: c["group"] == "training" and c["number"] == 1, cases)]
-    if not training_cases and cases:
-        first_training_case = cases[0]
-    else:
-        first_training_case = next(iter(training_cases), None)
-    first_case_response = proteus.api.get(first_training_case.get("case_url"))
-    first_case_json = first_case_response.json().get("case")
-    initial_step = first_case_json.get("initialStep")
-    final_step = first_case_json.get("finalStep")
-    workflow = workflow.lower()
-    common_step = CommonConfigMapper[workflow].number_of_steps()
-    cases_steps = CaseConfigMapper[workflow].number_of_steps()
-    timesteps_steps = (
-        StepConfigMapper[workflow].number_of_steps() - 1 if StepConfigMapper[workflow].number_of_steps() > 0 else 0
-    )
-    return common_step + (cases_steps + timesteps_steps * (final_step - initial_step + 1)) * len(cases)
+    for case_kind in ["training", "validation", "testing"]:
+        filtered_cases = [*filter(lambda c: c["group"] == case_kind and c["number"] == 1, cases)]
+        if not filtered_cases:
+            continue
+        else:
+            first_training_case = next(iter(filtered_cases), None)
+        first_case_response = proteus.api.get(first_training_case.get("case_url"))
+        first_case_json = first_case_response.json().get("case")
+        initial_step = first_case_json.get("initialStep")
+        final_step = first_case_json.get("finalStep")
+        workflow = workflow.lower()
+        common_step = CommonConfigMapper[workflow].number_of_steps()
+        cases_steps = CaseConfigMapper[workflow].number_of_steps()
+        timesteps_steps = (
+            StepConfigMapper[workflow].number_of_steps() - 1 if StepConfigMapper[workflow].number_of_steps() > 0 else 0
+        )
+        return common_step + (cases_steps + timesteps_steps * (final_step - initial_step + 1)) * len(cases)
+
+    raise RuntimeError("No cases found to extract steps")
 
 
 def upload(

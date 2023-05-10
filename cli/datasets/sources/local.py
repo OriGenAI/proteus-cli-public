@@ -39,11 +39,17 @@ class LocalSource(Source):
         if os.path.isdir(source_uri):
             for file in os.listdir(source_uri):
                 fq_file_path = Path(os.path.join(source_uri, file))
-                files.append(fq_file_path)
-                parts = file.split(".")
-                if len(parts) == 2:
-                    extension = "." + parts[1]
-                    by_extension.setdefault(extension, []).append(fq_file_path)
+                if os.path.isdir(fq_file_path):
+                    f_files, f_by_extension = self._list_dir_files(fq_file_path)
+                    files.extend(f_files)
+                    for ext, files in f_by_extension.items():
+                        by_extension.setdefault(ext, []).extend(files)
+                else:
+                    files.append(fq_file_path)
+                    parts = file.split(".")
+                    if len(parts) == 2:
+                        extension = "." + parts[1]
+                        by_extension.setdefault(extension, []).append(fq_file_path)
 
         return files, by_extension
 

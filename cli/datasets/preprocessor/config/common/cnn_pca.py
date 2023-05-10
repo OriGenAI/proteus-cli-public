@@ -60,47 +60,47 @@ class CnnPcaCommonConfig(DefaultConfig):
             iterator: the list of steps to preprocess
         """
 
-        def _get_dat_files():
-            return filter(
-                lambda f: f["name"].lower() not in ["litho", "actnum"],
-                self._get_mapping(),
-            )
+        mapping = [*filter(lambda x: x["name"] not in ["LITHO_INPUT", "ACTNUM"], self._get_mapping())]
+        return iter(
+            [
+                {
+                    "input": [RequiredFilePath(f'{f.get("source") or f.get("name")}.dat') for f in mapping],
+                    "output": [f'{f["name"]}.h5' for f in mapping],
+                    "preprocessing": "export_dat_properties",
+                    "keep": True,
+                    "additional_info": {"get_mapping": lambda: mapping},
+                }
+            ]
+        )
+
+    def step_4_actnum_prop(self):
+        """
+        List all cases and its steps to generate the .DATA iterator
+
+        Args: -
+
+        Returns:
+            iterator: the list of steps to preprocess
+        """
+        first_case = self.cases[0]
+        mapping = [*filter(lambda x: x["name"] == "ACTNUM", self._get_mapping())]
+
+        if len(mapping) == 0:
+            return iter([])
 
         return iter(
             [
                 {
-                    "input": [f'{f.get("source")}.dat' for f in _get_dat_files()],
-                    "output": [f'{f["name"].lower()}.h5' for f in _get_dat_files()],
-                    "preprocessing": "export_dat_properties",
+                    "input": [
+                        RequiredFilePath(
+                            f'{str(first_case["root"]).rstrip("/")}/' f"*ACTNUM.GRDECL", download_name="actnum"
+                        )
+                    ],
+                    "output": ["actnum.h5"],
+                    "preprocessing": "export_actnum",
+                    "case": first_case["number"],
                     "keep": True,
                     "additional_info": {"get_mapping": self._get_mapping},
                 }
             ]
         )
-
-    # def step_4_actnum_prop(self):
-    #     """
-    #     List all cases and its steps to generate the .DATA iterator
-    #
-    #     Args: -
-    #
-    #     Returns:
-    #         iterator: the list of steps to preprocess
-    #     """
-    #     first_case = self.cases[0]
-    #     return iter(
-    #         [
-    #             {
-    #                 "input": [
-    #                     RequiredFilePath(
-    #                         f'{str(first_case["root"]).rstrip("/")}/' f"*ACTNUM.GRDECL", download_name="actnum"
-    #                     )
-    #                 ],
-    #                 "output": ["actnum.h5"],
-    #                 "preprocessing": "export_actnum",
-    #                 "case": first_case["number"],
-    #                 "keep": True,
-    #                 "additional_info": {"get_mapping": self._get_mapping},
-    #             }
-    #         ]
-    #     )

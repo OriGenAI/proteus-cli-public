@@ -13,7 +13,7 @@ class CnnPcaCaseConfig(DefaultConfig):
         Returns:
             iterator: the list of steps to preprocess
         """
-
+        mapping = [*filter(lambda x: x["name"] == "LITHO_INPUT", self._get_mapping())]
         return (
             {
                 "input": [
@@ -26,5 +26,5 @@ class CnnPcaCaseConfig(DefaultConfig):
                 "additional_info": {"get_mapping": self._get_mapping},
             }
             for case in self.cases
-            if "BASE_CASE" not in str(case["root"])
+            if len(mapping) > 0 and "BASE_CASE" not in str(case["root"])
         )
