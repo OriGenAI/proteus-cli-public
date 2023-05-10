@@ -8,16 +8,17 @@ import numpy as np
 from ecl.eclfile import EclInitFile, EclFile
 from ecl.grid import EclGrid
 from ecl.summary import EclSum
-
+from preprocessing.deck import ecl_deck
 from preprocessing.deck.runspec import preprocess as preprocess_runspec
-from preprocessing.deck.section import find_section
-from preprocessing.modular.dat import preprocess as preprocess_dat
+from preprocessing.deck.section import find_section, get_includes
+from preprocessing.modular import dat
 from preprocessing.modular.data import WellSpecsProcessor
 from preprocessing.modular.egrid import preprocess as preprocess_egrid
 from preprocessing.modular.grdecl import preprocess as preprocess_grdecl
 from preprocessing.modular.init import preprocess as preprocess_init
 from preprocessing.modular.s import WellSummaryProcessor
 from preprocessing.modular.x import preprocess as preprocess_x
+
 from .config.case.well_model import SMSPEC_WELL_KEYWORDS, SMSPEC_FIELD_KEYWORDS
 from .utils import upload_file, find_ext, find_file, get_case_info
 from ... import proteus
@@ -172,7 +173,35 @@ def export_runspec(
 """ Cases preprocessing """
 
 
-def export_egrid_properties(case_loc, case_dest_loc, input_src, *_):
+def export_egrid_properties(case_loc, case_dest_loc, input_src, source, *_, allow_missing_files=tuple(), base_dir=None):
+
+    if getattr(input_src, "download_name", None) == "data":
+        return _export_egrid_properties_from_data(
+            case_loc, case_dest_loc, input_src, source, *_, allow_missing_files=allow_missing_files, base_dir=base_dir
+        )
+    else:
+        return _export_egrid_properties_from_egrid(case_loc, case_dest_loc, input_src, *_)
+
+
+def _export_egrid_properties_from_data(
+    case_loc, case_dest_loc, input_src, source, *_, allow_missing_files=tuple(), base_dir=None
+):
+    def download_func(source_path, destination_path):
+        from .utils import download_file
+
+        download_file(source_path, destination_path, source)
+
+    get_includes(input_src.full_path, download_func, allow_missing_files=allow_missing_files, base_dir=base_dir)
+
+    grid = ecl_deck.extract_actnum(input_src.full_path)
+    grid_dest_loc = os.path.join(case_dest_loc, "grid.h5")
+    props = preprocess_egrid(grid)
+    write_h5_from_dict(props, grid_dest_loc)
+
+    return None, grid_dest_loc, None
+
+
+def _export_egrid_properties_from_egrid(case_loc, case_dest_loc, input_src, *_):
 
     if getattr(input_src, "full_path", None):
         grid_src_loc = getattr(input_src, "full_path", None)
@@ -284,18 +313,16 @@ def export_actnum(
     get_mapping,
     *args,
 ):
-    grdecl_src_loc = find_ext(case_loc=case_loc, ext="GRDECL")
-    mapping = filter(lambda x: x["name"] == "ACTNUM", get_mapping())
+    mapping = [*filter(lambda x: x["name"] == "ACTNUM", get_mapping())]
+    grdecl_src_loc = find_ext(case_loc=case_loc, ext="GRDECL", required=False, one=True)
 
-    with cwrap.open(str(grdecl_src_loc), "r") as f:
-        props = preprocess_grdecl(f, mapping)
+    if mapping and grdecl_src_loc:
+        with cwrap.open(str(grdecl_src_loc), "r") as f:
+            props = preprocess_grdecl(f, mapping)
 
-    _write_keywords_to_h5(props, case_dest_loc)
+        _write_keywords_to_h5(props, case_dest_loc)
+
     return grdecl_src_loc, case_dest_loc, None
-
-
-def _extract_dat_mappings(mapping):
-    return [*filter(lambda f: f["name"].lower() not in ["litho", "actnum"], mapping)]
 
 
 def export_dat_properties(
@@ -307,9 +334,8 @@ def export_dat_properties(
     get_mapping,
     *args,
 ):
-    dat_src_locs = [str(find_file(case_loc, src.split("/")[-1])) for src in input_src]
-
-    mapping = _extract_dat_mappings(get_mapping())
+    dat_src_locs = [str(find_file(case_loc, src.split("/")[-1])) for src in input_src[None]]
+    mapping = get_mapping()
 
     dat_files = {}
     for keyword in mapping:
@@ -319,9 +345,9 @@ def export_dat_properties(
             None,
         )
         if file:
-            dat_files[keyword["name"].lower()] = file
+            dat_files[keyword["name"]] = file
 
-    props = preprocess_dat(dat_files, mapping)
+    props = dat.preprocess(dat_files, mapping)
 
     _write_keywords_to_h5(props, case_dest_loc)
 

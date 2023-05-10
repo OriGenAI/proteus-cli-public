@@ -57,32 +57,35 @@ def download_file(source_path, destination_path, source, progress=False):
             globbed_paths = ",".join(str(x) for x in items_and_paths)
             raise RuntimeError(f'"f{source_path}" defines more than one file: {globbed_paths}')
 
-        if len(items_and_paths) != 1:
+        cannot_resolve_glob = (
+            len(items_and_paths) > 1 or len(items_and_paths) == 0 and isinstance(source_path, RequiredFilePath)
+        )
+        if cannot_resolve_glob:
             raise FileNotFoundError(f'Cannot resolve glob "{source_path}"')
 
         assert len(destination_path.split("*")) in (1, 2)
 
-        glob_replacement_in_destination_path = suffix.join(
-            items_and_paths[0].path.split(prefix, 1)[1].split(suffix)[:-1]
-        )
-
-        if "*" in destination_path:
-            destination_path_parts = destination_path.split("*")
-            destination_path = (
-                destination_path_parts[0] + glob_replacement_in_destination_path + destination_path_parts[1]
+        if items_and_paths:
+            glob_replacement_in_destination_path = suffix.join(
+                items_and_paths[0].path.split(prefix, 1)[1].split(suffix)[:-1]
             )
 
-        if "*" in source_path:
-            transformed_source_path = prefix + glob_replacement_in_destination_path + suffix
-        else:
-            transformed_source_path = source_path
+            if "*" in destination_path:
+                destination_path_parts = destination_path.split("*")
+                destination_path = (
+                    destination_path_parts[0] + glob_replacement_in_destination_path + destination_path_parts[1]
+                )
 
-        proteus.logger.info(
-            f'Glob "{source_path}" resolved to {items_and_paths[0]}. Output path rewritten to f{destination_path}'
-        )
+            if "*" in source_path:
+                transformed_source_path = prefix + glob_replacement_in_destination_path + suffix
+            else:
+                transformed_source_path = source_path
+
+            proteus.logger.info(
+                f'Glob "{source_path}" resolved to {items_and_paths[0]}. Output path rewritten to f{destination_path}'
+            )
 
         items_and_paths = iter(items_and_paths)
-
     else:
         items_and_paths = source.list_contents(starts_with=source_path)
         transformed_source_path = source_path
@@ -131,6 +134,7 @@ def download_file(source_path, destination_path, source, progress=False):
             if isinstance(source_path, RequiredFilePath):
                 raise FileNotFoundError(f"Required file {source_path} is not found")
             proteus.logger.error(f"The following file was not found: {source_path}")
+            return None, None
 
 
 @proteus.may_insist_up_to()
@@ -146,13 +150,8 @@ def upload_file(source_path, file_path, url):
     Returns: -
     """
     modified = get_creation_date(file_path)
-    with open(file_path, "rb") as file_content:
-        proteus.api.post_file(url, source_path, content=file_content, modified=modified, retry=False)
-    try:
-        if not os.path.isdir(file_path):
-            os.remove(file_path)
-    except Exception:
-        pass
+    file_path = Path(file_path)
+    proteus.api.post_file(url, source_path, content=file_path, modified=modified, retry=False)
 
 
 """ Destructuring helper function of an object """
@@ -237,17 +236,32 @@ class PathMeta(str):
     download_name = None
     cloned_from = None
     full_path = None
+    replace_with = None
+    replaces = None
 
-    def __new__(cls, value, download_name=None, cloned_from=None, full_path=None):
+    def __new__(cls, value, download_name=None, cloned_from=None, full_path=None, replace_with=None):
         path_meta = str.__new__(cls, value)
         path_meta.download_name = download_name
         path_meta.cloned_from = cloned_from
         path_meta.full_path = full_path
+        path_meta.replace_with = replace_with
         return path_meta
 
     def clone(self, value):
-        return self.__class__(value, download_name=self.download_name, cloned_from=self)
+        cloned = self.__class__(
+            value,
+            download_name=self.download_name,
+            cloned_from=self,
+            full_path=self.full_path,
+            replace_with=self.replace_with,
+        )
+        cloned.replaces = self.replaces
+        return cloned
 
 
 class RequiredFilePath(PathMeta):
+    pass
+
+
+class OptionalFilePath(PathMeta):
     pass
