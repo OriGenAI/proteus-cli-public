@@ -146,13 +146,8 @@ def upload_file(source_path, file_path, url):
     Returns: -
     """
     modified = get_creation_date(file_path)
-    with open(file_path, "rb") as file_content:
-        proteus.api.post_file(url, source_path, content=file_content, modified=modified, retry=False)
-    try:
-        if not os.path.isdir(file_path):
-            os.remove(file_path)
-    except Exception:
-        pass
+    file_path = Path(file_path)
+    proteus.api.post_file(url, source_path, content=file_path, modified=modified, retry=False)
 
 
 """ Destructuring helper function of an object """

@@ -8,7 +8,6 @@ import numpy as np
 from ecl.eclfile import EclInitFile, EclFile
 from ecl.grid import EclGrid
 from ecl.summary import EclSum
-
 from preprocessing.deck.runspec import preprocess as preprocess_runspec
 from preprocessing.deck.section import find_section
 from preprocessing.modular.dat import preprocess as preprocess_dat
@@ -18,6 +17,7 @@ from preprocessing.modular.grdecl import preprocess as preprocess_grdecl
 from preprocessing.modular.init import preprocess as preprocess_init
 from preprocessing.modular.s import WellSummaryProcessor
 from preprocessing.modular.x import preprocess as preprocess_x
+
 from .config.case.well_model import SMSPEC_WELL_KEYWORDS, SMSPEC_FIELD_KEYWORDS
 from .utils import upload_file, find_ext, find_file, get_case_info
 from ... import proteus
@@ -284,18 +284,16 @@ def export_actnum(
     get_mapping,
     *args,
 ):
-    grdecl_src_loc = find_ext(case_loc=case_loc, ext="GRDECL")
-    mapping = filter(lambda x: x["name"] == "ACTNUM", get_mapping())
+    mapping = [*filter(lambda x: x["name"] == "ACTNUM", get_mapping())]
+    grdecl_src_loc = find_ext(case_loc=case_loc, ext="GRDECL", required=False, one=True)
 
-    with cwrap.open(str(grdecl_src_loc), "r") as f:
-        props = preprocess_grdecl(f, mapping)
+    if mapping and grdecl_src_loc:
+        with cwrap.open(str(grdecl_src_loc), "r") as f:
+            props = preprocess_grdecl(f, mapping)
 
-    _write_keywords_to_h5(props, case_dest_loc)
+        _write_keywords_to_h5(props, case_dest_loc)
+
     return grdecl_src_loc, case_dest_loc, None
-
-
-def _extract_dat_mappings(mapping):
-    return [*filter(lambda f: f["name"].lower() not in ["litho", "actnum"], mapping)]
 
 
 def export_dat_properties(
@@ -307,9 +305,8 @@ def export_dat_properties(
     get_mapping,
     *args,
 ):
-    dat_src_locs = [str(find_file(case_loc, src.split("/")[-1])) for src in input_src]
-
-    mapping = _extract_dat_mappings(get_mapping())
+    dat_src_locs = [str(find_file(case_loc, src.split("/")[-1])) for src in input_src[None]]
+    mapping = get_mapping()
 
     dat_files = {}
     for keyword in mapping:

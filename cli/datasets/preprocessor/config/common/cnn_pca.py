@@ -60,20 +60,15 @@ class CnnPcaCommonConfig(DefaultConfig):
             iterator: the list of steps to preprocess
         """
 
-        def _get_dat_files():
-            return filter(
-                lambda f: f["name"].lower() not in ["litho", "actnum"],
-                self._get_mapping(),
-            )
-
+        mapping = [*filter(lambda x: x["name"] not in ["LITHO_INPUT", "ACTNUM"], self._get_mapping())]
         return iter(
             [
                 {
-                    "input": [f'{f.get("source")}.dat' for f in _get_dat_files()],
-                    "output": [f'{f["name"].lower()}.h5' for f in _get_dat_files()],
+                    "input": [RequiredFilePath(f'{f.get("source") or f.get("name")}.dat') for f in mapping],
+                    "output": [f'{f["name"]}.h5' for f in mapping],
                     "preprocessing": "export_dat_properties",
                     "keep": True,
-                    "additional_info": {"get_mapping": self._get_mapping},
+                    "additional_info": {"get_mapping": lambda: mapping},
                 }
             ]
         )

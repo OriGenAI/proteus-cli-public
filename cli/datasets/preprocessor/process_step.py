@@ -64,10 +64,7 @@ def process_step(
         path_name = os.path.join(tmpdirname, "cases", f"SIMULATION_{case}")
     else:
         path_name = os.path.join(tmpdirname, "cases", f"{split}/SIMULATION_{case}") if (split and case) else tmpdirname
-    try:
-        os.makedirs(path_name)
-    except Exception:
-        pass
+    os.makedirs(path_name, exist_ok=True)
 
     # Download the required files. Keep the file if necessary
     downloaded_inputs = OrderedDict()
