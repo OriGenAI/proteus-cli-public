@@ -20,15 +20,15 @@ def updated_mocked_api_get(mocked_api_get):
 
         url = mocker.call_args[0][0]
 
-        if re.match(r'^/api/v1/buckets/[^/]+$', url):
-            uuid = re.findall(r'^/api/v1/buckets/([^/]+)', url)[0]
-            return b'{"bucket":' + bucket_info + b'}'
-        elif re.match(r'^/api/v1/buckets/$', url):
-            uuid = re.findall(r'^/api/v1/buckets/([^/]+)', url)[0]
-            return b'{"total": 1, ' b'"results":[' + bucket_info + b']}'
-        elif re.match(r'^/api/v1/buckets/[^/]+/files$', url):
-            uuid = re.findall(r'^/api/v1/buckets/([^/]+)', url)[0]
-            return b'''{
+        if re.match(r"^/api/v1/buckets/[^/]+$", url):
+            uuid = re.findall(r"^/api/v1/buckets/([^/]+)", url)[0]
+            return b'{"bucket":' + bucket_info + b"}"
+        elif re.match(r"^/api/v1/buckets/$", url):
+            uuid = re.findall(r"^/api/v1/buckets/([^/]+)", url)[0]
+            return b'{"total": 1, ' b'"results":[' + bucket_info + b"]}"
+        elif re.match(r"^/api/v1/buckets/[^/]+/files$", url):
+            uuid = re.findall(r"^/api/v1/buckets/([^/]+)", url)[0]
+            return b"""{
                 "results": [
                     {
                         "ready": true,
@@ -38,10 +38,9 @@ def updated_mocked_api_get(mocked_api_get):
                 ],
                 "total": 1,
                 "next": null
-            }'''
+            }"""
         else:
             raise b'{"bucket_fi}'
-
 
         return
 
@@ -58,7 +57,7 @@ def bucket_uuid():
 def target_folder():
 
     for file in glob("tests/files/test_download/*", recursive=True):
-        if file.startswith('tests/files/test_download/tmp'):
+        if file.startswith("tests/files/test_download/tmp"):
             continue
 
         if os.path.isdir(file):
@@ -66,7 +65,7 @@ def target_folder():
         else:
             os.remove(file)
 
-    assert os.listdir("tests/files/test_download/") == ['tmp']
+    assert os.listdir("tests/files/test_download/") == ["tmp"]
     return "tests/files/test_download"
 
 

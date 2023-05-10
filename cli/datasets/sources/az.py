@@ -46,7 +46,7 @@ class AZSource(Source):
                 container_name=container_name,
             )
             return
-        
+
         errors = []
         login_successful = False
         for auth_method in auth_methods:
@@ -63,11 +63,11 @@ class AZSource(Source):
                 break
             except ClientAuthenticationError as e:
                 errors.append(e)
-        
+
         if not login_successful:
             for error in errors:
                 proteus.logger.error(error)
-            raise RuntimeError('Cannot authenticate into azure')
+            raise RuntimeError("Cannot authenticate into azure")
 
     @proteus.may_insist_up_to(5, 1)
     def list_contents(self, starts_with="", ends_with=None):
