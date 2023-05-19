@@ -10,7 +10,7 @@ from .common import Source, SourcedItem
 class LocalSource(Source):
 
     URI_re = re.compile(r"^.*$")
-    
+
     def __init__(self, uri):
         super().__init__(os.path.abspath(os.path.expanduser(uri)))
 
