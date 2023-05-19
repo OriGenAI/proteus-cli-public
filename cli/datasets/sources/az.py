@@ -78,7 +78,7 @@ class AZSource(Source):
         try:
             for item in self.container_client.list_blobs(name_starts_with=prefix + starts_with):
                 item_name = f'/{item["name"]}'
-                assert item_name.startswith("/" + prefix + starts_with)
+                assert item_name.startswith(f"/{prefix}{starts_with}".replace("//", "/"))
                 if ends_with is None or item_name.endswith(ends_with):
                     yield SourcedItem(item, item_name, self, item.size)
         except HttpResponseError:

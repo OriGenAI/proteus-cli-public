@@ -11,6 +11,9 @@ class LocalSource(Source):
 
     URI_re = re.compile(r"^.*$")
 
+    def __init__(self, uri):
+        super().__init__(os.path.abspath(os.path.expanduser(uri)))
+
     def list_contents(self, starts_with="", ends_with=""):
         source_uri = self.uri
         starts_with = starts_with.lstrip("/")
