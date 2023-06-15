@@ -1,26 +1,20 @@
-# This is a simple Dockerfile to use while developing
-# It's not suitable for production
-#
-# It allows you to run both flask and celery if you enabled it
-# for flask: docker run --env-file=.flaskenv image flask run
-# for celery: docker run --env-file=.flaskenv image celery worker -A proteus.celery_app:app
-#
-# note that celery will require a running broker and result backend
-FROM python:3.8-slim-buster
+# syntax=docker/dockerfile:1
+FROM origenproteusregistry.azurecr.io/origen.ai/opm_base:2947843500ff46696704988ef19191d331e1a219 as cli_base
 
-RUN mkdir /cli
-WORKDIR /cli
+WORKDIR /var/run/cli
 
-COPY cli/api/ api/
-COPY cli/ cli/
-COPY setup.py project.py ./
-COPY requirements/ requirements/
+ARG CLI_VERSION
 
-RUN pip install -U pip
-RUN pip install -e .
+RUN pip install --no-cache-dir proteus-cli==$CLI_VERSION &&  \
+    pip install --no-cache origen-ai-ecl==0.2.11 && \
+    pip cache purge
 
-ARG DEPLOY_ENV=production
-ENV DEPLOYMENT=$DEPLOY_ENV
-ENV PYTHON_PATH=.
+ENTRYPOINT /usr/local/bin/proteus-do
 
-ENTRYPOINT ["sleep 3600"]
+FROM cli_base as cli_development
+
+COPY poetry.lock pyproject.toml ./
+
+RUN pip install --no-cache-dir poetry && poetry install --no-interaction --no-ansi --no-root --no-cache
+
+ENTRYPOINT []

@@ -139,5 +139,8 @@ proteus-do
 input_*
 .idea
 config.env
+
+docker-compose.override.yml
+
 tests/files/test_download/*
 !tests/files/test_download/tmp

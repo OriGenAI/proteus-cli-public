@@ -1,0 +1,14 @@
+version: '3.4'
+
+services:
+  cli:
+    build:
+      context: .
+      target: cli_base
+
+  cli-dev:
+    build:
+      context: .
+      target: cli_development
+    volumes:
+      - ./:/var/run/cli/
