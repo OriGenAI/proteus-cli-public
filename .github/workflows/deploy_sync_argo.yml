@@ -1,0 +1,58 @@
+name: Notify ArgoCD
+
+on:
+  workflow_call:
+     inputs:
+        argo_app_parameter:
+          type: string
+          description: Parameter of the corresponding image tag
+          required: true
+        base_image_name:
+          type: string
+          description: Name of the base image
+          required: true
+        override_tag_value:
+          type: string
+          description: Provide a tag for the image instead of auto-generating one by branch name
+          required: false
+          default: ''
+     secrets:
+       ARGOCD_HOST:
+         required: true
+       ARGOCD_NOTIFY_TOKEN:
+         required: true
+       REGISTRY_LOGIN_SERVER_AZ:
+         required: true
+       REGISTRY_USERNAME_AZ:
+         required: true
+       REGISTRY_PASSWORD_AZ:
+        required: true
+
+jobs:
+  dev:
+    name: 'dev'
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/stg' || github.ref == 'refs/heads/PS-513-aks-cli-cli-docker-image'
+    steps:
+      # Checkout infrastructure repository to get common actions.
+      - name: Retrieve org-wide actions
+        uses: actions/checkout@v3
+        with:
+          repository: OriGenAI/infrastructure
+          ref: master
+          ssh-key: ${{ secrets.WORKFLOWS_DEPLOYMENT_KEY }}
+          path: ./infrastructure
+
+      # Build image and push it to the Origen's registry.
+      - name: Notify to Argo
+        id: build_and_push_build
+        uses: ./infrastructure/.github/actions/deploy_sync_argo
+        with:
+          argo_app_parameter: ${{ inputs.argo_app_parameter }}
+          base_image_name: ${{ inputs.base_image_name }}
+          override_tag_value: ${{ inputs.override_tag_value }}
+          REGISTRY_LOGIN_SERVER_AZ: ${{ secrets.REGISTRY_LOGIN_SERVER_AZ }}
+          REGISTRY_USERNAME_AZ: ${{ secrets.REGISTRY_USERNAME_AZ }}
+          REGISTRY_PASSWORD_AZ: ${{ secrets.REGISTRY_PASSWORD_AZ }}
+          ARGOCD_HOST: ${{ secrets.ARGOCD_HOST }}
+          ARGOCD_NOTIFY_TOKEN: ${{ secrets.ARGOCD_NOTIFY_TOKEN }}

@@ -1,4 +1,6 @@
-Dockerfile
+Dockerfile.dev
 Dockerfile-basis
 venv
 lifecycle/private
+**/__pycache__
+**/*.pyc

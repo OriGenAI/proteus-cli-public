@@ -1,0 +1,96 @@
+name: Upload Docker image
+
+on:
+  workflow_run:
+    workflows:
+      - 'Upload Python Package'
+    types:
+      - completed
+permissions:
+  contents: read
+
+env:
+  BASE_IMAGE_NAME: origen.ai/cli
+
+jobs:
+  build_and_test:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    name: Build docker image & push to registry
+    runs-on: ubuntu-latest
+    outputs:
+      release_proj_version: ${{ env.release_proj_version }}
+      BASE_IMAGE_NAME: ${{ env.BASE_IMAGE_NAME }}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Retrieve org-wide actions
+      uses: actions/checkout@v3
+      with:
+        repository: OriGenAI/infrastructure
+        ref: master
+        ssh-key: ${{secrets.WORKFLOWS_DEPLOYMENT_KEY}}
+        path: ./infrastructure
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.8'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install poetry virtualenv
+
+    - name: Obtain the version to release
+      run: |
+        echo "release_proj_version=`poetry version -s`" >> $GITHUB_ENV
+        echo "release_proj_version=`poetry version -s`" >> $GITHUB_OUTPUT
+
+    - name: (origen.ai/cli) Build and push
+      id: build_and_test
+      uses: ./infrastructure/.github/actions/build_image_az
+      with:
+        base_image_name: ${{ env.BASE_IMAGE_NAME }}
+        build_extra_args: "{
+          \"--target\": \"cli_base\",
+          \"--build-arg\": \"CLI_VERSION=${{ env.release_proj_version}}\"
+        }"
+        REGISTRY_LOGIN_SERVER_AZ: ${{secrets.REGISTRY_LOGIN_SERVER_AZ}}
+        REGISTRY_USERNAME_AZ: ${{secrets.REGISTRY_USERNAME_AZ}}
+        REGISTRY_PASSWORD_AZ: ${{secrets.REGISTRY_PASSWORD_AZ}}
+        WORKFLOWS_DEPLOYMENT_KEY: ${{secrets.WORKFLOWS_DEPLOYMENT_KEY}}
+        hash_files: |
+          cli
+          tests
+          pyproject.toml
+          poetry.lock
+          Dockerfile
+
+    - name: Login with AZ
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ secrets.REGISTRY_LOGIN_SERVER_AZ }}
+        username: ${{ secrets.REGISTRY_USERNAME_AZ }}
+        password: ${{ secrets.REGISTRY_PASSWORD_AZ }}
+
+    - name: Get branch name
+      id: branch_name
+      uses: tj-actions/branch-names@v6
+
+    # Retags the built image with the commit id and branch name so that it can be used in other workflows, etc.
+    - name: Retag successful image
+      shell: bash
+      run: |
+        docker tag ${{ steps.build_and_test.outputs.built_image_name }} ${{ secrets.REGISTRY_LOGIN_SERVER_AZ }}/${{ env.BASE_IMAGE_NAME }}:${{ env.release_proj_version}}
+        docker push ${{ secrets.REGISTRY_LOGIN_SERVER_AZ }}/${{ env.BASE_IMAGE_NAME }}:${{ env.release_proj_version }}
+
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    name: Deploy (trigger sync in ArgoCD)
+    needs: build_and_test
+    uses: ./.github/workflows/deploy_sync_argo.yml
+    with:
+      argo_app_parameter: arbiter.workers_images.dataset.tag
+      override_tag_value: ${{ needs.build_and_test.outputs.release_proj_version }}
+      base_image_name: ${{ needs.build_and_test.outputs.BASE_IMAGE_NAME }}
+    secrets: inherit
