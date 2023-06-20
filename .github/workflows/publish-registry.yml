@@ -84,13 +84,13 @@ jobs:
         docker tag ${{ steps.build_and_test.outputs.built_image_name }} ${{ secrets.REGISTRY_LOGIN_SERVER_AZ }}/${{ env.BASE_IMAGE_NAME }}:${{ env.release_proj_version}}
         docker push ${{ secrets.REGISTRY_LOGIN_SERVER_AZ }}/${{ env.BASE_IMAGE_NAME }}:${{ env.release_proj_version }}
 
-  deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    name: Deploy (trigger sync in ArgoCD)
-    needs: build_and_test
-    uses: ./.github/workflows/deploy_sync_argo.yml
-    with:
-      argo_app_parameter: arbiter.workers_images.dataset.tag
-      override_tag_value: ${{ needs.build_and_test.outputs.release_proj_version }}
-      base_image_name: ${{ needs.build_and_test.outputs.BASE_IMAGE_NAME }}
-    secrets: inherit
+#  deploy:
+#    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+#    name: Deploy (trigger sync in ArgoCD)
+#    needs: build_and_test
+#    uses: ./.github/workflows/deploy_sync_argo.yml
+#    with:
+#      argo_app_parameter: arbiter.workers_images.dataset.tag
+#      override_tag_value: ${{ needs.build_and_test.outputs.release_proj_version }}
+#      base_image_name: ${{ needs.build_and_test.outputs.BASE_IMAGE_NAME }}
+#    secrets: inherit
