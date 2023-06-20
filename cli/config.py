@@ -18,17 +18,19 @@ class Config(object):
     SLEEP_TIME = 30
     PROMPT = True
     AUTH_HOST = os.getenv("AUTH_HOST", "https://auth.dev.origen.ai")
-    PROTEUS_HOST = os.getenv("PROTEUS_HOST", "https://proteus-test.dev.origen.ai")
+    PROTEUS_HOST = os.getenv("PROTEUS_HOST", os.getenv("API_HOST", "https://proteus-test.dev.origen.ai"))
     API_SSL_VERIFY = os.getenv("API_SSL_VERIFY", "1").lower() not in ("0", "false", "f")
-    USERNAME = os.getenv("PROTEUS_USERNAME", None)
-    PASSWORD = os.getenv("PROTEUS_PASSWORD", None)
+    USERNAME = os.getenv("PROTEUS_USERNAME", os.getenv("USERNAME", None))
+    PASSWORD = os.getenv("PROTEUS_PASSWORD", os.getenv("PASSWORD", None))
     REALM = os.getenv("REALM", "origen")
     CLIENT_ID = os.getenv("CLIENT_ID", "proteus-front")
     CLIENT_SECRET = os.getenv("CLIENT_SECRET", None)
 
-    WORKERS_REALM = os.getenv("WORKERS_REALM", "robots")
-    WORKERS_CLIENT_ID = os.getenv("WORKERS_CLIENT_ID", "workers")
-    WORKERS_CLIENT_SECRET = os.getenv("WORKERS_CLIENT_SECRET", None)
+    WORKERS_REALM = os.getenv("WORKERS_REALM", os.getenv("REALM", "robots"))
+    WORKERS_CLIENT_ID = os.getenv("WORKERS_CLIENT_ID", os.getenv("CLIENT_ID", "workers"))
+    WORKERS_CLIENT_SECRET = os.getenv("WORKERS_CLIENT_SECRET", os.getenv("CLIENT_SECRET", None))
+
+    ENTITY_URL = os.getenv("ENTITY_URL", None)
 
     RETRY_INTERVAL = 25  # Seconds
     REFRESH_GAP = 100  # Seconds
