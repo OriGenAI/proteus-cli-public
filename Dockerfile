@@ -9,6 +9,11 @@ RUN pip install --no-cache-dir proteus-cli==$CLI_VERSION &&  \
     pip install --no-cache origen-ai-ecl==0.2.11 && \
     pip cache purge
 
+RUN \
+    wget https://aka.ms/downloadazcopy-v10-linux && \
+    tar -xvf ./downloadazcopy-v10-linux && \
+    cp ./azcopy_linux_amd64_*/azcopy /usr/bin/
+
 ENTRYPOINT /usr/local/bin/proteus-do
 
 FROM cli_base as cli_development
