@@ -1,8 +1,8 @@
-from ..default import DefaultConfig
-from ...utils import RequiredFilePath
+from cli.datasets.preprocessor.config import BaseConfig
+from cli.datasets.preprocessor.utils import RequiredFilePath
 
 
-class CnnPcaCommonConfig(DefaultConfig):
+class CnnPcaCommonConfig(BaseConfig):
     """Configuration generator for the common files"""
 
     def step_1_runspec(self):

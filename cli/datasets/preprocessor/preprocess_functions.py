@@ -1,6 +1,7 @@
 import json
 import os
 import pickle
+from typing import Callable
 
 import cwrap
 import h5py
@@ -8,6 +9,8 @@ import numpy as np
 from ecl.eclfile import EclInitFile, EclFile
 from ecl.grid import EclGrid
 from ecl.summary import EclSum
+
+from cli.datasets.preprocessor.config.well_model import SMSPEC_WELL_KEYWORDS, SMSPEC_FIELD_KEYWORDS
 from preprocessing.deck import ecl_deck
 from preprocessing.deck.runspec import preprocess as preprocess_runspec
 from preprocessing.deck.section import find_section, get_includes
@@ -18,9 +21,8 @@ from preprocessing.modular.grdecl import preprocess as preprocess_grdecl
 from preprocessing.modular.init import preprocess as preprocess_init
 from preprocessing.modular.s import WellSummaryProcessor
 from preprocessing.modular.x import preprocess as preprocess_x
-
-from .config.case.well_model import SMSPEC_WELL_KEYWORDS, SMSPEC_FIELD_KEYWORDS
-from .utils import upload_file, find_ext, find_file, get_case_info
+from .utils import upload_file, find_ext, find_file, get_case_info, PathMeta
+from ..sources.local import LocalSource
 from ... import proteus
 
 DEFAULT_COMMON_PROPERTIES = {"max_pressure": -100000, "min_pressure": 100000}
@@ -111,51 +113,24 @@ def export_deck(case_loc, case_dest_loc, _, source, cases_url, group, number):
 
 
 def export_runspec(
-    case_loc,
-    case_dest_loc,
-    input_src,
-    source,
-    cases_url,
-    set_endpoint,
-    allow_missing_files=tuple(),
-    base_dir=None,
-    *_,
+    download_func: Callable,
+    output_source: LocalSource,
+    data: PathMeta,
+    init: PathMeta,
+    egrid: PathMeta,
+    smspec: PathMeta,
+    **_
 ):
-    runspec_dest_loc = os.path.join(base_dir, "runspec.p")
-
-    data_file_loc = None
-    egrid_file_loc = None
-    smspec_file_loc = None
-    init_file_loc = None
-
-    if isinstance(input_src, dict):
-        data_file_loc = next(iter(input_src.get("data") or []), None)
-        init_file_loc = next(iter(input_src.get("init") or []), None)
-        egrid_file_loc = next(iter(input_src.get("grid") or []), None)
-        smspec_file_loc = next(iter(input_src.get("smspec") or []), None)
-
-    if data_file_loc is None:
-        data_file_loc = find_ext(case_loc, "DATA", required=True, one=True)
-    if egrid_file_loc is None:
-        egrid_file_loc = find_ext(case_loc, "EGRID", first=True, required=False)
-    if smspec_file_loc is None:
-        smspec_file_loc = find_ext(case_loc, "SMSPEC", first=True, required=False)
-    if init_file_loc is None:
-        init_file_loc = find_ext(case_loc, "INIT", required=False)
-
-    def download_func(source_path, destination_path):
-        from .utils import download_file
-
-        download_file(source_path, destination_path, source)
+    runspec_dest_loc = os.path.join(output_source.uri, "runspec.p")
 
     data = preprocess_runspec(
-        data_file_loc,
-        egrid_file_loc=egrid_file_loc,
-        smspec_file_loc=smspec_file_loc,
+        data.full_path,
+        egrid_file_loc=egrid.full_path,
+        smspec_file_loc=smspec.full_path,
         download_func=download_func,
-        init_file_loc=init_file_loc,
-        allow_missing_files=allow_missing_files,
-        base_dir=base_dir,
+        init_file_loc=init.full_path,
+        base_dir=output_source.uri
+
     )
 
     multout = data.get("multout")
@@ -165,56 +140,49 @@ def export_runspec(
 
     write_pickle_from_dict(data, runspec_dest_loc)
 
-    set_endpoint(data.get("endscale"))
-
-    return data_file_loc, runspec_dest_loc, None
-
 
 """ Cases preprocessing """
 
 
-def export_egrid_properties(case_loc, case_dest_loc, input_src, source, *_, allow_missing_files=tuple(), base_dir=None):
+def export_egrid_properties(
+    download_func: Callable,
+    output_source: LocalSource,
+    data: PathMeta=None,
+    egrid: PathMeta=None,
+    **_
+):
+    if not data and not egrid:
+        raise RuntimeError('Either data or egrid files are needed')
 
-    if getattr(input_src, "download_name", None) == "data":
-        return _export_egrid_properties_from_data(
-            case_loc, case_dest_loc, input_src, source, *_, allow_missing_files=allow_missing_files, base_dir=base_dir
+    if data:
+        _export_egrid_properties_from_data(
+            data.full_path, download_func=download_func, base_dir=output_source.uri
         )
     else:
-        return _export_egrid_properties_from_egrid(case_loc, case_dest_loc, input_src, *_)
+        _export_egrid_properties_from_egrid(egrid.full_path, base_dir=output_source.uri)
 
 
 def _export_egrid_properties_from_data(
-    case_loc, case_dest_loc, input_src, source, *_, allow_missing_files=tuple(), base_dir=None
+    input_src, download_func, base_dir=None, allow_missing_files=tuple(),
 ):
-    def download_func(source_path, destination_path):
-        from .utils import download_file
 
-        download_file(source_path, destination_path, source)
-
-    get_includes(input_src.full_path, download_func, allow_missing_files=allow_missing_files, base_dir=base_dir)
+    get_includes(input_src, download_func, allow_missing_files=allow_missing_files, base_dir=base_dir)
 
     grid = ecl_deck.extract_actnum(input_src.full_path)
-    grid_dest_loc = os.path.join(case_dest_loc, "grid.h5")
+    grid_dest_loc = os.path.join(base_dir, "grid.h5")
     props = preprocess_egrid(grid)
     write_h5_from_dict(props, grid_dest_loc)
 
-    return None, grid_dest_loc, None
 
 
-def _export_egrid_properties_from_egrid(case_loc, case_dest_loc, input_src, *_):
+def _export_egrid_properties_from_egrid(input_src, base_dir=None, allow_missing_files=tuple(), ):
 
-    if getattr(input_src, "full_path", None):
-        grid_src_loc = getattr(input_src, "full_path", None)
-    else:
-        grid_src_loc = find_ext(case_loc=case_loc, ext="EGRID", required=True, one=True)
+    grid_dest_loc = os.path.join(base_dir, "grid.h5")
 
-    grid_dest_loc = os.path.join(case_dest_loc, "grid.h5")
-
-    grid = EclGrid(str(grid_src_loc))
+    grid = EclGrid(str(input_src))
     props = preprocess_egrid(grid)
     write_h5_from_dict(props, grid_dest_loc)
 
-    return None, grid_dest_loc, None
 
 
 def export_init_properties(
@@ -234,7 +202,7 @@ def export_init_properties(
     endpoint_scaling = get_endpoint()
     props = preprocess_init(init, endpoint_scaling)
 
-    dir_path = os.path.dirname(os.path.realpath(__file__))
+    dir_path = os.path.dirname(os.path.abspath(__file__))
     with open(os.path.join(dir_path, "init_keywords.json")) as file:
         init_keywords = json.load(file)
 
@@ -243,46 +211,28 @@ def export_init_properties(
         file_dest_loc = os.path.join(case_dest_loc, init_keyword.get("filename"))
         write_h5_from_dict(keywords, file_dest_loc)
 
-    return init_src_loc, case_dest_loc, None
 
 
 def export_well_init_properties(
-    case_loc,
-    case_dest_loc,
-    input_src,
-    source,
-    cases_url,
-    get_endpoint,
-    *args,
+    output_source: LocalSource,
+    grid,
+    init,
+    **_
 ):
 
-    init_src_loc = None
-    grid_src_loc = None
+    grid = EclGrid(str(grid.full_path))
+    init = EclInitFile(grid, str(init.full_path))
+    props = preprocess_init(init, False)
 
-    if isinstance(input_src, dict):
-        grid_src_loc = next(iter(input_src.get("grid") or []), None)
-        init_src_loc = next(iter(input_src.get("init") or []), None)
-
-    if init_src_loc is None:
-        init_src_loc = find_ext(case_loc=case_loc, ext="INIT", required=True, one=True)
-    if grid_src_loc is None:
-        grid_src_loc = find_ext(case_loc=case_loc, ext="EGRID", required=True, one=True)
-
-    grid = EclGrid(str(grid_src_loc))
-    init = EclInitFile(grid, str(init_src_loc))
-    endpoint_scaling = get_endpoint()
-    props = preprocess_init(init, endpoint_scaling)
-
-    dir_path = os.path.dirname(os.path.realpath(__file__))
+    dir_path = os.path.dirname(os.path.abspath(__file__))
     with open(os.path.join(dir_path, "well_init_keywords.json")) as file:
         init_keywords = json.load(file)
 
     for init_keyword in init_keywords:
         keywords = {k: props.get(k, []) for k in init_keyword.get("keywords")}
-        file_dest_loc = os.path.join(case_dest_loc, init_keyword.get("filename"))
+        file_dest_loc = os.path.join(output_source.uri, init_keyword.get("filename"))
         write_h5_from_dict(keywords, file_dest_loc)
 
-    return init_src_loc, case_dest_loc, None
 
 
 def export_litho(
@@ -404,22 +354,18 @@ def export_smry(case_loc, case_dest_loc, _, source, *args, allow_missing_files=t
     return f"{smry_src_loc}.S????", preprocessed_smry_dest_loc, None
 
 
-def export_smspec(case_loc, case_dest_loc, input_src, source, *args):
+def export_smspec(
+    output_source: LocalSource,
+    smspec,
+    **_
+):
 
-    smspec_file_loc = None
-
-    if isinstance(input_src, dict):
-        smspec_file_loc = next(iter(input_src.get("smspec") or []), None)
-
-    if smspec_file_loc is None:
-        smspec_file_loc = find_ext(case_loc=case_loc, ext="SMSPEC", required=True, one=True)
-
-    smry = EclSum(str(smspec_file_loc))
+    smry = EclSum(str(smspec.full_path))
 
     wnames = np.array(list(smry.wells()))
 
     for key in SMSPEC_WELL_KEYWORDS:
-        with h5py.File(os.path.join(case_dest_loc, f"{key}.h5"), "w") as h5f:
+        with h5py.File(os.path.join(output_source.uri, f"{key}.h5"), "w") as h5f:
             for i, w in enumerate(wnames):
                 try:
                     data = smry.numpy_vector(f"{key}:{w}", report_only=True)
@@ -429,14 +375,14 @@ def export_smspec(case_loc, case_dest_loc, input_src, source, *args):
                     pass
 
     for key in SMSPEC_FIELD_KEYWORDS:
-        with h5py.File(os.path.join(case_dest_loc, f"{key}.h5"), "w") as h5f:
+        with h5py.File(os.path.join(output_source.uri, f"{key}.h5"), "w") as h5f:
             try:
                 data = smry.numpy_vector(key, report_only=True)
                 h5f.create_dataset(key, data=data)
             except KeyError:
                 pass
 
-    return smspec_file_loc, None, None
+    return smspec, None, None
 
 
 """ Steps preprocessing """

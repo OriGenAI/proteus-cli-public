@@ -163,3 +163,13 @@ class AZSource(Source):
     def fastcopy(self, reference, destination):
         # TODO: Maybe fastcopy can use azcopy?
         return False
+
+    def cd(self, subpath):
+        url, perms = self.uri.split('?')
+
+        return self.__class__(f"{url.rstrip('/')}/{subpath.lstrip('/')}?{perms}")
+
+    def to_relative(self, item: str):
+        uri_without_credentials = self.uri.split('?')[0]
+        assert item.startswith(uri_without_credentials)
+        return item.split(uri_without_credentials, 1)[1].lstrip('/')

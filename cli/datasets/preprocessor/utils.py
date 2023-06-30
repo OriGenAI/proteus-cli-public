@@ -1,6 +1,7 @@
 import datetime
 import os
 import platform
+import re
 import time
 from pathlib import Path
 
@@ -31,7 +32,7 @@ def get_creation_date(path_to_file):
             return datetime.datetime.fromtimestamp(stat.st_mtime)
 
 
-def download_file(source_path, destination_path, source, progress=False):
+def download_file(source_path, destination_path, input_source, progress=False):
     """
     Download a file from the allowed providers. Ex: local, az, etc.
 
@@ -44,18 +45,19 @@ def download_file(source_path, destination_path, source, progress=False):
 
     Returns: -
     """
-    # Preserve RequiredFilePath with input.__class__
-    source_path = source_path.__class__(source_path.replace("\\", "/"))
+
+    # First, resolve which files have to be downloaded
+    source_path = getattr(source_path, "clone", source_path.__class__)(source_path.replace("\\", "/"))
     destination_path = destination_path.replace("\\", "/")
     if "*" in source_path:
         prefix, suffix = source_path.split("*", 1)
         if "*" in suffix:
             raise RuntimeError("A file path can not include more than one glob symbol ('*')")
-        items_and_paths = list(source.list_contents(starts_with=prefix, ends_with=suffix))
+        items_and_paths = list(input_source.list_contents(starts_with=prefix, ends_with=suffix))
 
         if len(items_and_paths) > 1:
             globbed_paths = ",".join(str(x) for x in items_and_paths)
-            raise RuntimeError(f'"f{source_path}" defines more than one file: {globbed_paths}')
+            raise RuntimeError(f'"{source_path}" defines more than one file: {globbed_paths}')
 
         cannot_resolve_glob = (
             len(items_and_paths) > 1 or len(items_and_paths) == 0 and isinstance(source_path, RequiredFilePath)
@@ -66,36 +68,37 @@ def download_file(source_path, destination_path, source, progress=False):
         assert len(destination_path.split("*")) in (1, 2)
 
         if items_and_paths:
-            glob_replacement_in_destination_path = suffix.join(
-                items_and_paths[0].path.split(prefix, 1)[1].split(suffix)[:-1]
-            )
+            asterisk_replace_with = items_and_paths[0].path_rel
+            if prefix:
+                asterisk_replace_with = re.sub(rf'^{prefix}', '', asterisk_replace_with)
+            if suffix:
+                asterisk_replace_with = re.sub(rf'{suffix}$', '', asterisk_replace_with)
 
-            if "*" in destination_path:
-                destination_path_parts = destination_path.split("*")
-                destination_path = (
-                    destination_path_parts[0] + glob_replacement_in_destination_path + destination_path_parts[1]
-                )
+            transformed_source_path = source_path.replace('*', asterisk_replace_with)
 
-            if "*" in source_path:
-                transformed_source_path = prefix + glob_replacement_in_destination_path + suffix
-            else:
-                transformed_source_path = source_path
+            if '*' in destination_path:
+                destination_path = destination_path.replace('*', asterisk_replace_with)
 
             proteus.logger.info(
-                f'Glob "{source_path}" resolved to {items_and_paths[0]}. Output path rewritten to f{destination_path}'
+                f'Glob "{source_path}" resolved to {items_and_paths[0].path}. Output path rewritten to {destination_path}'
             )
 
         items_and_paths = iter(items_and_paths)
     else:
-        items_and_paths = source.list_contents(starts_with=source_path)
+        assert '*' not in destination_path, '* can only be used in destionation path if also present in source_path'
+
+        items_and_paths = input_source.list_contents(starts_with=source_path)
         transformed_source_path = source_path
 
-    path_list = destination_path.split("/")[0:-1]
-    Path("/".join(path_list)).mkdir(parents=True, exist_ok=True)
+    destination_path = os.path.abspath(destination_path)
+
+    Path(os.path.dirname(destination_path)).mkdir(parents=True, exist_ok=True)
 
     if os.path.isfile(destination_path):
+        # The file aready exists, continue
         return transformed_source_path, destination_path
     elif os.path.isfile(f"{destination_path}.tmp"):
+        # The file is being downloaded, probabl
         wait_until_file_is_downloaded(destination_path)
         return transformed_source_path, destination_path
     else:
@@ -104,7 +107,7 @@ def download_file(source_path, destination_path, source, progress=False):
 
             destination_file = f"{destination_path}.tmp"
 
-            if not source.fastcopy(reference, destination_file):
+            if not input_source.fastcopy(reference, destination_file):
                 Path(f"{destination_path}.tmp").touch()
 
                 if callable(size):
@@ -120,7 +123,7 @@ def download_file(source_path, destination_path, source, progress=False):
                         disable=not progress,
                     ) as pbar:
                         read = 0
-                        for chunk in source.chunks(reference):
+                        for chunk in input_source.chunks(reference):
                             file.write(chunk)
                             read += len(chunk)
                             pbar.update(len(chunk))
@@ -257,6 +260,9 @@ class PathMeta(str):
         )
         cloned.replaces = self.replaces
         return cloned
+
+    def __bool__(self):
+        return self.full_path is not None
 
 
 class RequiredFilePath(PathMeta):

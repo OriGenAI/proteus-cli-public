@@ -1,7 +1,7 @@
-from ..default import DefaultConfig
+from cli.datasets.preprocessor.config import BaseConfig
 
 
-class CnnPcaCaseConfig(DefaultConfig):
+class CnnPcaCaseConfig(BaseConfig):
     """Configuration generator for the cases"""
 
     def step_1_litho_prop(self):

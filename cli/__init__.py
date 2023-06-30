@@ -11,6 +11,7 @@ from cli.debugger.commands import debugger as debugger_commands
 from cli.jobs.commands import jobs as jobs_commands
 from cli.runtime import proteus
 from cli.simulations.commands import simulations as simulations_commands
+from cli.utils import sssh
 
 ENTITY_INFO = next(
     (
