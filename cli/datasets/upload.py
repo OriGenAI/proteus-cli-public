@@ -163,6 +163,7 @@ def process_files(
             base_input_source=get_source(bucket),
             base_output_source=get_source(tmpdirname),
             cases_url=cases_url,
+            allow_missing_files=allow_missing_files
         )
 
         for _ in proteus.bucket.each_item_parallel(
@@ -186,7 +187,7 @@ def process_files(
         )
 
 
-def generate_process_step_partial(progress, base_input_source: Source, base_output_source: LocalSource, cases_url: str):
+def generate_process_step_partial(progress, base_input_source: Source, base_output_source: LocalSource, cases_url: str, allow_missing_files=tuple()):
     def step_partial(step: StepConfigWithMetadata):
 
         progress.set_description(step.step_name)
@@ -211,6 +212,7 @@ def generate_process_step_partial(progress, base_input_source: Source, base_outp
             output_source=output_source,
             base_output_source=base_output_source,
             cases_url=cases_url,
+            allow_missing_files=allow_missing_files
         )
 
     return step_partial

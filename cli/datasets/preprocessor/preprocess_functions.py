@@ -119,6 +119,7 @@ def export_runspec(
     init: PathMeta = None,
     egrid: PathMeta = None,
     smspec: PathMeta = None,
+    allow_missing_files: Sequence[str]=tuple(),
     **_,
 ):
     runspec_dest_loc = os.path.join(output_source.uri, "runspec.p")
@@ -130,6 +131,7 @@ def export_runspec(
         init_file_loc=init and init.full_path,
         download_func=download_func,
         base_dir=output_source.uri,
+        allow_missing_files=allow_missing_files
     )
 
     multout = data.get("multout")

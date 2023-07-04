@@ -2,7 +2,7 @@ import os
 from collections import OrderedDict
 from contextlib import contextmanager, ExitStack
 from threading import RLock
-from typing import Iterator, Union
+from typing import Iterator, Union, Sequence
 
 from .config import StepConfigWithMetadata
 from .utils import upload_file, download_file, PathMeta, RequiredFilePath
@@ -28,6 +28,7 @@ def process_step_2(
     output_source: LocalSource,
     cases_url,
     base_output_source: LocalSource,
+    allow_missing_files: Sequence[str]=tuple()
 ):
 
     with ExitStack() as lock_input_files:
@@ -57,6 +58,7 @@ def process_step_2(
                 output_source=output_source,
                 base_output_source=base_output_source,
                 input_files=input_files,
+                allow_missing_files=allow_missing_files,
                 **{**files},
             )
 
