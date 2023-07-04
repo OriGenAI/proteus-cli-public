@@ -110,40 +110,43 @@ class BaseConfig:
 
             base_step_name = f'{"Config".join(self.__class__.__name__.split("Config")[:-1]) or "Config"}.{func.__name__}'
 
-            configs = func()
+            try:
+                configs = func()
 
-            digits_for_cases = len(str(max(x.case for x in func())))
+                digits_for_cases = len(str(max(x.case for x in configs))) if len(configs) > 0 else 0
 
-            for step_config in configs:
-                assert isinstance(step_config, (CommonStepConfig, CaseStepConfig, StepStepConfig))
+                for step_config in configs:
+                    assert isinstance(step_config, (CommonStepConfig, CaseStepConfig, StepStepConfig))
 
-                preprocessing_phase = self.__module__.split('.')[-1]
+                    preprocessing_phase = self.__module__.split('.')[-1]
 
-                if preprocessing_phase not in PREPROCESSING_PHASES or not self.__class__.__module__.startswith('cli.datasets.preprocessor.config.'):
-                    raise RuntimeError(
-                        f'{self.__class__.__module__}.{self.__class__.__qualname__} is not placed in the proper path. Please follow the following path to organize the config: cli.datasets.preprocessor.config.<workflow_name>.<preprocessing_phase>.MyConfigClass'
+                    if preprocessing_phase not in PREPROCESSING_PHASES or not self.__class__.__module__.startswith('cli.datasets.preprocessor.config.'):
+                        raise RuntimeError(
+                            f'{self.__class__.__module__}.{self.__class__.__qualname__} is not placed in the proper path. Please follow the following path to organize the config: cli.datasets.preprocessor.config.<workflow_name>.<preprocessing_phase>.MyConfigClass'
+                        )
+
+                    dict_config = step_config.__dict__
+
+                    root = dict_config.pop('root')
+                    if not root:
+                        root = '' if isinstance(step_config, CommonStepConfig) else \
+                            f'{step_config.split}/SIMULATION_{step_config.case}'
+
+                    step_name = base_step_name
+                    if step_config.case:
+                        step_name = f'{str(step_config.case).zfill(digits_for_cases)}.' + step_name
+                    if step_config.split:
+                        step_name = f'{step_config.split[:2]}.' + step_name
+
+                    yield StepConfigWithMetadata(
+                        step_name=step_name,
+                        type=step_config.__class__,
+                        preprocessing_phase=preprocessing_phase,
+                        root=root,
+                        **dict_config
                     )
-
-                dict_config = step_config.__dict__
-
-                root = dict_config.pop('root')
-                if not root:
-                    root = '' if isinstance(step_config, CommonStepConfig) else \
-                        f'{step_config.split}/SIMULATION_{step_config.case}'
-
-                step_name = base_step_name
-                if step_config.case:
-                    step_name = f'{str(step_config.case).zfill(digits_for_cases)}.' + step_name
-                if step_config.split:
-                    step_name = f'{step_config.split[:2]}.' + step_name
-
-                yield StepConfigWithMetadata(
-                    step_name=step_name,
-                    type=step_config.__class__,
-                    preprocessing_phase=preprocessing_phase,
-                    root=root,
-                    **dict_config
-                )
+            except BaseException as e:
+                raise RuntimeError(f'Error reading step {base_step_name}') from e
 
     @classmethod
     def number_of_steps(cls):

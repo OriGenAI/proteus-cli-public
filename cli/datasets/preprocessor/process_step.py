@@ -165,6 +165,7 @@ def process_step_2(
         for input_file in step.input:
             found_input = lock_input_files.enter_context(download_input_file(input_file, input_source, output_source, step.keep))
             files[found_input.download_name or input_file] = found_input
+        input_files = tuple(x for x in files.values())
 
         # Preprocess inputs
         if step.preprocessing_fn:
@@ -179,6 +180,7 @@ def process_step_2(
                 download_func=download_func,
                 output_source=output_source,
                 base_output_source=base_output_source,
+                input_files=input_files,
                 **{**files}
             )
 

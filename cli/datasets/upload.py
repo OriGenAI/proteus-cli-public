@@ -76,11 +76,15 @@ def get_steps(cases, workflow) -> List[StepConfigWithMetadata]:
     steps = []
     # Generate all the files-pairs with a generator
     for preprocessing_phase in PREPROCESSING_PHASES:
-        config_module = importlib.import_module(f'cli.datasets.preprocessor.config.{workflow.replace("-", "_")}.{preprocessing_phase}')
-        config_classes = [getattr(config_module, x) for x in dir(config_module) if isinstance(getattr(config_module, x), type) and issubclass(getattr(config_module, x), BaseConfig) and getattr(config_module, x) != BaseConfig]
+        module_name = f'cli.datasets.preprocessor.config.{workflow.replace("-", "_")}.{preprocessing_phase}'
+        config_module = importlib.import_module(module_name)
+        config_classes = [getattr(config_module, x) for x in dir(config_module) if isinstance(getattr(config_module, x), type) and issubclass(getattr(config_module, x), BaseConfig) and getattr(config_module, x).__module__ == config_module.__name__]
         assert len(config_classes) == 1
-        for step in config_classes[0](cases).return_iterator():
-            steps.append(step)
+        try:
+            for step in config_classes[0](cases).return_iterator():
+                steps.append(step)
+        except BaseException as e:
+            raise RuntimeError(f'Error reading {module_name}.{config_classes[0].__name__}')
 
     return sorted(steps, key=lambda x: x.step_name)
 
@@ -178,6 +182,8 @@ def generate_process_step_partial(progress, base_input_source: Source, base_outp
         progress.refresh()
 
         if not step.enabled:
+            for _ in step.output:
+                progress.update(1)
             return step.output
 
         if step.preprocessing_phase in (PREPROCESSING_PHASE_CASE, PREPROCESSING_PHASE_STEP):

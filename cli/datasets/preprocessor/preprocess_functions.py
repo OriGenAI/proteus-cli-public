@@ -1,7 +1,7 @@
 import json
 import os
 import pickle
-from typing import Callable
+from typing import Callable, Sequence
 
 import cwrap
 import h5py
@@ -21,7 +21,7 @@ from preprocessing.modular.grdecl import preprocess as preprocess_grdecl
 from preprocessing.modular.init import preprocess as preprocess_init
 from preprocessing.modular.s import WellSummaryProcessor
 from preprocessing.modular.x import preprocess as preprocess_x
-from .utils import upload_file, find_ext, find_file, get_case_info, PathMeta
+from .utils import upload_file, find_ext, get_case_info, PathMeta
 from ..sources.local import LocalSource
 from ... import proteus
 
@@ -116,19 +116,19 @@ def export_runspec(
     download_func: Callable,
     output_source: LocalSource,
     data: PathMeta,
-    init: PathMeta,
-    egrid: PathMeta,
-    smspec: PathMeta,
+    init: PathMeta=None,
+    egrid: PathMeta=None,
+    smspec: PathMeta=None,
     **_
 ):
     runspec_dest_loc = os.path.join(output_source.uri, "runspec.p")
 
     data = preprocess_runspec(
         data.full_path,
-        egrid_file_loc=egrid.full_path,
-        smspec_file_loc=smspec.full_path,
+        egrid_file_loc=egrid and egrid.full_path,
+        smspec_file_loc=smspec and smspec.full_path,
+        init_file_loc=init and init.full_path,
         download_func=download_func,
-        init_file_loc=init.full_path,
         base_dir=output_source.uri
 
     )
@@ -166,7 +166,7 @@ def _export_egrid_properties_from_data(
     input_src, download_func, base_dir=None, allow_missing_files=tuple(),
 ):
 
-    get_includes(input_src, download_func, allow_missing_files=allow_missing_files, base_dir=base_dir)
+    get_includes(input_src, download_func, allow_missing_files=allow_missing_files)
 
     grid = ecl_deck.extract_actnum(input_src.full_path)
     grid_dest_loc = os.path.join(base_dir, "grid.h5")
@@ -210,7 +210,6 @@ def export_init_properties(
         keywords = {k: props.get(k, []) for k in init_keyword.get("keywords")}
         file_dest_loc = os.path.join(case_dest_loc, init_keyword.get("filename"))
         write_h5_from_dict(keywords, file_dest_loc)
-
 
 
 def export_well_init_properties(
@@ -276,58 +275,52 @@ def export_actnum(
 
 
 def export_dat_properties(
-    case_loc,
-    case_dest_loc,
-    input_src,
-    source,
-    cases_url,
-    get_mapping,
-    *args,
+    output_source: LocalSource,
+    input_files: Sequence[PathMeta],
+    **_
 ):
-    dat_src_locs = [str(find_file(case_loc, src.split("/")[-1])) for src in input_src[None]]
-    mapping = get_mapping()
+    dat_src_locs = {
+        f'{f.full_path}': f'{f.download_name}'
+        for f
+        in input_files
+    }
 
-    dat_files = {}
-    for keyword in mapping:
-        source = keyword.get("source", keyword["name"])
-        file = next(
-            filter(lambda f: f"{source}.dat" in f, dat_src_locs),
-            None,
-        )
-        if file:
-            dat_files[keyword["name"]] = file
-
-    props = dat.preprocess(dat_files, mapping)
-
-    _write_keywords_to_h5(props, case_dest_loc)
+    case_dest_loc = []
+    # Dat files can be very big. Write them individually to reduce memory usage
+    for source, col_name, df in dat.preprocess(dat_src_locs, do_yield=True):
+        case_dest_loc.append(_write_keywords_to_h5({col_name: source}, output_source.uri)[0])
 
     return dat_src_locs, case_dest_loc, None
 
 
 def _write_keywords_to_h5(props, dest_loc):
+    locations = []
     for k, v in props.items():
         file_dest_loc = os.path.join(dest_loc, f"{k}.h5")
         write_h5_from_dict({k: v}, file_dest_loc)
+        locations.append(file_dest_loc)
+
+    return locations
 
 
-def export_wellspec(case_loc, case_dest_loc, _, source, *args, allow_missing_files=tuple(), base_dir=None):
-    runspec_dest_loc = os.path.join(case_dest_loc, "well_spec.p")
-    data_src_loc = find_ext(case_loc, "DATA")
-
-    def download_func(source_path, destination_path):
-        from .utils import download_file
-
-        download_file(source_path, destination_path, source)
-
+def export_wellspec(
+    data: PathMeta,
+    download_func,
+    output_source: LocalSource,
+    allow_missing_files=tuple(),
+    **_
+):
     # Read and download data includes
-    find_section(data_src_loc, "RUNSPEC", download_func, allow_missing_files=allow_missing_files, base_dir=base_dir)
+    find_section(data.full_path, "RUNSPEC", download_func, allow_missing_files=allow_missing_files)
 
-    preprocessor = WellSpecsProcessor(data_src_loc)
-    data = preprocessor.process()
+    wellspec_dest_loc = os.path.join(output_source.uri, "well_spec.p")
 
-    write_pickle_from_dict(data, runspec_dest_loc)
+    preprocessor = WellSpecsProcessor(data.full_path)
+    wellspec_data = preprocessor.process()
 
-    return data_src_loc, runspec_dest_loc, None
+    write_pickle_from_dict(wellspec_data, wellspec_dest_loc)
+
+    return data.full_path, wellspec_dest_loc, None
 
 
 def export_smry(case_loc, case_dest_loc, _, source, *args, allow_missing_files=tuple(), base_dir=None):
