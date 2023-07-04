@@ -79,7 +79,7 @@ def process_step_2(
             progress.update(1)
             progress.refresh()
 
-    return found_outputs
+    return step
 
 
 INPUT_FIND_LOCKS = {}

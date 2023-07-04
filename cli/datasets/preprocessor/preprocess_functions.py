@@ -130,7 +130,6 @@ def export_runspec(
         smspec_file_loc=smspec and smspec.full_path,
         init_file_loc=init and init.full_path,
         download_func=download_func,
-        base_dir=output_source.uri,
         allow_missing_files=allow_missing_files
     )
 

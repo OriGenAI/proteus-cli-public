@@ -37,7 +37,7 @@ def upload(
     set_dataset_version(dataset_uuid)
 
     proteus.logger.info(f"This process will use {workers} simultaneous threads.")
-    proteus.reporting.send("started upload", status="processing", progress=0)
+    proteus.reporting.send("Starting", status="processing", progress=0)
     with TqdmUpWithReport(total=0, unit="files") as progress:
 
         progress.set_description("Retrieving dataset metadata...")
@@ -63,7 +63,7 @@ def upload(
             temp_folder_override=temp_folder_override,
         )
 
-    proteus.reporting.send("upload finished", status="completed", progress=100)
+    proteus.reporting.send("Done", status="completed", progress=100)
 
 
 def set_dataset_version(dataset_uuid):
@@ -166,11 +166,11 @@ def process_files(
             allow_missing_files=allow_missing_files
         )
 
-        for _ in proteus.bucket.each_item_parallel(
+        for step in proteus.bucket.each_item_parallel(
             total=len(steps), items=steps, each_item_fn=process_step_partial, workers=workers, progress=False
         ):
             proteus.reporting.send(
-                "uploading",
+                f"Step finished: {step.step_name}",
                 status="processing",
                 progress=round(progress.last_print_n / progress.total, 0),
                 number=progress.last_print_n,
@@ -178,13 +178,6 @@ def process_files(
             )
 
         assert progress.last_print_n == progress.total
-        proteus.reporting.send(
-            "completed",
-            status="completed",
-            progress=100,
-            number=progress.total,
-            total=progress.total,
-        )
 
 
 def generate_process_step_partial(progress, base_input_source: Source, base_output_source: LocalSource, cases_url: str, allow_missing_files=tuple()):
