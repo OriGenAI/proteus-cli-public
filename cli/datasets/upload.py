@@ -8,8 +8,13 @@ from typing import List
 from cli import proteus
 from cli.api.hooks import TqdmUpWithReport
 from cli.config import config
-from cli.datasets.preprocessor.config import BaseConfig, PREPROCESSING_PHASES, \
-    StepConfigWithMetadata, PREPROCESSING_PHASE_CASE, PREPROCESSING_PHASE_STEP
+from cli.datasets.preprocessor.config import (
+    BaseConfig,
+    PREPROCESSING_PHASES,
+    StepConfigWithMetadata,
+    PREPROCESSING_PHASE_CASE,
+    PREPROCESSING_PHASE_STEP,
+)
 from cli.datasets.preprocessor.process_step import process_step_2
 from cli.datasets.sources.az import AZSource
 from cli.datasets.sources.common import Source
@@ -33,7 +38,7 @@ def upload(
 
     proteus.logger.info(f"This process will use {workers} simultaneous threads.")
     proteus.reporting.send("started upload", status="processing", progress=0)
-    with TqdmUpWithReport(total=0, unit='files') as progress:
+    with TqdmUpWithReport(total=0, unit="files") as progress:
 
         progress.set_description("Retrieving dataset metadata...")
         cases = get_cases(dataset_uuid, progress)
@@ -78,13 +83,19 @@ def get_steps(cases, workflow) -> List[StepConfigWithMetadata]:
     for preprocessing_phase in PREPROCESSING_PHASES:
         module_name = f'cli.datasets.preprocessor.config.{workflow.replace("-", "_")}.{preprocessing_phase}'
         config_module = importlib.import_module(module_name)
-        config_classes = [getattr(config_module, x) for x in dir(config_module) if isinstance(getattr(config_module, x), type) and issubclass(getattr(config_module, x), BaseConfig) and getattr(config_module, x).__module__ == config_module.__name__]
+        config_classes = [
+            getattr(config_module, x)
+            for x in dir(config_module)
+            if isinstance(getattr(config_module, x), type)
+            and issubclass(getattr(config_module, x), BaseConfig)
+            and getattr(config_module, x).__module__ == config_module.__name__
+        ]
         assert len(config_classes) == 1
         try:
             for step in config_classes[0](cases).return_iterator():
                 steps.append(step)
         except BaseException as e:
-            raise RuntimeError(f'Error reading {module_name}.{config_classes[0].__name__}')
+            raise RuntimeError(f"Error reading {module_name}.{config_classes[0].__name__}") from e
 
     return sorted(steps, key=lambda x: x.step_name)
 
@@ -151,7 +162,7 @@ def process_files(
             progress,
             base_input_source=get_source(bucket),
             base_output_source=get_source(tmpdirname),
-            cases_url=cases_url
+            cases_url=cases_url,
         )
 
         for _ in proteus.bucket.each_item_parallel(
@@ -159,7 +170,7 @@ def process_files(
         ):
             proteus.reporting.send(
                 "uploading",
-                status='processing',
+                status="processing",
                 progress=round(progress.last_print_n / progress.total, 0),
                 number=progress.last_print_n,
                 total=progress.total,
@@ -168,7 +179,7 @@ def process_files(
         assert progress.last_print_n == progress.total
         proteus.reporting.send(
             "completed",
-            status='completed',
+            status="completed",
             progress=100,
             number=progress.total,
             total=progress.total,
@@ -199,7 +210,7 @@ def generate_process_step_partial(progress, base_input_source: Source, base_outp
             input_source=input_source,
             output_source=output_source,
             base_output_source=base_output_source,
-            cases_url=cases_url
+            cases_url=cases_url,
         )
 
     return step_partial

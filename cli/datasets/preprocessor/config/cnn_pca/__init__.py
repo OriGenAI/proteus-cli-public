@@ -11,7 +11,6 @@ class CnnPcaMapping:
 
 
 class BaseCnnPcaCaseConfig(BaseConfig):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -22,7 +21,10 @@ class BaseCnnPcaCaseConfig(BaseConfig):
         config = dataset.json().get("dataset").get("sampling").get("config")
         assert isinstance(config.get("cnn_pca_design").get("keywords"), (list,))
 
-        raw_mapping = [CnnPcaMapping(**x.setdefault("source", x["name"]) and x) for x in config.get("cnn_pca_design").get("keywords")]
+        raw_mapping = [
+            CnnPcaMapping(**x.setdefault("source", x["name"]) and x)
+            for x in config.get("cnn_pca_design").get("keywords")
+        ]
         self.litho_input = next((x for x in raw_mapping if x.name == "LITHO_INPUT"), None)
         self.mapping = [x for x in raw_mapping if x.name not in ("LITHO_INPUT", "ACTNUM")]
         self.actnum_mapping = next((x for x in raw_mapping if x.name == "ACTNUM"), None)

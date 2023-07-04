@@ -116,10 +116,10 @@ def export_runspec(
     download_func: Callable,
     output_source: LocalSource,
     data: PathMeta,
-    init: PathMeta=None,
-    egrid: PathMeta=None,
-    smspec: PathMeta=None,
-    **_
+    init: PathMeta = None,
+    egrid: PathMeta = None,
+    smspec: PathMeta = None,
+    **_,
 ):
     runspec_dest_loc = os.path.join(output_source.uri, "runspec.p")
 
@@ -129,8 +129,7 @@ def export_runspec(
         smspec_file_loc=smspec and smspec.full_path,
         init_file_loc=init and init.full_path,
         download_func=download_func,
-        base_dir=output_source.uri
-
+        base_dir=output_source.uri,
     )
 
     multout = data.get("multout")
@@ -145,25 +144,22 @@ def export_runspec(
 
 
 def export_egrid_properties(
-    download_func: Callable,
-    output_source: LocalSource,
-    data: PathMeta=None,
-    egrid: PathMeta=None,
-    **_
+    download_func: Callable, output_source: LocalSource, data: PathMeta = None, egrid: PathMeta = None, **_
 ):
     if not data and not egrid:
-        raise RuntimeError('Either data or egrid files are needed')
+        raise RuntimeError("Either data or egrid files are needed")
 
     if data:
-        _export_egrid_properties_from_data(
-            data.full_path, download_func=download_func, base_dir=output_source.uri
-        )
+        _export_egrid_properties_from_data(data.full_path, download_func=download_func, base_dir=output_source.uri)
     else:
         _export_egrid_properties_from_egrid(egrid.full_path, base_dir=output_source.uri)
 
 
 def _export_egrid_properties_from_data(
-    input_src, download_func, base_dir=None, allow_missing_files=tuple(),
+    input_src,
+    download_func,
+    base_dir=None,
+    allow_missing_files=tuple(),
 ):
 
     get_includes(input_src, download_func, allow_missing_files=allow_missing_files)
@@ -174,15 +170,17 @@ def _export_egrid_properties_from_data(
     write_h5_from_dict(props, grid_dest_loc)
 
 
-
-def _export_egrid_properties_from_egrid(input_src, base_dir=None, allow_missing_files=tuple(), ):
+def _export_egrid_properties_from_egrid(
+    input_src,
+    base_dir=None,
+    allow_missing_files=tuple(),
+):
 
     grid_dest_loc = os.path.join(base_dir, "grid.h5")
 
     grid = EclGrid(str(input_src))
     props = preprocess_egrid(grid)
     write_h5_from_dict(props, grid_dest_loc)
-
 
 
 def export_init_properties(
@@ -212,12 +210,7 @@ def export_init_properties(
         write_h5_from_dict(keywords, file_dest_loc)
 
 
-def export_well_init_properties(
-    output_source: LocalSource,
-    grid,
-    init,
-    **_
-):
+def export_well_init_properties(output_source: LocalSource, grid, init, **_):
 
     grid = EclGrid(str(grid.full_path))
     init = EclInitFile(grid, str(init.full_path))
@@ -231,7 +224,6 @@ def export_well_init_properties(
         keywords = {k: props.get(k, []) for k in init_keyword.get("keywords")}
         file_dest_loc = os.path.join(output_source.uri, init_keyword.get("filename"))
         write_h5_from_dict(keywords, file_dest_loc)
-
 
 
 def export_litho(
@@ -274,16 +266,8 @@ def export_actnum(
     return grdecl_src_loc, case_dest_loc, None
 
 
-def export_dat_properties(
-    output_source: LocalSource,
-    input_files: Sequence[PathMeta],
-    **_
-):
-    dat_src_locs = {
-        f'{f.full_path}': f'{f.download_name}'
-        for f
-        in input_files
-    }
+def export_dat_properties(output_source: LocalSource, input_files: Sequence[PathMeta], **_):
+    dat_src_locs = {f"{f.full_path}": f"{f.download_name}" for f in input_files}
 
     case_dest_loc = []
     # Dat files can be very big. Write them individually to reduce memory usage
@@ -303,13 +287,7 @@ def _write_keywords_to_h5(props, dest_loc):
     return locations
 
 
-def export_wellspec(
-    data: PathMeta,
-    download_func,
-    output_source: LocalSource,
-    allow_missing_files=tuple(),
-    **_
-):
+def export_wellspec(data: PathMeta, download_func, output_source: LocalSource, allow_missing_files=tuple(), **_):
     # Read and download data includes
     find_section(data.full_path, "RUNSPEC", download_func, allow_missing_files=allow_missing_files)
 
@@ -347,11 +325,7 @@ def export_smry(case_loc, case_dest_loc, _, source, *args, allow_missing_files=t
     return f"{smry_src_loc}.S????", preprocessed_smry_dest_loc, None
 
 
-def export_smspec(
-    output_source: LocalSource,
-    smspec,
-    **_
-):
+def export_smspec(output_source: LocalSource, smspec, **_):
 
     smry = EclSum(str(smspec.full_path))
 

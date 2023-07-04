@@ -85,7 +85,7 @@ class LocalSource(Source):
         yield self.download(reference)
 
     def cd(self, subpath):
-        if subpath.startswith('/'):
+        if subpath.startswith("/"):
             self._check_sandbox(subpath)
             return self.__class__(subpath, sandbox_uri=self.sandbox_uri)
 

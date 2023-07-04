@@ -29,11 +29,9 @@ class WellModelCommonConfig(BaseConfig):
                     ),
                     RequiredFilePath(f'{first_case["root"]}/*.INIT', download_name="init"),
                 ),
-                output=(
-                    RequiredFilePath("runspec.p"),
-                ),
+                output=(RequiredFilePath("runspec.p"),),
                 preprocessing_fn=export_runspec,
                 keep=True,
-                enabled=True
+                enabled=True,
             ),
         )

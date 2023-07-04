@@ -5,26 +5,17 @@ from typing import Optional, Callable, Sequence
 from cli import proteus
 from cli.datasets.preprocessor.utils import PathMeta
 
-PREPROCESSING_PHASE_COMMON = 'common'
-PREPROCESSING_PHASE_CASE = 'case'
-PREPROCESSING_PHASE_STEP = 'step'
+PREPROCESSING_PHASE_COMMON = "common"
+PREPROCESSING_PHASE_CASE = "case"
+PREPROCESSING_PHASE_STEP = "step"
 
-PREPROCESSING_PHASES = [
-    PREPROCESSING_PHASE_COMMON,
-    PREPROCESSING_PHASE_CASE,
-    PREPROCESSING_PHASE_STEP
-]
+PREPROCESSING_PHASES = [PREPROCESSING_PHASE_COMMON, PREPROCESSING_PHASE_CASE, PREPROCESSING_PHASE_STEP]
 
-CASE_TYPE_TRAINING = 'training'
-CASE_TYPE_TESTING = 'testing'
-CASE_TYPE_VALIDATION = 'validation'
+CASE_TYPE_TRAINING = "training"
+CASE_TYPE_TESTING = "testing"
+CASE_TYPE_VALIDATION = "validation"
 
-CASE_TYPES = [
-    CASE_TYPE_TRAINING,
-    CASE_TYPE_TESTING,
-    CASE_TYPE_VALIDATION
-]
-
+CASE_TYPES = [CASE_TYPE_TRAINING, CASE_TYPE_TESTING, CASE_TYPE_VALIDATION]
 
 
 # Config object wrapping all properties
@@ -108,7 +99,9 @@ class BaseConfig:
             if not callable(func):
                 continue
 
-            base_step_name = f'{"Config".join(self.__class__.__name__.split("Config")[:-1]) or "Config"}.{func.__name__}'
+            base_step_name = (
+                f'{"Config".join(self.__class__.__name__.split("Config")[:-1]) or "Config"}.{func.__name__}'
+            )
 
             try:
                 configs = func()
@@ -118,35 +111,43 @@ class BaseConfig:
                 for step_config in configs:
                     assert isinstance(step_config, (CommonStepConfig, CaseStepConfig, StepStepConfig))
 
-                    preprocessing_phase = self.__module__.split('.')[-1]
+                    preprocessing_phase = self.__module__.split(".")[-1]
 
-                    if preprocessing_phase not in PREPROCESSING_PHASES or not self.__class__.__module__.startswith('cli.datasets.preprocessor.config.'):
+                    if preprocessing_phase not in PREPROCESSING_PHASES or not self.__class__.__module__.startswith(
+                        "cli.datasets.preprocessor.config."
+                    ):
                         raise RuntimeError(
-                            f'{self.__class__.__module__}.{self.__class__.__qualname__} is not placed in the proper path. Please follow the following path to organize the config: cli.datasets.preprocessor.config.<workflow_name>.<preprocessing_phase>.MyConfigClass'
+                            f"{self.__class__.__module__}.{self.__class__.__qualname__} is not placed "
+                            f"in the proper path. Please follow the following path to organize the "
+                            f"config: cli.datasets.preprocessor.config.<workflow_name>."
+                            f"<preprocessing_phase>.MyConfigClass"
                         )
 
                     dict_config = step_config.__dict__
 
-                    root = dict_config.pop('root')
+                    root = dict_config.pop("root")
                     if not root:
-                        root = '' if isinstance(step_config, CommonStepConfig) else \
-                            f'{step_config.split}/SIMULATION_{step_config.case}'
+                        root = (
+                            ""
+                            if isinstance(step_config, CommonStepConfig)
+                            else f"{step_config.split}/SIMULATION_{step_config.case}"
+                        )
 
                     step_name = base_step_name
                     if step_config.case:
-                        step_name = f'{str(step_config.case).zfill(digits_for_cases)}.' + step_name
+                        step_name = f"{str(step_config.case).zfill(digits_for_cases)}." + step_name
                     if step_config.split:
-                        step_name = f'{step_config.split[:2]}.' + step_name
+                        step_name = f"{step_config.split[:2]}." + step_name
 
                     yield StepConfigWithMetadata(
                         step_name=step_name,
                         type=step_config.__class__,
                         preprocessing_phase=preprocessing_phase,
                         root=root,
-                        **dict_config
+                        **dict_config,
                     )
             except BaseException as e:
-                raise RuntimeError(f'Error reading step {base_step_name}') from e
+                raise RuntimeError(f"Error reading step {base_step_name}") from e
 
     @classmethod
     def number_of_steps(cls):

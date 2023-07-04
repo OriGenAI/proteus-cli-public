@@ -70,22 +70,23 @@ def download_file(source_path, destination_path, input_source, progress=False):
         if items_and_paths:
             asterisk_replace_with = items_and_paths[0].path_rel
             if prefix:
-                asterisk_replace_with = re.sub(rf'^{prefix}', '', asterisk_replace_with)
+                asterisk_replace_with = re.sub(rf"^{prefix}", "", asterisk_replace_with)
             if suffix:
-                asterisk_replace_with = re.sub(rf'{suffix}$', '', asterisk_replace_with)
+                asterisk_replace_with = re.sub(rf"{suffix}$", "", asterisk_replace_with)
 
-            transformed_source_path = source_path.replace('*', asterisk_replace_with)
+            transformed_source_path = source_path.replace("*", asterisk_replace_with)
 
-            if '*' in destination_path:
-                destination_path = destination_path.replace('*', asterisk_replace_with)
+            if "*" in destination_path:
+                destination_path = destination_path.replace("*", asterisk_replace_with)
 
             proteus.logger.info(
-                f'Glob "{source_path}" resolved to {items_and_paths[0].path}. Output path rewritten to {destination_path}'
+                f'Glob "{source_path}" resolved to {items_and_paths[0].path}. '
+                f"Output path rewritten to {destination_path}"
             )
 
         items_and_paths = iter(items_and_paths)
     else:
-        assert '*' not in destination_path, '* can only be used in destionation path if also present in source_path'
+        assert "*" not in destination_path, "* can only be used in destionation path if also present in source_path"
 
         items_and_paths = input_source.list_contents(starts_with=source_path)
         transformed_source_path = source_path

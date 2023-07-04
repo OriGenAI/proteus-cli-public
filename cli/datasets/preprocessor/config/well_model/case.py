@@ -3,13 +3,15 @@ import os
 
 from cli.datasets.preprocessor.config import BaseConfig, CaseStepConfig
 from cli.datasets.preprocessor.config.well_model import SMSPEC_WELL_KEYWORDS, SMSPEC_FIELD_KEYWORDS
-from cli.datasets.preprocessor.preprocess_functions import export_egrid_properties, \
-    export_well_init_properties, export_smspec
+from cli.datasets.preprocessor.preprocess_functions import (
+    export_egrid_properties,
+    export_well_init_properties,
+    export_smspec,
+)
 from cli.datasets.preprocessor.utils import RequiredFilePath, OptionalFilePath
 
 
 class WellModelCaseConfig(BaseConfig):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -22,15 +24,18 @@ class WellModelCaseConfig(BaseConfig):
         return tuple(
             CaseStepConfig(
                 input=(
-                    RequiredFilePath('*.EGRID', download_name='egrid', replace_with=RequiredFilePath('*.DATA', download_name='data')),
+                    RequiredFilePath(
+                        "*.EGRID", download_name="egrid", replace_with=RequiredFilePath("*.DATA", download_name="data")
+                    ),
                 ),
-                output=(RequiredFilePath('grid.h5'),),
+                output=(RequiredFilePath("grid.h5"),),
                 root=case["root"],
                 preprocessing_fn=export_egrid_properties,
-                split=case['group'],
+                split=case["group"],
                 case=case["number"],
-                enabled=True
-            ) for case in self.cases
+                enabled=True,
+            )
+            for case in self.cases
         )
 
     def step_2_init_props(self):
@@ -38,18 +43,15 @@ class WellModelCaseConfig(BaseConfig):
         return tuple(
             CaseStepConfig(
                 input=(
-                    RequiredFilePath('*.INIT', download_name="init"),
-                    RequiredFilePath('*.EGRID', download_name="grid"),
+                    RequiredFilePath("*.INIT", download_name="init"),
+                    RequiredFilePath("*.EGRID", download_name="grid"),
                 ),
-                output=tuple(
-                    RequiredFilePath(output.get("filename"))
-                    for output in self.init_keywords
-                ),
+                output=tuple(RequiredFilePath(output.get("filename")) for output in self.init_keywords),
                 root=case["root"],
                 preprocessing_fn=export_well_init_properties,
-                split=case['group'],
+                split=case["group"],
                 case=case["number"],
-                enabled=True
+                enabled=True,
             )
             for case in self.cases
         )
@@ -58,23 +60,16 @@ class WellModelCaseConfig(BaseConfig):
 
         return tuple(
             CaseStepConfig(
-                input=(
-                    RequiredFilePath('*.SMSPEC', download_name="smspec"),
-                )
+                input=(RequiredFilePath("*.SMSPEC", download_name="smspec"),)
                 + tuple(
-                    RequiredFilePath(f'*.S{str(step).zfill(4)}', download_name="s")
-                    for step
-                    in range(case["initialStep"] + 1, case["finalStep"] + 1)
+                    RequiredFilePath(f"*.S{str(step).zfill(4)}", download_name="s")
+                    for step in range(case["initialStep"] + 1, case["finalStep"] + 1)
                 ),
-                output=tuple(
-                    OptionalFilePath(f'{k}.h5')
-                    for k
-                    in SMSPEC_WELL_KEYWORDS + SMSPEC_FIELD_KEYWORDS
-                ),
+                output=tuple(OptionalFilePath(f"{k}.h5") for k in SMSPEC_WELL_KEYWORDS + SMSPEC_FIELD_KEYWORDS),
                 root=case["root"],
                 preprocessing_fn=export_smspec,
-                split=case['group'],
-                case=case["number"]
+                split=case["group"],
+                case=case["number"],
             )
             for case in self.cases
         )

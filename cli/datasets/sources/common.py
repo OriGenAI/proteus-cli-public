@@ -9,6 +9,7 @@ class SourcedItem:
         self.size = size
 
     _path_rel = None
+
     @property
     def path_rel(self):
         if self._path_rel is None:
