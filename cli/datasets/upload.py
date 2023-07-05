@@ -48,7 +48,7 @@ def upload(
         total_files = sum(len(x.output) for x in list(steps))
         progress.total = total_files
 
-        progress.set_description("Uploading...")
+        progress.set_description("Starting...")
         progress.refresh()
 
         process_files(
@@ -163,7 +163,7 @@ def process_files(
             base_input_source=get_source(bucket),
             base_output_source=get_source(tmpdirname),
             cases_url=cases_url,
-            allow_missing_files=allow_missing_files
+            allow_missing_files=allow_missing_files,
         )
 
         for step in proteus.bucket.each_item_parallel(
@@ -180,7 +180,9 @@ def process_files(
         assert progress.last_print_n == progress.total
 
 
-def generate_process_step_partial(progress, base_input_source: Source, base_output_source: LocalSource, cases_url: str, allow_missing_files=tuple()):
+def generate_process_step_partial(
+    progress, base_input_source: Source, base_output_source: LocalSource, cases_url: str, allow_missing_files=tuple()
+):
     def step_partial(step: StepConfigWithMetadata):
 
         progress.set_description(step.step_name)
@@ -205,7 +207,7 @@ def generate_process_step_partial(progress, base_input_source: Source, base_outp
             output_source=output_source,
             base_output_source=base_output_source,
             cases_url=cases_url,
-            allow_missing_files=allow_missing_files
+            allow_missing_files=allow_missing_files,
         )
 
     return step_partial

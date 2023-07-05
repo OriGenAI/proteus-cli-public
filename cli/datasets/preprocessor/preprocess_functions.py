@@ -1,6 +1,7 @@
 import json
 import os
 import pickle
+from threading import RLock
 from typing import Callable, Sequence
 
 import cwrap
@@ -119,7 +120,7 @@ def export_runspec(
     init: PathMeta = None,
     egrid: PathMeta = None,
     smspec: PathMeta = None,
-    allow_missing_files: Sequence[str]=tuple(),
+    allow_missing_files: Sequence[str] = tuple(),
     **_,
 ):
     runspec_dest_loc = os.path.join(output_source.uri, "runspec.p")
@@ -130,7 +131,7 @@ def export_runspec(
         smspec_file_loc=smspec and smspec.full_path,
         init_file_loc=init and init.full_path,
         download_func=download_func,
-        allow_missing_files=allow_missing_files
+        allow_missing_files=allow_missing_files,
     )
 
     multout = data.get("multout")
@@ -267,13 +268,19 @@ def export_actnum(
     return grdecl_src_loc, case_dest_loc, None
 
 
+EXPORT_DAT_PROPERTIES_LOCK = RLock()
+
+
 def export_dat_properties(output_source: LocalSource, input_files: Sequence[PathMeta], **_):
     dat_src_locs = {f"{f.full_path}": f"{f.download_name}" for f in input_files}
 
-    case_dest_loc = []
-    # Dat files can be very big. Write them individually to reduce memory usage
-    for source, col_name, df in dat.preprocess(dat_src_locs, do_yield=True):
-        case_dest_loc.append(_write_keywords_to_h5({col_name: source}, output_source.uri)[0])
+    # Loading dat files can be heavy and consume a lot of memory. Ensure 2 steps are not loading
+    # dat data in memory at the same time
+    with EXPORT_DAT_PROPERTIES_LOCK:
+        case_dest_loc = []
+        # Dat files can be very big. Write them individually to reduce memory usage
+        for source, col_name, df in dat.preprocess(dat_src_locs, do_yield=True):
+            case_dest_loc.append(_write_keywords_to_h5({col_name: source}, output_source.uri)[0])
 
     return dat_src_locs, case_dest_loc, None
 

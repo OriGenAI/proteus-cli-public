@@ -33,6 +33,7 @@ class WellModelCaseConfig(BaseConfig):
                 preprocessing_fn=export_egrid_properties,
                 split=case["group"],
                 case=case["number"],
+                keep=False,
                 enabled=True,
             )
             for case in self.cases
@@ -51,6 +52,7 @@ class WellModelCaseConfig(BaseConfig):
                 preprocessing_fn=export_well_init_properties,
                 split=case["group"],
                 case=case["number"],
+                keep=False,
                 enabled=True,
             )
             for case in self.cases
@@ -69,6 +71,7 @@ class WellModelCaseConfig(BaseConfig):
                 root=case["root"],
                 preprocessing_fn=export_smspec,
                 split=case["group"],
+                keep=False,
                 case=case["number"],
             )
             for case in self.cases

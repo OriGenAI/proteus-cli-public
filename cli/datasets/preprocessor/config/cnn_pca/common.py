@@ -36,17 +36,7 @@ class CnnPcaCommonConfig(BaseCnnPcaCaseConfig):
             ),
         )
 
-    def step_3_dat_files(self):
-        return (
-            CommonStepConfig(
-                input=tuple(RequiredFilePath(f"{m.source or m.name}.dat", download_name=m.name) for m in self.mapping),
-                output=tuple(RequiredFilePath(f"{m.name}.h5") for m in self.mapping),
-                preprocessing_fn=export_dat_properties,
-                keep=False,
-            ),
-        )
-
-    def step_4_actnum_prop(self):
+    def step_3_actnum_prop(self):
         """
         List all cases and its steps to generate the .DATA iterator
 
@@ -70,4 +60,15 @@ class CnnPcaCommonConfig(BaseCnnPcaCaseConfig):
                 output=(RequiredFilePath("actnum.h5"),),
                 preprocessing_fn=export_actnum,
             ),
+        )
+
+    def step_4_dat_files(self):
+        return tuple(
+            CommonStepConfig(
+                input=(RequiredFilePath(f"{m.source or m.name}.dat", download_name=m.name),),
+                output=(RequiredFilePath(f"{m.name}.h5"),),
+                preprocessing_fn=export_dat_properties,
+                keep=False,
+            )
+            for m in self.mapping
         )

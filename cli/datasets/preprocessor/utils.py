@@ -5,9 +5,8 @@ import re
 import time
 from pathlib import Path
 
-from tqdm import tqdm
-
 from ... import proteus
+from ...api.hooks import TqdmUpWithReport
 
 
 def get_creation_date(path_to_file):
@@ -32,7 +31,7 @@ def get_creation_date(path_to_file):
             return datetime.datetime.fromtimestamp(stat.st_mtime)
 
 
-def download_file(source_path, destination_path, input_source, progress=False):
+def download_file(source_path, destination_path, input_source, progress: TqdmUpWithReport = None):
     """
     Download a file from the allowed providers. Ex: local, az, etc.
 
@@ -96,12 +95,10 @@ def download_file(source_path, destination_path, input_source, progress=False):
     Path(os.path.dirname(destination_path)).mkdir(parents=True, exist_ok=True)
 
     if os.path.isfile(destination_path):
-        # The file aready exists, continue
-        return transformed_source_path, destination_path
+        return transformed_source_path, destination_path, True
     elif os.path.isfile(f"{destination_path}.tmp"):
-        # The file is being downloaded, probabl
         wait_until_file_is_downloaded(destination_path)
-        return transformed_source_path, destination_path
+        return transformed_source_path, destination_path, True
     else:
         try:
             _, path, reference, size = next(items_and_paths)
@@ -111,34 +108,21 @@ def download_file(source_path, destination_path, input_source, progress=False):
             if not input_source.fastcopy(reference, destination_file):
                 Path(f"{destination_path}.tmp").touch()
 
-                if callable(size):
-                    size = callable(size)
-
                 with open(f"{destination_path}.tmp", "wb") as file:
-                    with tqdm(
-                        total=size,
-                        unit="B",
-                        unit_scale=True,
-                        unit_divisor=1024,
-                        desc=f"Retrieving file {path}",
-                        disable=not progress,
-                    ) as pbar:
-                        read = 0
-                        for chunk in input_source.chunks(reference):
-                            file.write(chunk)
-                            read += len(chunk)
-                            pbar.update(len(chunk))
+                    if progress:
+                        progress.set_description(f"Downloading {reference.name}")
 
-                        pbar.set_description("Done")
+                    for chunk in input_source.chunks(reference):
+                        file.write(chunk)
 
             os.rename(f"{destination_path}.tmp", destination_path)
 
-            return transformed_source_path, destination_path
+            return transformed_source_path, destination_path, False
         except StopIteration:
             if isinstance(source_path, RequiredFilePath):
                 raise FileNotFoundError(f"Required file {source_path} is not found")
             proteus.logger.error(f"The following file was not found: {source_path}")
-            return None, None
+            return None, None, False
 
 
 @proteus.may_insist_up_to()
@@ -261,9 +245,6 @@ class PathMeta(str):
         )
         cloned.replaces = self.replaces
         return cloned
-
-    def __bool__(self):
-        return self.full_path is not None
 
 
 class RequiredFilePath(PathMeta):

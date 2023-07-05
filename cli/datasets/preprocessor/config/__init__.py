@@ -106,7 +106,9 @@ class BaseConfig:
             try:
                 configs = func()
 
-                digits_for_cases = len(str(max(x.case for x in configs))) if len(configs) > 0 else 0
+                digits_for_cases = (
+                    len(str(max(max(x.case or 0 for x in configs), len(configs)))) if len(configs) > 0 else 0
+                )
 
                 for step_config in configs:
                     assert isinstance(step_config, (CommonStepConfig, CaseStepConfig, StepStepConfig))

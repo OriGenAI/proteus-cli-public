@@ -49,3 +49,9 @@ class Source:
 
     def to_relative(self, item: str):
         raise NotImplementedError()
+
+    def dirname(self, item: str):
+        raise NotImplementedError()
+
+    def join(self, *items):
+        raise NotImplementedError()

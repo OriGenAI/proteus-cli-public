@@ -89,7 +89,7 @@ class LocalSource(Source):
             self._check_sandbox(subpath)
             return self.__class__(subpath, sandbox_uri=self.sandbox_uri)
 
-        return self.__class__(os.path.join(self.uri, subpath), sandbox_uri=self.uri)
+        return self.__class__(os.path.normpath(self.join(self.uri, subpath)), sandbox_uri=self.uri)
 
     def _check_sandbox(self, reference):
         if not os.path.abspath(reference).startswith(self.sandbox_uri):
@@ -98,4 +98,10 @@ class LocalSource(Source):
     def to_relative(self, item: str):
         base_path = os.path.abspath(self.uri)
         assert item.startswith(base_path)
-        return os.path.abspath(item).split(base_path, 1)[1].lstrip(os.path.sep)
+        return os.path.normpath(item).split(base_path, 1)[1].lstrip(os.path.sep)
+
+    def dirname(self, item: str):
+        return os.path.dirname(item)
+
+    def join(self, *items):
+        return os.path.join(*items)

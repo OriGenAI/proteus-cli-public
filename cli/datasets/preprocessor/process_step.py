@@ -9,6 +9,7 @@ from .utils import upload_file, download_file, PathMeta, RequiredFilePath
 from ..sources.common import Source
 from ..sources.local import LocalSource
 from ... import proteus
+from ...api.hooks import TqdmUpWithReport
 
 
 def files_exist_in_bucket(outputs, bucket_url):
@@ -22,13 +23,13 @@ def files_exist_in_bucket(outputs, bucket_url):
 
 
 def process_step_2(
-    progress,
+    progress: TqdmUpWithReport,
     step: StepConfigWithMetadata,
     input_source: Source,
     output_source: LocalSource,
     cases_url,
     base_output_source: LocalSource,
-    allow_missing_files: Sequence[str]=tuple()
+    allow_missing_files: Sequence[str] = tuple(),
 ):
 
     with ExitStack() as lock_input_files:
@@ -36,7 +37,7 @@ def process_step_2(
         files = OrderedDict()
         for input_file in step.input:
             found_input = lock_input_files.enter_context(
-                download_input_file(input_file, input_source, output_source, step.keep)
+                download_input_file(input_file, input_source, output_source, step.keep, progress)
             )
             files[found_input.download_name or input_file] = found_input
         input_files = tuple(x for x in files.values())
@@ -49,8 +50,20 @@ def process_step_2(
                 local_input_source = input_source.cd(subpath)
                 local_output_source = output_source.cd(subpath)
 
+                # Always keep dependency files outside the local input source. PE, the following
+                # structure is very typical and the include folder is re-used many times
+                #
+                # /cases/testing/SIMULATION_1/file.DATA
+                # /include/file.grid
+                #
+                # If the input_source is in /cases/testing/SIMULATION_1/, we would like for
+                # /include/file.grid to not be removed because most likely it will be used
+                # by /cases/testing/SIMULATION_2/, /cases/validation/SIMULATION_99/, etc
+                dependency_uri = local_input_source.cd(input_source.dirname(dependency_file)).uri
+                keep = not local_input_source.uri.startswith(dependency_uri) or step.keep
+
                 return lock_input_files.enter_context(
-                    download_input_file(dependency_file, local_input_source, local_output_source, step.keep)
+                    download_input_file(dependency_file, local_input_source, local_output_source, keep, progress)
                 ).full_path
 
             step.preprocessing_fn(
@@ -88,7 +101,11 @@ CREATE_INPUT_FILE_LOCK = RLock()
 
 @contextmanager
 def download_input_file(
-    input_file: Union[PathMeta, str], input_source: Source, output_source: LocalSource, keep: bool
+    input_file: Union[PathMeta, str],
+    input_source: Source,
+    output_source: LocalSource,
+    keep: bool,
+    progress: TqdmUpWithReport,
 ) -> Iterator[PathMeta]:
     if not isinstance(input_file, PathMeta):
         input_file = PathMeta(input_file)
@@ -108,7 +125,7 @@ def download_input_file(
     with file_lock:
         # Try to download the file
         try:
-            transformed_input, output_path = download_file(input_file, dir_output_file, input_source)
+            transformed_input, output_path, _ = download_file(input_file, dir_output_file, input_source, progress)
         except FileNotFoundError:
             transformed_input = None
             # Try to download the replacement if the file was not found
@@ -131,6 +148,3 @@ def download_input_file(
 
         if not keep:
             os.remove(output_path)
-
-        with CREATE_INPUT_FILE_LOCK:
-            INPUT_FIND_LOCKS[lock_key].pop()
