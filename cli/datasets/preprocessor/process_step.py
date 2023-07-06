@@ -23,7 +23,7 @@ def files_exist_in_bucket(outputs, bucket_url):
     return True
 
 
-def process_step_2(
+def process_step(
     progress: TqdmUpWithReport,
     step: StepConfigWithMetadata,
     input_source: Source,

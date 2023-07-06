@@ -15,7 +15,7 @@ from cli.datasets.preprocessor.config import (
     PREPROCESSING_PHASE_CASE,
     PREPROCESSING_PHASE_STEP,
 )
-from cli.datasets.preprocessor.process_step import process_step_2
+from cli.datasets.preprocessor.process_step import process_step
 from cli.datasets.sources.az import AZSource
 from cli.datasets.sources.common import Source
 from cli.datasets.sources.local import LocalSource
@@ -200,7 +200,7 @@ def generate_process_step_partial(
             input_source = base_input_source
             output_source = base_output_source
 
-        return process_step_2(
+        return process_step(
             progress,
             step,
             input_source=input_source,
