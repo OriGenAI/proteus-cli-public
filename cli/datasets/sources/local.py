@@ -11,8 +11,9 @@ class LocalSource(Source):
 
     URI_re = re.compile(r"^.*$")
 
-    def __init__(self, uri):
+    def __init__(self, uri, sandbox_uri=None):
         super().__init__(os.path.abspath(os.path.expanduser(uri)))
+        self.sandbox_uri = os.path.abspath(sandbox_uri or self.uri)
 
     def list_contents(self, starts_with="", ends_with=""):
         source_uri = self.uri
@@ -57,6 +58,7 @@ class LocalSource(Source):
         return files, by_extension
 
     def open(self, reference):
+        self._check_sandbox(reference)
         stats = reference.stat()
         reference_path = str(reference)
         modified = datetime.fromtimestamp(stats.st_mtime, tz=timezone.utc)
@@ -64,6 +66,7 @@ class LocalSource(Source):
         return reference_path, file_size, modified, reference.open("rb")
 
     def fastcopy(self, reference, destination):
+        self._check_sandbox(reference)
         try:
             os.symlink(reference, destination)
         except BaseException:
@@ -72,9 +75,33 @@ class LocalSource(Source):
         return True
 
     def download(self, reference):
+        self._check_sandbox(reference)
         with reference.open("rb") as file:
             return file.read()
 
     def chunks(self, reference):
+        self._check_sandbox(reference)
         # FIXME: no real chunk download
         yield self.download(reference)
+
+    def cd(self, subpath):
+        if subpath.startswith("/"):
+            self._check_sandbox(subpath)
+            return self.__class__(subpath, sandbox_uri=self.sandbox_uri)
+
+        return self.__class__(os.path.normpath(self.join(self.uri, subpath)), sandbox_uri=self.uri)
+
+    def _check_sandbox(self, reference):
+        if not os.path.abspath(reference).startswith(self.sandbox_uri):
+            raise FileNotFoundError(f"File {reference} is outside sandboxed base dir {self.sandbox_uri}")
+
+    def to_relative(self, item: str):
+        base_path = os.path.abspath(self.uri)
+        assert item.startswith(base_path)
+        return os.path.normpath(item).split(base_path, 1)[1].lstrip(os.path.sep)
+
+    def dirname(self, item: str):
+        return os.path.dirname(item)
+
+    def join(self, *items):
+        return os.path.join(*items)
