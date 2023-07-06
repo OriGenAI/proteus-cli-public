@@ -172,12 +172,12 @@ def process_files(
             proteus.reporting.send(
                 f"Step finished: {step.step_name}",
                 status="processing",
-                progress=round(progress.last_print_n / progress.total, 0),
-                number=progress.last_print_n,
+                progress=round(progress.n / progress.total, 0),
+                number=progress.n,
                 total=progress.total,
             )
 
-        assert progress.last_print_n == progress.total
+        assert progress.n == progress.total
 
 
 def generate_process_step_partial(

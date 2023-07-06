@@ -8,6 +8,7 @@ from azure.identity import DefaultAzureCredential
 from azure.storage.blob import ContainerClient
 
 from cli.config import config
+from proteus.bucket import AZ_COPY_PRESENT, AzCopyError
 from .common import Source, SourcedItem
 from ... import proteus
 
@@ -199,6 +200,18 @@ class AZSource(Source):
             yield chunk
 
     def fastcopy(self, reference, destination):
+        if AZ_COPY_PRESENT:
+            try:
+                download_url = (
+                    f'{self.storage_url}/{self.container_name}/{reference.name.strip("/")}?{self.url_sas_token}'
+                )
+                proteus.bucket.run_azcopy("copy", download_url, destination)
+            except AzCopyError as e:
+                raise RuntimeError(
+                    f'Could not download {reference.name} to {destination} via azcopy: \n{e.out or ""}\n{e.err}'
+                )
+            return True
+
         # TODO: Maybe fastcopy can use azcopy?
         return False
 

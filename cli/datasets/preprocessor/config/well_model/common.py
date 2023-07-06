@@ -1,6 +1,6 @@
 from cli.datasets.preprocessor.config import BaseConfig, CommonStepConfig
 from cli.datasets.preprocessor.preprocess_functions import export_runspec
-from cli.datasets.preprocessor.utils import RequiredFilePath
+from cli.utils.files import RequiredFilePath
 
 
 class WellModelCommonConfig(BaseConfig):

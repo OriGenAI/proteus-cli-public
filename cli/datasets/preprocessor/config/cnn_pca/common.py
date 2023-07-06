@@ -6,7 +6,7 @@ from cli.datasets.preprocessor.preprocess_functions import (
     export_dat_properties,
     export_actnum,
 )
-from cli.datasets.preprocessor.utils import RequiredFilePath
+from cli.utils.files import RequiredFilePath
 
 
 class CnnPcaCommonConfig(BaseCnnPcaCaseConfig):
@@ -69,6 +69,7 @@ class CnnPcaCommonConfig(BaseCnnPcaCaseConfig):
                 output=(RequiredFilePath(f"{m.name}.h5"),),
                 preprocessing_fn=export_dat_properties,
                 keep=False,
+                name=m.name,
             )
             for m in self.mapping
         )

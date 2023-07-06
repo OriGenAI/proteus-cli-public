@@ -12,6 +12,7 @@ from ecl.grid import EclGrid
 from ecl.summary import EclSum
 
 from cli.datasets.preprocessor.config.well_model import SMSPEC_WELL_KEYWORDS, SMSPEC_FIELD_KEYWORDS
+from cli.utils.files import upload_file, find_ext, PathMeta
 from preprocessing.deck import ecl_deck
 from preprocessing.deck.runspec import preprocess as preprocess_runspec
 from preprocessing.deck.section import find_section, get_includes
@@ -22,7 +23,6 @@ from preprocessing.modular.grdecl import preprocess as preprocess_grdecl
 from preprocessing.modular.init import preprocess as preprocess_init
 from preprocessing.modular.s import WellSummaryProcessor
 from preprocessing.modular.x import preprocess as preprocess_x
-from .utils import upload_file, find_ext, get_case_info, PathMeta
 from ..sources.local import LocalSource
 from ... import proteus
 
@@ -104,10 +104,11 @@ def export_deck(case_loc, case_dest_loc, _, source, cases_url, group, number):
     root_folder = case_dest_loc.split("/cases/")[0]
     ecl_deck_loc = os.path.join(root_folder, "ecl_deck.p")
 
-    case = get_case_info(f"{cases_url}/{group}/{number}")
-    min = int(case.get("initialStep")) - 1
-    max = case.get("finalStep")
-    props = {"size": max - min, "min": min, "max": max}
+    case = proteus.api.get(f"{cases_url}/{group}/{number}").json().get("case")
+
+    min_step = int(case.get("initialStep")) - 1
+    max_step = case.get("finalStep")
+    props = {"size": max_step - min_step, "min": min_step, "max": max_step}
     write_pickle_from_dict(props, ecl_deck_loc)
 
     return None, ecl_deck_loc, None
@@ -315,7 +316,7 @@ def export_smry(case_loc, case_dest_loc, _, source, *args, allow_missing_files=t
     data_src_loc = find_ext(case_loc, "DATA")
 
     def download_func(source_path, destination_path):
-        from .utils import download_file
+        from cli.utils.files import download_file
 
         download_file(source_path, destination_path, source)
 

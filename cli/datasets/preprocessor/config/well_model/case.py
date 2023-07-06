@@ -8,7 +8,7 @@ from cli.datasets.preprocessor.preprocess_functions import (
     export_well_init_properties,
     export_smspec,
 )
-from cli.datasets.preprocessor.utils import RequiredFilePath, OptionalFilePath
+from cli.utils.files import RequiredFilePath, OptionalFilePath
 
 
 class WellModelCaseConfig(BaseConfig):

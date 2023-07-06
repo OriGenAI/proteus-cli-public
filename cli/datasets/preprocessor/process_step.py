@@ -1,15 +1,16 @@
 import os
 from collections import OrderedDict
 from contextlib import contextmanager, ExitStack
-from threading import RLock
+from threading import RLock, Thread
 from typing import Iterator, Union, Sequence
 
-from .config import StepConfigWithMetadata
-from .utils import upload_file, download_file, PathMeta, RequiredFilePath
-from ..sources.common import Source
-from ..sources.local import LocalSource
-from ... import proteus
-from ...api.hooks import TqdmUpWithReport
+from cli import proteus
+from cli.api.hooks import TqdmUpWithReport
+from cli.datasets.preprocessor.config import StepConfigWithMetadata
+from cli.datasets.sources.common import Source
+from cli.datasets.sources.local import LocalSource
+from cli.utils.files import upload_file, download_file, PathMeta, RequiredFilePath
+from cli.utils.sync import TaskDependencySemaphore
 
 
 def files_exist_in_bucket(outputs, bucket_url):
@@ -37,7 +38,7 @@ def process_step_2(
         files = OrderedDict()
         for input_file in step.input:
             found_input = lock_input_files.enter_context(
-                download_input_file(input_file, input_source, output_source, step.keep, progress)
+                download_input_file(input_file, input_source, output_source, step.keep, progress, step.step_name)
             )
             files[found_input.download_name or input_file] = found_input
         input_files = tuple(x for x in files.values())
@@ -63,9 +64,17 @@ def process_step_2(
                 keep = not local_input_source.uri.startswith(dependency_uri) or step.keep
 
                 return lock_input_files.enter_context(
-                    download_input_file(dependency_file, local_input_source, local_output_source, keep, progress)
+                    download_input_file(
+                        dependency_file,
+                        local_input_source,
+                        local_output_source,
+                        keep,
+                        progress,
+                        step.step_name + ".dependency",
+                    )
                 ).full_path
 
+            progress.set_description(step.step_name)
             step.preprocessing_fn(
                 download_func=download_func,
                 output_source=output_source,
@@ -74,6 +83,7 @@ def process_step_2(
                 allow_missing_files=allow_missing_files,
                 **{**files},
             )
+            progress.set_description(step.step_name)
 
         # Find and upload outputs
         found_outputs = []
@@ -87,16 +97,14 @@ def process_step_2(
 
             found_output = found_output_files[0]
             found_outputs.append(output)
+            progress.set_postfix({"uploading": base_output_source.to_relative(found_output.path)})
             upload_file(base_output_source.to_relative(found_output.path), found_output.path, cases_url)
+            progress.set_postfix({})
             progress.set_description(step.step_name)
             progress.update(1)
             progress.refresh()
 
     return step
-
-
-INPUT_FIND_LOCKS = {}
-CREATE_INPUT_FILE_LOCK = RLock()
 
 
 @contextmanager
@@ -106,45 +114,75 @@ def download_input_file(
     output_source: LocalSource,
     keep: bool,
     progress: TqdmUpWithReport,
+    step_info=None,
 ) -> Iterator[PathMeta]:
+
     if not isinstance(input_file, PathMeta):
         input_file = PathMeta(input_file)
 
     dir_output_file = os.path.join(output_source.uri, input_file)
 
-    lock_key = (input_source.uri, input_file)
-    file_lock = None
-    with CREATE_INPUT_FILE_LOCK:
-        file_lock = next(iter(INPUT_FIND_LOCKS.get(lock_key, [None]) or [None]))
-
-        if file_lock is None:
-            file_lock = RLock()
-
-        INPUT_FIND_LOCKS.setdefault(lock_key, []).append(file_lock)
-
-    with file_lock:
-        # Try to download the file
+    try:
+        transformed_input, output_path, _ = download_file(input_file, dir_output_file, input_source, progress)
+    except FileNotFoundError:
+        transformed_input = None
+        # Try to download the replacement if the file was not found
         try:
-            transformed_input, output_path, _ = download_file(input_file, dir_output_file, input_source, progress)
+            if input_file.replace_with is not None:
+                transformed_input = download_input_file(
+                    input_file.replace_with, input_source, output_source, keep, progress, step_info.step_name
+                )
         except FileNotFoundError:
-            transformed_input = None
-            # Try to download the replacement if the file was not found
-            try:
-                if input_file.replace_with is not None:
-                    transformed_input = download_input_file(output_source, input_file.replace_with, input_source)
-            except FileNotFoundError:
-                pass
+            pass
 
-            if transformed_input is None:
-                raise
+        if transformed_input is None:
+            raise
 
-        if transformed_input is not None:
-            transformed_input = input_file.clone(transformed_input)
-            transformed_input.full_path = output_path
-        else:
-            transformed_input = input_file
+    if transformed_input is not None:
+        transformed_input = input_file.clone(transformed_input)
+        transformed_input.full_path = output_path
+    else:
+        transformed_input = input_file
 
+    with _lock_dependency(output_path, keep, step_info):
         yield transformed_input
 
-        if not keep:
-            os.remove(output_path)
+
+DOWNLOAD_INPUT_FILE_LOCK = RLock()
+DOWNLOAD_INPUT_FILE_SEMAPHORES = {}
+
+
+@contextmanager
+def _lock_dependency(output_path, keep, step_info):
+    """
+    Ensures a file is not removed until all tasks depending on it are finished.
+    """
+    with DOWNLOAD_INPUT_FILE_LOCK:
+        file_semaphore = DOWNLOAD_INPUT_FILE_SEMAPHORES.get(output_path)
+        if not file_semaphore:
+            file_semaphore = TaskDependencySemaphore(output_path)
+            DOWNLOAD_INPUT_FILE_SEMAPHORES[output_path] = file_semaphore
+
+    # A step using a file must prevent other steps from removing the file until
+    # it has finished using the file.
+
+    file_semaphore.acquire_task(step_info)
+    yield
+    with DOWNLOAD_INPUT_FILE_LOCK:
+        file_semaphore.release_task(step_info)
+        if file_semaphore.value == 0:
+            DOWNLOAD_INPUT_FILE_SEMAPHORES.pop(output_path, None)
+
+    if not keep:
+        # If the task to remove files is run in a separated thread, and by chance the next step
+        # is not using this task's step, the next step may continue.
+        rm_thread = Thread(daemon=True, target=_rm_input, args=(output_path, file_semaphore, step_info))
+        rm_thread.start()
+
+
+def _rm_input(output_path, file_semaphore, step_info):
+    file_semaphore.acquire_dependecy(step_info)
+    try:
+        os.remove(output_path)
+    except FileNotFoundError:
+        pass

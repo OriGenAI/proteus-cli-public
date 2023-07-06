@@ -1,9 +1,10 @@
+from copy import deepcopy
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Optional, Callable, Sequence
 
 from cli import proteus
-from cli.datasets.preprocessor.utils import PathMeta
+from cli.utils.files import PathMeta
 
 PREPROCESSING_PHASE_COMMON = "common"
 PREPROCESSING_PHASE_CASE = "case"
@@ -125,7 +126,8 @@ class BaseConfig:
                             f"<preprocessing_phase>.MyConfigClass"
                         )
 
-                    dict_config = step_config.__dict__
+                    dict_config = deepcopy(step_config.__dict__)
+                    dict_config.pop("name", None)
 
                     root = dict_config.pop("root")
                     if not root:
@@ -136,6 +138,8 @@ class BaseConfig:
                         )
 
                     step_name = base_step_name
+                    if step_config.name:
+                        step_name = f"{step_name}.{step_config.name}"
                     if step_config.case:
                         step_name = f"{str(step_config.case).zfill(digits_for_cases)}." + step_name
                     if step_config.split:
@@ -169,6 +173,7 @@ class CommonStepConfig:
     case: Optional[str] = None
     root: Optional[str] = None
     enabled: Optional[bool] = True
+    name: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -183,6 +188,7 @@ class CaseStepConfig:
     preprocessing_fn: Optional[Callable]
     keep: Optional[bool] = False
     enabled: Optional[bool] = True
+    name: Optional[str] = None
 
 
 @dataclass(frozen=True)
