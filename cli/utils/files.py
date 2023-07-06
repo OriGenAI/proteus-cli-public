@@ -3,10 +3,11 @@ import os
 import platform
 import re
 from pathlib import Path
-from threading import RLock, Semaphore
+from threading import RLock
 
 from cli import proteus
 from cli.api.hooks import TqdmUpWithReport
+from cli.utils.sync import TaskDependencySemaphore
 
 
 def get_creation_date(path_to_file):
@@ -103,7 +104,7 @@ def download_file(source_path, destination_path, input_source, progress: TqdmUpW
     with DOWNLOAD_FILE_LOCK:
         file_semaphore = DOWNLOAD_FILE_SEMAPHORES.get(destination_path)
         if not file_semaphore:
-            file_semaphore = Semaphore()
+            file_semaphore = TaskDependencySemaphore()
             DOWNLOAD_FILE_SEMAPHORES[destination_path] = file_semaphore
 
     try:
