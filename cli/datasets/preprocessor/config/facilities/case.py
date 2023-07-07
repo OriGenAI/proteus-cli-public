@@ -1,7 +1,10 @@
-from preprocessing.common.csv_to_h5 import preprocess as preprocess_csv_to_h5
+import os
+from collections import defaultdict
+
+from preprocessing.facilities.flowline import preprocess as preprocess_flowline
 
 from cli.datasets.preprocessor.config import BaseConfig, CaseStepConfig
-from cli.datasets.preprocessor.utils import RequiredFilePath
+from cli.utils.files import RequiredFilePath
 
 
 class FacilitiesCaseConfig(BaseConfig):
@@ -9,23 +12,27 @@ class FacilitiesCaseConfig(BaseConfig):
 
     def step_1_flowline(self):
         """
-        List the steps to generate the flowline preprocessor
+        Create a preprocesor for each case group
 
         Args: -
 
         Returns:
-            iterator: the list of steps to preprocess
+            iterator: the list of groups to preprocess
         """
+        groups = defaultdict(list)
+        for c in self.cases:
+            groups[c["group"]].append(c)
+
         return tuple(
             CaseStepConfig(
-                input=(RequiredFilePath("*.csv", download_name="flowline"),),
-                output=(RequiredFilePath("output.h5"),),
-                preprocessing_fn=preprocess_csv_to_h5,
-                root=case["root"],
-                split=case["group"],
-                case=case["number"],
+                input=tuple(RequiredFilePath(f"{os.path.split(c['root'])[1]}/*.csv") for c in cases),
+                output=(RequiredFilePath("flowline.h5"),),
+                preprocessing_fn=preprocess_flowline,
+                root=os.path.split(cases[0]["root"])[0],  # "cases/{group}"
+                split=group,
+                case=None,
                 keep=True,
                 enabled=True
             )
-            for case in self.cases
+            for group, cases in groups.items()
         )

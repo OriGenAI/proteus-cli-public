@@ -1,7 +1,7 @@
-from preprocessing.common.csv_to_h5 import preprocess as preprocess_csv_to_h5
+from preprocessing.facilities.network import preprocess as preprocess_network
 
 from cli.datasets.preprocessor.config import BaseConfig, CommonStepConfig
-from cli.datasets.preprocessor.utils import RequiredFilePath
+from cli.utils.files import RequiredFilePath
 
 
 class FacilitiesCommonConfig(BaseConfig):
@@ -19,8 +19,8 @@ class FacilitiesCommonConfig(BaseConfig):
         return (
             CommonStepConfig(
                 input=(RequiredFilePath("network.csv", download_name="network"),),
-                output=(RequiredFilePath("output.h5"),),
-                preprocessing_fn=preprocess_csv_to_h5,
+                output=(RequiredFilePath("network.json"),),
+                preprocessing_fn=preprocess_network,
                 keep=True,
                 enabled=True,
             ),
