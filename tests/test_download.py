@@ -15,6 +15,8 @@ def test_download(mocked_auth):
 
 @given("an api mock", target_fixture="updated_mocked_api_get")
 def updated_mocked_api_get(mocked_api_get):
+
+    FILE_URL = "/api/v1/buckets/files/22-22"
     def response_setter(response, mocker):
         bucket_info = b'{"url": "my_url", "filepath": "test-file", "presigned_url": {"url": "http://example.com"}, "size": 0, "ready": true}'
 
@@ -28,19 +30,23 @@ def updated_mocked_api_get(mocked_api_get):
             return b'{"total": 1, ' b'"results":[' + bucket_info + b"]}"
         elif re.match(r"^/api/v1/buckets/[^/]+/files$", url):
             uuid = re.findall(r"^/api/v1/buckets/([^/]+)", url)[0]
-            return b"""{
+            return """{{
                 "results": [
-                    {
+                    {{
                         "ready": true,
                         "filepath": "test-file",
-                        "uuid":  "aaaa-bbbb-cccc"
-                    }
+                        "uuid":  "aaaa-bbbb-cccc",
+                        "url": "{}",
+                        "size": 22
+                    }}
                 ],
                 "total": 1,
                 "next": null
-            }"""
+            }}""".format(FILE_URL).encode()
+        elif url == FILE_URL:
+            return b'my-file-content'
         else:
-            raise b'{"bucket_fi}'
+            raise AssertionError('Unknown URL')
 
         return
 
@@ -71,7 +77,7 @@ def target_folder():
 
 @when("I download")
 def download_bucket(bucket_uuid, target_folder, updated_mocked_api_get):
-    list(proteus.bucket.download(bucket_uuid, target_folder, workers=1))
+    list(proteus.bucket.download(bucket_uuid, target_folder, workers=1, via="api_files"))
 
 
 @then("there are logged messages")

@@ -1,29 +1,27 @@
+import importlib
 import os
-import re
 import shutil
 import tempfile
-import time
-from functools import partial
-from multiprocessing.pool import ThreadPool
+from contextlib import contextmanager
+from typing import List
 
-import numpy as np
-from tqdm import tqdm
-from tqdm.utils import CallbackIOWrapper
-
+from cli import proteus
 from cli.api.hooks import TqdmUpWithReport
 from cli.config import config
 from cli.datasets.preprocessor.config import (
-    CaseConfigMapper,
-    CommonConfigMapper,
-    StepConfigMapper,
+    BaseConfig,
+    PREPROCESSING_PHASES,
+    StepConfigWithMetadata,
+    PREPROCESSING_PHASE_CASE,
+    PREPROCESSING_PHASE_STEP,
 )
-from .sources.az import AZSource
-from .sources.local import LocalSource
-from .sources.s3 import S3Source
-from .. import proteus
+from cli.datasets.preprocessor.process_step import process_step
+from cli.datasets.sources.az import AZSource
+from cli.datasets.sources.common import Source
+from cli.datasets.sources.local import LocalSource
+from cli.datasets.sources.s3 import S3Source
 
 AVAILABLE_SOURCES = [S3Source, AZSource, LocalSource]
-
 
 PROTEUS_HOST, WORKERS_COUNT, DATASET_VERSION = (
     config.PROTEUS_HOST,
@@ -31,13 +29,41 @@ PROTEUS_HOST, WORKERS_COUNT, DATASET_VERSION = (
     config.DATASET_VERSION,
 )
 
-_sheet_extension = re.compile(r".*(?P<extension>DATA|EGRID|INIT|SMSPEC|GRDECL)$")
 
-case_re = re.compile(
-    r"(?P<root>.*/(?P<group>validation|training|testing)" r"/SIMULATION_(?P<number>\d+))/(?P<content>.*)"
-)
+def upload(
+    bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False, allow_missing_files=tuple(), temp_folder_override=False
+):
+    assert proteus.auth.access_token is not None
+    set_dataset_version(dataset_uuid)
 
-_timestep = re.compile(r".*(?P<extension>X\d{4}|S\d{4})$")
+    proteus.logger.info(f"This process will use {workers} simultaneous threads.")
+    proteus.reporting.send("Starting", status="processing", progress=0)
+    with TqdmUpWithReport(total=0, unit="files") as progress:
+
+        progress.set_description("Retrieving dataset metadata...")
+        cases = get_cases(dataset_uuid, progress)
+        bucket_url, cases_url, workflow = get_dataset_info(dataset_uuid)
+        steps = get_steps(cases, workflow)
+
+        total_files = sum(len(x.output) for x in list(steps))
+        progress.total = total_files
+
+        progress.set_description("Starting...")
+        progress.refresh()
+
+        process_files(
+            bucket,
+            bucket_url,
+            cases_url,
+            steps,
+            progress=progress,
+            workers=workers,
+            replace=replace,
+            allow_missing_files=allow_missing_files,
+            temp_folder_override=temp_folder_override,
+        )
+
+    proteus.reporting.send("Done", status="completed", progress=100)
 
 
 def set_dataset_version(dataset_uuid):
@@ -51,67 +77,34 @@ def set_dataset_version(dataset_uuid):
     proteus.api.post(dataset_version_url, new_version)
 
 
-def get_total_steps(cases, workflow):
-    for case_kind in ["training", "validation", "testing"]:
-        filtered_cases = [*filter(lambda c: c["group"] == case_kind and c["number"] == 1, cases)]
-        if not filtered_cases:
-            continue
-        else:
-            first_training_case = next(iter(filtered_cases), None)
-        first_case_response = proteus.api.get(first_training_case.get("case_url"))
-        first_case_json = first_case_response.json().get("case")
-        initial_step = first_case_json.get("initialStep")
-        final_step = first_case_json.get("finalStep")
-        workflow = workflow.lower()
-        common_step = CommonConfigMapper[workflow].number_of_steps()
-        cases_steps = CaseConfigMapper[workflow].number_of_steps()
-        timesteps_steps = (
-            StepConfigMapper[workflow].number_of_steps() - 1 if StepConfigMapper[workflow].number_of_steps() > 0 else 0
-        )
-        return common_step + (cases_steps + timesteps_steps * (final_step - initial_step + 1)) * len(cases)
+def get_steps(cases, workflow) -> List[StepConfigWithMetadata]:
+    steps = []
+    # Generate all the files-pairs with a generator
+    for preprocessing_phase in PREPROCESSING_PHASES:
+        module_name = f'cli.datasets.preprocessor.config.{workflow.replace("-", "_")}.{preprocessing_phase}'
+        config_module = importlib.import_module(module_name)
+        config_classes = [
+            getattr(config_module, x)
+            for x in dir(config_module)
+            if isinstance(getattr(config_module, x), type)
+            and issubclass(getattr(config_module, x), BaseConfig)
+            and getattr(config_module, x).__module__ == config_module.__name__
+        ]
+        assert len(config_classes) == 1
+        try:
+            for step in config_classes[0](cases).return_iterator():
+                steps.append(step)
+        except BaseException as e:
+            raise RuntimeError(f"Error reading {module_name}.{config_classes[0].__name__}") from e
 
-    raise RuntimeError("No cases found to extract steps")
+    return sorted(steps, key=lambda x: x.step_name)
 
 
-def upload(
-    bucket, dataset_uuid, workers=WORKERS_COUNT, replace=False, allow_missing_files=tuple(), temp_folder_override=False
-):
-    assert proteus.api.auth.access_token is not None
-    set_dataset_version(dataset_uuid)
-    source = get_source(bucket)
-
-    proteus.logger.info(f"This process will use {workers} simultaneous threads.")
-    proteus.reporting.send("started upload", status="processing", progress=0)
-    with TqdmUpWithReport(total=0) as progress:
-        cases = get_cases(dataset_uuid, progress)
-
-        progress.set_description("Setting the dataset version")
-        progress.refresh()
-        response = proteus.api.get(f"/api/v1/datasets/{dataset_uuid}")
-        dataset_json = response.json().get("dataset")
-        bucket_url = dataset_json.get("bucket_url")
-        cases_url = dataset_json.get("cases_url")
-        workflow = dataset_json.get("workflow").get("workflow") or dataset_json.get("workflow").get("name")
-
-        total_steps = get_total_steps(cases, workflow)
-
-        progress.total = total_steps
-        progress.set_description("Starting processing files")
-        progress.refresh()
-        process_files(
-            source,
-            bucket_url,
-            cases_url,
-            progress=progress,
-            cases=cases,
-            workers=workers,
-            workflow=workflow,
-            replace=replace,
-            allow_missing_files=allow_missing_files,
-            temp_folder_override=temp_folder_override,
-        )
-
-    proteus.reporting.send("upload finished", status="completed", progress=100)
+def get_dataset_info(dataset_uuid):
+    response = proteus.api.get(f"/api/v1/datasets/{dataset_uuid}")
+    dataset_json = response.json().get("dataset")
+    workflow = dataset_json.get("workflow").get("workflow") or dataset_json.get("workflow").get("name")
+    return dataset_json.get("bucket_url"), dataset_json.get("cases_url"), workflow
 
 
 def get_cases(dataset_uuid, progress):
@@ -121,13 +114,9 @@ def get_cases(dataset_uuid, progress):
     cases_url = f"/api/v1/datasets/{dataset_uuid}/cases"
     response = proteus.api.get(cases_url)
 
-    return response.json().get("cases")
+    cases = response.json().get("cases")
 
-
-def find_target(case_by_group_and_number, group=None, number=None, **other):
-    if group is None or number is None:
-        return None
-    return case_by_group_and_number.get(f"{group}-{number}")
+    return sorted(cases, key=lambda d: d["root"])
 
 
 def get_source(source_uri):
@@ -136,93 +125,8 @@ def get_source(source_uri):
             return candidate(source_uri)
 
 
-def parallelized_upload(item_and_path, case_by_group_and_number, processed, skipped_count):
-    item, path, reference = item_and_path
-    matchs_as_case = case_re.match(path)
-    terms = matchs_as_case.groupdict() if matchs_as_case is not None else {}
-    target = find_target(case_by_group_and_number, **terms)
-    if target is None:
-        skipped_count += 1
-    else:
-        content = terms.get("content")
-        matchs = _timestep.match(content) or _sheet_extension.match(content)
-        if matchs:
-            if is_pending(matchs, target):
-                done, skipped = send_as(target, item, reference, **terms, **matchs.groupdict())
-                processed += done
-                skipped_count += skipped
-            else:
-                processed += 1
-
-    return processed
-
-
-def is_pending(match, target):
-    extension = match.groupdict().get("extension")
-    missing_core = target.get("missing_parts").get("core")
-    if extension in missing_core:
-        return True
-    missing_steps = target.get("missing_parts").get("steps")
-    if extension in missing_steps:
-        return True
-    return False
-
-
-def send_as(target, source, reference, group=None, number=None, extension=None, **other):
-    target_url = target.get("case_url")
-    source_path, file_size, modified, stream = source.open(reference)
-    done = 0
-    skipped = 0
-    transfer = None
-    try:
-        with tqdm(total=file_size, unit="B", unit_scale=True, unit_divisor=1024) as progress:
-            progress.set_description(f"uploading {source_path}")
-            wrapped_file = CallbackIOWrapper(progress.update, stream, "read")
-            transfer = proteus.api.post_file(
-                target_url, source_path, content=wrapped_file, modified=modified, retry=True
-            )
-            progress.set_description(f"uploaded {source_path[-20:]}")
-            stream.close()
-            assert transfer.json()
-            progress.close()
-            if transfer.status_code == 201:
-                done = 1
-            elif transfer.status_code == 200:
-                skipped = 1
-            else:
-                raise Exception("transfer failed")
-    except Exception as error:
-        proteus.logger.error(f"Failed upload: {source_path}")
-        if transfer is not None:
-            proteus.logger.error(error, transfer.content)
-        raise error
-    return done, skipped
-
-
-def process_files(
-    source,
-    bucket_url,
-    cases_url,
-    progress,
-    cases=[],
-    workers=WORKERS_COUNT,
-    workflow="hm",
-    replace=False,
-    allow_missing_files=tuple(),
-    temp_folder_override=False,
-):
-    from .preprocessor.config import Config
-    from .preprocessor.process_step import process_step
-
-    # Download common.p if exists
-    common_content = download_common(f"{bucket_url}/common.p")
-
-    # Generate all the files-pairs with a generator
-    sortedCases = sorted(cases, key=lambda d: d["root"])
-    config = Config(cases=sortedCases, common_data=common_content, workflow=workflow)
-    steps = config.return_iterator()
-
-    # Create temporary folder
+@contextmanager
+def _tmp_output_folder(bucket_url, temp_folder_override):
     tmpdirname = None
     try:
         tmpdirname = (
@@ -231,35 +135,79 @@ def process_files(
             else temp_folder_override
         )
         os.makedirs(tmpdirname, exist_ok=True)
-        with ThreadPool(processes=workers) as pool:
-            process_step_partial = partial(
-                process_step,
-                tmpdirname=tmpdirname,
-                source=source,
-                bucket_url=bucket_url,
-                cases_url=cases_url,
-                replace=replace,
-                allow_missing_files=allow_missing_files,
-            )
-            for res in pool.imap(process_step_partial, steps):
-                for output in res[:-1]:
-                    progress.update(n=1 / len(res))
-                    progress.set_description(f"File uploaded: {output}")
-                    time.sleep(1)
-                progress.set_description(f"File uploaded: {res[-1]}")
-                progress.update_with_report(n=1 / len(res))
-                progress.refresh()
+
+        yield tmpdirname
+
     finally:
         if tmpdirname and not temp_folder_override:
             shutil.rmtree(tmpdirname, ignore_errors=True)
 
 
-def download_common(url):
-    try:
-        r = proteus.api.get(url)
-        open("/tmp/common.p", "wb").write(r.content)
+def process_files(
+    bucket,
+    bucket_url,
+    cases_url,
+    steps,
+    progress,
+    workers=WORKERS_COUNT,
+    replace=False,
+    allow_missing_files=tuple(),
+    temp_folder_override=False,
+):
 
-        download = np.load("/tmp/common.p", allow_pickle=True)
-        return download
-    except Exception:
-        return None
+    # Create temporary folder
+    with _tmp_output_folder(bucket_url, temp_folder_override) as tmpdirname:
+
+        process_step_partial = generate_process_step_partial(
+            progress,
+            base_input_source=get_source(bucket),
+            base_output_source=get_source(tmpdirname),
+            cases_url=cases_url,
+            allow_missing_files=allow_missing_files,
+        )
+
+        for step in proteus.bucket.each_item_parallel(
+            total=len(steps), items=steps, each_item_fn=process_step_partial, workers=workers, progress=False
+        ):
+            proteus.reporting.send(
+                f"Step finished: {step.step_name}",
+                status="processing",
+                progress=round(progress.n / progress.total, 0),
+                number=progress.n,
+                total=progress.total,
+            )
+
+        assert progress.n == progress.total
+
+
+def generate_process_step_partial(
+    progress, base_input_source: Source, base_output_source: LocalSource, cases_url: str, allow_missing_files=tuple()
+):
+    def step_partial(step: StepConfigWithMetadata):
+
+        progress.set_description(step.step_name)
+        progress.refresh()
+
+        if not step.enabled:
+            for _ in step.output:
+                progress.update(1)
+            return step.output
+
+        if step.preprocessing_phase in (PREPROCESSING_PHASE_CASE, PREPROCESSING_PHASE_STEP):
+            input_source = base_input_source.cd(step.root)
+            output_source = base_output_source.cd(step.root)
+        else:
+            input_source = base_input_source
+            output_source = base_output_source
+
+        return process_step(
+            progress,
+            step,
+            input_source=input_source,
+            output_source=output_source,
+            base_output_source=base_output_source,
+            cases_url=cases_url,
+            allow_missing_files=allow_missing_files,
+        )
+
+    return step_partial

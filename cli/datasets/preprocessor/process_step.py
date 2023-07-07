@@ -1,12 +1,16 @@
-import glob
-import inspect
 import os
-import shutil
 from collections import OrderedDict
+from contextlib import contextmanager, ExitStack
+from threading import RLock, Thread
+from typing import Iterator, Union, Sequence
 
-from . import preprocess_functions
-from .utils import pluck, upload_file, download_file, PathMeta
-from ... import proteus, config
+from cli import proteus
+from cli.api.hooks import TqdmUpWithReport
+from cli.datasets.preprocessor.config import StepConfigWithMetadata
+from cli.datasets.sources.common import Source
+from cli.datasets.sources.local import LocalSource
+from cli.utils.files import upload_file, download_file, PathMeta, RequiredFilePath
+from cli.utils.sync import TaskDependencySemaphore
 
 
 def files_exist_in_bucket(outputs, bucket_url):
@@ -20,137 +24,165 @@ def files_exist_in_bucket(outputs, bucket_url):
 
 
 def process_step(
-    step,
-    tmpdirname,
-    source,
-    bucket_url,
+    progress: TqdmUpWithReport,
+    step: StepConfigWithMetadata,
+    input_source: Source,
+    output_source: LocalSource,
     cases_url,
-    replace=False,
-    allow_missing_files=tuple(),
-    download_workers=config.WORKERS_DOWNLOAD_COUNT,
+    base_output_source: LocalSource,
+    allow_missing_files: Sequence[str] = tuple(),
 ):
 
-    (
-        inputs,
-        outputs,
-        preprocessing_function_name,
-        split,
-        case,
-        keep,
-        additional_info,
-        post_processing_info,
-        post_processing_function_name,
-        continue_if_missing,
-    ) = pluck(
-        step,
-        "input",
-        "output",
-        "preprocessing",
-        "split",
-        "case",
-        "keep",
-        "additional_info",
-        "post_processing_info",
-        "post_processing_function_name",
-        "continue_if_missing",
-    )
-
-    additional_info = additional_info or {}
-
-    if not replace and files_exist_in_bucket(outputs, bucket_url):
-        return outputs
-
-    if "cases/SIMULATION_" in outputs[0]:
-        path_name = os.path.join(tmpdirname, "cases", f"SIMULATION_{case}")
-    else:
-        path_name = os.path.join(tmpdirname, "cases", f"{split}/SIMULATION_{case}") if (split and case) else tmpdirname
-    os.makedirs(path_name, exist_ok=True)
-
-    # Download the required files. Keep the file if necessary
-    downloaded_inputs = OrderedDict()
-
-    def process_input(input):
-        # Preserve RequiredFilePath with input.__class__
-        source_path = getattr(input, "clone", input.__class__)(f"/{input}")
-        try:
-            transformed_input, output_path = download_file(source_path, os.path.join(tmpdirname, str(input)), source)
-        except FileNotFoundError:
-            transformed_input, output_path = None, None
-
-        if transformed_input is None and getattr(input, "replace_with", None) is not None:
-            transformed_input, output_path = process_input(input.replace_with)
-            transformed_input.replaces = input
-        elif transformed_input is not None:
-            transformed_input = getattr(input, "clone", lambda x: PathMeta(x, download_name=input))(transformed_input)
-        else:
-            transformed_input = input
-
-        return transformed_input, output_path
-
-    for transformed_input, output_path in proteus.bucket.each_item_parallel(
-        total=len(inputs), items=inputs, each_item_fn=process_input, workers=download_workers
-    ):
-        if output_path:
-            downloaded_inputs.setdefault(getattr(transformed_input, "download_name", transformed_input), []).append(
-                output_path
+    with ExitStack() as lock_input_files:
+        # Download inputs
+        files = OrderedDict()
+        for input_file in step.input:
+            found_input = lock_input_files.enter_context(
+                download_input_file(input_file, input_source, output_source, step.keep, progress, step.step_name)
             )
+            files[found_input.download_name or input_file] = found_input
+        input_files = tuple(x for x in files.values())
 
-    # Process the files
-    func = getattr(preprocess_functions, preprocessing_function_name)
-    func_input = None
-    if len(inputs) > 1:
-        func_input = downloaded_inputs
-    if len(inputs) == 1:
-        download_name, output_path = next(iter(downloaded_inputs.items()), (inputs[0], None))
-        if output_path and len(output_path) == 1:
-            output_path = output_path[0]
+        # Preprocess inputs
+        if step.preprocessing_fn:
 
-        func_input = PathMeta(download_name, download_name=download_name, full_path=output_path)
+            def download_func(dependency_file, dir_path):
+                subpath = output_source.to_relative(dir_path)
+                local_input_source = input_source.cd(subpath)
+                local_output_source = output_source.cd(subpath)
 
-    # Parameters not fully supported by old preprocessing configurations
-    fn_args = set(inspect.getfullargspec(func).args).union(inspect.getfullargspec(func).kwonlyargs)
-    if "allow_missing_files" in fn_args:
-        additional_info["allow_missing_files"] = list(allow_missing_files)
+                # Always keep dependency files outside the local input source. PE, the following
+                # structure is very typical and the include folder is re-used many times
+                #
+                # /cases/testing/SIMULATION_1/file.DATA
+                # /include/file.grid
+                #
+                # If the input_source is in /cases/testing/SIMULATION_1/, we would like for
+                # /include/file.grid to not be removed because most likely it will be used
+                # by /cases/testing/SIMULATION_2/, /cases/validation/SIMULATION_99/, etc
+                dependency_uri = local_input_source.cd(input_source.dirname(dependency_file)).uri
+                keep = not local_input_source.uri.startswith(dependency_uri) or step.keep
 
-    if continue_if_missing:
-        additional_info.setdefault("allow_missing_files", []).extend(continue_if_missing)
+                return lock_input_files.enter_context(
+                    download_input_file(
+                        dependency_file,
+                        local_input_source,
+                        local_output_source,
+                        keep,
+                        progress,
+                        step.step_name + ".dependency",
+                    )
+                ).full_path
 
-    if "base_dir" in fn_args:
-        additional_info["base_dir"] = tmpdirname
+            progress.set_description(step.step_name)
+            step.preprocessing_fn(
+                download_func=download_func,
+                output_source=output_source,
+                base_output_source=base_output_source,
+                input_files=input_files,
+                allow_missing_files=allow_missing_files,
+                **{**files},
+            )
+            progress.set_description(step.step_name)
 
-    source_dir, _, output = func(
-        path_name,
-        path_name,
-        func_input,
-        source,
-        cases_url,
-        **(additional_info or {}),
-    )
+        # Find and upload outputs
+        found_outputs = []
+        for output in step.output:
+            found_output_files = list(output_source.list_contents(output))
+            if len(found_output_files) != 1 and isinstance(output, RequiredFilePath):
+                raise FileNotFoundError(
+                    f"Output {output} was suposed to be generated by {step.name} "
+                    f"from {step.root}, but the file was not found."
+                )
 
-    # Post-Process the files
-    if post_processing_function_name:
-        post_func = getattr(preprocess_functions, post_processing_function_name)
-        post_func(
-            os.path.join(tmpdirname, "cases"),
-            output,
-            bucket_url,
-            **post_processing_info,
-        )
+            found_output = found_output_files[0]
+            found_outputs.append(output)
+            progress.set_postfix({"uploading": base_output_source.to_relative(found_output.path)})
+            upload_file(base_output_source.to_relative(found_output.path), found_output.path, cases_url)
+            progress.set_postfix({})
+            progress.set_description(step.step_name)
+            progress.update(1)
+            progress.refresh()
 
-    # Delete not necessary files
-    if (not keep) and source_dir:
-        fileList = glob.glob(str(source_dir))
-        for filePath in fileList:
-            try:
-                if os.path.isdir(filePath):
-                    shutil.rmtree(filePath)
-                else:
-                    os.remove(filePath)
-            except Exception:
-                pass
+    return step
 
-    # Upload the files
-    for output in outputs:
-        upload_file(output, os.path.join(tmpdirname, output), cases_url)
 
-    return outputs
+@contextmanager
+def download_input_file(
+    input_file: Union[PathMeta, str],
+    input_source: Source,
+    output_source: LocalSource,
+    keep: bool,
+    progress: TqdmUpWithReport,
+    step_info=None,
+) -> Iterator[PathMeta]:
+
+    if not isinstance(input_file, PathMeta):
+        input_file = PathMeta(input_file)
+
+    dir_output_file = os.path.join(output_source.uri, input_file)
+
+    try:
+        transformed_input, output_path, _ = download_file(input_file, dir_output_file, input_source, progress)
+    except FileNotFoundError:
+        transformed_input = None
+        # Try to download the replacement if the file was not found
+        try:
+            if input_file.replace_with is not None:
+                transformed_input = download_input_file(
+                    input_file.replace_with, input_source, output_source, keep, progress, step_info.step_name
+                )
+        except FileNotFoundError:
+            pass
+
+        if transformed_input is None:
+            raise
+
+    if transformed_input is not None:
+        transformed_input = input_file.clone(transformed_input)
+        transformed_input.full_path = output_path
+    else:
+        transformed_input = input_file
+
+    with _lock_dependency(output_path, keep, step_info):
+        yield transformed_input
+
+
+DOWNLOAD_INPUT_FILE_LOCK = RLock()
+DOWNLOAD_INPUT_FILE_SEMAPHORES = {}
+
+
+@contextmanager
+def _lock_dependency(output_path, keep, step_info):
+    """
+    Ensures a file is not removed until all tasks depending on it are finished.
+    """
+    with DOWNLOAD_INPUT_FILE_LOCK:
+        file_semaphore = DOWNLOAD_INPUT_FILE_SEMAPHORES.get(output_path)
+        if not file_semaphore:
+            file_semaphore = TaskDependencySemaphore(output_path)
+            DOWNLOAD_INPUT_FILE_SEMAPHORES[output_path] = file_semaphore
+
+    # A step using a file must prevent other steps from removing the file until
+    # it has finished using the file.
+
+    file_semaphore.acquire_task(step_info)
+    yield
+    with DOWNLOAD_INPUT_FILE_LOCK:
+        file_semaphore.release_task(step_info)
+        if file_semaphore.value == 0:
+            DOWNLOAD_INPUT_FILE_SEMAPHORES.pop(output_path, None)
+
+    if not keep:
+        # If the task to remove files is run in a separated thread, and by chance the next step
+        # is not using this task's step, the next step may continue.
+        rm_thread = Thread(daemon=True, target=_rm_input, args=(output_path, file_semaphore, step_info))
+        rm_thread.start()
+
+
+def _rm_input(output_path, file_semaphore, step_info):
+    file_semaphore.acquire_dependecy(step_info)
+    try:
+        os.remove(output_path)
+    except FileNotFoundError:
+        pass
