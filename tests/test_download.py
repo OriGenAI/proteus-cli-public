@@ -17,6 +17,7 @@ def test_download(mocked_auth):
 def updated_mocked_api_get(mocked_api_get):
 
     FILE_URL = "/api/v1/buckets/files/22-22"
+
     def response_setter(response, mocker):
         bucket_info = b'{"url": "my_url", "filepath": "test-file", "presigned_url": {"url": "http://example.com"}, "size": 0, "ready": true}'
 
@@ -42,11 +43,13 @@ def updated_mocked_api_get(mocked_api_get):
                 ],
                 "total": 1,
                 "next": null
-            }}""".format(FILE_URL).encode()
+            }}""".format(
+                FILE_URL
+            ).encode()
         elif url == FILE_URL:
-            return b'my-file-content'
+            return b"my-file-content"
         else:
-            raise AssertionError('Unknown URL')
+            raise AssertionError("Unknown URL")
 
         return
 

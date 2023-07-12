@@ -32,7 +32,7 @@ class FacilitiesCaseConfig(BaseConfig):
                 split=group,
                 case=None,
                 keep=True,
-                enabled=True
+                enabled=True,
             )
             for group, cases in groups.items()
         )
