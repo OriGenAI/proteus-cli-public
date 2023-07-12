@@ -1402,14 +1402,14 @@ virtualenv = ">=20.10.0"
 
 [[package]]
 name = "proteus-preprocessing"
-version = "0.3.0"
+version = "0.4.0"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "proteus_preprocessing-0.3.0-py3-none-any.whl", hash = "sha256:012c2fbccd0c5906289d5134ec5d1e5cabe4eafaf7544d435bdd4fe9192d1cf5"},
-    {file = "proteus_preprocessing-0.3.0.tar.gz", hash = "sha256:a20eeb2f837e110de1df453953a76bc5465cfe0cf9b55e085010b39c8451bb2b"},
+    {file = "proteus_preprocessing-0.4.0-py3-none-any.whl", hash = "sha256:45cf91f0d913032dcafdbd51b48e37e7692ef52df4ec90644b71f0dbddd97e0f"},
+    {file = "proteus_preprocessing-0.4.0.tar.gz", hash = "sha256:7470d08a356304c0d9bbbf6b51fe65bcef2c564277be8688c544446a3d06d63f"},
 ]
 
 [package.dependencies]
@@ -2051,4 +2051,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.3)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.8"
-content-hash = "a56e46dd55fe3259d3cbf05c733e7b63f066041a5c5d002311d125155661c836"
+content-hash = "c0c88133e0df6dcc607be3a23e9619aa1ec598d8300286a8adeae9ec47c96660"
