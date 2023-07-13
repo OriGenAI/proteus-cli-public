@@ -483,7 +483,7 @@ files = [
 cffi = ">=1.12"
 
 [package.extras]
-docs = ["sphinx (>=1.6.5,!=1.8.0,!=3.1.0,!=3.1.1)", "sphinx_rtd_theme"]
+docs = ["sphinx (>=1.6.5,!=1.8.0,!=3.1.0,!=3.1.1)", "sphinx-rtd-theme"]
 docstest = ["doc8", "pyenchant (>=1.6.11)", "sphinxcontrib-spelling (>=4.0.1)", "twine (>=1.12.0)"]
 pep8test = ["black", "flake8", "flake8-import-order", "pep8-naming"]
 sdist = ["setuptools-rust (>=0.11.4)"]
@@ -1402,14 +1402,14 @@ virtualenv = ">=20.10.0"
 
 [[package]]
 name = "proteus-preprocessing"
-version = "0.4.1"
+version = "0.4.2"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "proteus_preprocessing-0.4.0-py3-none-any.whl", hash = "sha256:940bc2f7591d99b8f10da748c5394544bf4d418d72cb9b02f3999c5d9a82c1a9"},
-    {file = "proteus_preprocessing-0.4.0.tar.gz", hash = "sha256:e1b8664c72440bc9e178b900f2c9a6154b924c978f7d2170d1373816042106a4"},
+    {file = "proteus_preprocessing-0.4.0-py3-none-any.whl", hash = "sha256:900f8ec9c912ec35e205cb64320be37b13254db1c3640ff167e41e0f4fcdcefe"},
+    {file = "proteus_preprocessing-0.4.0.tar.gz", hash = "sha256:cd8d75856d7d76059c81d666855249366b011698367a7ec4bdea1aa58ea54684"},
 ]
 
 [package.dependencies]
@@ -2057,4 +2057,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.3)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.8"
-content-hash = "c4711df869a1e1b2c59194c3c69b33f27d6d5860d69ea74f508a2a20b45d6c83"
+content-hash = "35ace3b1f2d60ae8d5dbd08663ca205189a42aec8e377b98565ab54459db7932"

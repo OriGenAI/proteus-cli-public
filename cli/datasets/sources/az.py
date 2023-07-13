@@ -56,7 +56,7 @@ class AZSource(Source):
         assert match is not None, f"{uri} must be a blob storage URI"
         container_name = match.groupdict()["container_name"]
         storage_url = f'https://{match.groupdict()["bucket_name"]}'
-        subpath = match.groupdict()["prefix"].split("?")[0].rstrip("/")
+        subpath = match.groupdict()["prefix"].split("?")[0].rstrip("/.").rstrip("/")
 
         uri_parts = iter(uri.split("?"))
 
@@ -161,6 +161,12 @@ class AZSource(Source):
     @lru_cache(maxsize=50000)
     def _list_blobs_with_cache(cls, container_client, name_starts_with):
         items = cls._blob_cache.setdefault(container_client, {}).get(name_starts_with)
+
+        # First let's try "indicating" that we want to search in a directory
+        # Because maybe we want to search in "SIMULATION_1" but we also have "SIMULATION_10", "SIMULATION_100"...
+        if not items:
+            items = list(container_client.list_blobs(name_starts_with=name_starts_with + "/"))
+            cls._blob_cache[container_client][name_starts_with] = items
 
         if not items:
             items = list(container_client.list_blobs(name_starts_with=name_starts_with))
