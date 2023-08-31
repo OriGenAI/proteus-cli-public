@@ -5,7 +5,6 @@ import tempfile
 from contextlib import contextmanager
 from typing import List
 
-from cli import proteus
 from cli.api.hooks import TqdmUpWithReport
 from cli.config import config
 from cli.datasets.preprocessor.config import (
@@ -20,6 +19,8 @@ from cli.datasets.sources.az import AZSource
 from cli.datasets.sources.common import Source
 from cli.datasets.sources.local import LocalSource
 from cli.datasets.sources.s3 import S3Source
+
+from cli import proteus
 
 AVAILABLE_SOURCES = [S3Source, AZSource, LocalSource]
 
@@ -191,7 +192,7 @@ def generate_process_step_partial(
         if not step.enabled:
             for _ in step.output:
                 progress.update(1)
-            return step.output
+            return step
 
         if step.preprocessing_phase in (PREPROCESSING_PHASE_CASE, PREPROCESSING_PHASE_STEP):
             input_source = base_input_source.cd(step.root)
