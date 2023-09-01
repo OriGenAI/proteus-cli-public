@@ -21,6 +21,7 @@ def datasets():
 @click.argument("bucket")
 @click.argument("dataset_uuid")
 @may_fail_on_http_error(exit_code=1)
+@proteus.reporting.ensure_failed_is_reported
 @proteus.runs_authentified
 def upload(
     bucket,

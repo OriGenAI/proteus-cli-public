@@ -61,13 +61,19 @@ def download_file(source_path, destination_path, input_source, progress: TqdmUpW
 
         if len(items_and_paths) > 1:
             globbed_paths = ",".join(str(x) for x in items_and_paths)
-            raise RuntimeError(f'"{source_path}" defines more than one file: {globbed_paths}')
+            full_path_not_found = input_source.join(input_source.subpath, source_path)
+            error = f'"{full_path_not_found}" defines more than one file: {globbed_paths}'
+            proteus.logger.error(error)
+            proteus.reporting.send()
+            raise RuntimeError(error)
 
         cannot_resolve_glob = (
             len(items_and_paths) > 1 or len(items_and_paths) == 0 and isinstance(source_path, RequiredFilePath)
         )
         if cannot_resolve_glob:
-            raise FileNotFoundError(f'Cannot resolve glob "{source_path}"')
+            full_path_not_found = input_source.join(input_source.subpath, source_path)
+            error = f'Cannot find any file matching the following glob "{full_path_not_found}"'
+            raise FileNotFoundError(error)
 
         assert len(destination_path.split("*")) in (1, 2)
 
@@ -138,9 +144,10 @@ def download_file(source_path, destination_path, input_source, progress: TqdmUpW
 
         return transformed_source_path, destination_path, False
     except StopIteration:
+        full_path_not_found = input_source.join(input_source.subpath, source_path)
+        error = f"The following file was not found: {full_path_not_found}"
         if isinstance(source_path, RequiredFilePath):
-            raise FileNotFoundError(f"Required file {source_path} is not found")
-        proteus.logger.error(f"The following file was not found: {source_path}")
+            raise FileNotFoundError(error)
         return None, None, False
     finally:
         file_semaphore.release()
