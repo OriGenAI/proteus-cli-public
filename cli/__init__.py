@@ -59,6 +59,7 @@ if ENTITY_INFO.get("entity_name") == "datasets" and ENTITY_INFO.get("entity_id")
 
 # Try to fill up args from env
 @click.group()
+@proteus.reporting.ensure_failed_is_reported
 def main():
     """
     Simple CLI for PROTEUS auxiliary utils
