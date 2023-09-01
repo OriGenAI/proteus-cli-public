@@ -281,7 +281,7 @@ def export_dat_properties(output_source: LocalSource, input_files: Sequence[Path
         case_dest_loc = []
         # Dat files can be very big. Write them individually to reduce memory usage
         for source, col_name, df in dat.preprocess(dat_src_locs):
-            case_dest_loc.append(_write_keywords_to_h5({col_name: source}, output_source.uri)[0])
+            case_dest_loc.append(_write_keywords_to_h5({col_name: df.to_numpy()}, output_source.uri)[0])
 
     return dat_src_locs, case_dest_loc, None
 
