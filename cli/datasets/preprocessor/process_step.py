@@ -1,10 +1,11 @@
 import os
 from collections import OrderedDict
 from contextlib import contextmanager, ExitStack
+from itertools import chain
 from threading import RLock, Thread
 from typing import Iterator, Union, Sequence
 
-from cli import proteus
+from cli import proteus, config
 from cli.api.hooks import TqdmUpWithReport
 from cli.datasets.preprocessor.config import StepConfigWithMetadata
 from cli.datasets.sources.common import Source
@@ -34,14 +35,27 @@ def process_step(
 ):
 
     with ExitStack() as lock_input_files:
-        # Download inputs
+        # Download inputs in parallel
         files = OrderedDict()
-        for input_file in step.input:
+
+        def _download_input_file(input_file):
             found_input = lock_input_files.enter_context(
                 download_input_file(input_file, input_source, output_source, step.keep, progress, step.step_name)
             )
-            files[found_input.download_name or input_file] = found_input
-        input_files = tuple(x for x in files.values())
+            return found_input.download_name or input_file, found_input
+
+        for download_name, found_input in proteus.bucket.each_item_parallel(
+            len(step.input), step.input, each_item_fn=_download_input_file, workers=config.WORKERS_DOWNLOAD_COUNT
+        ):
+            if download_name in files:
+                if not isinstance(files[download_name], list):
+                    files[download_name] = [files[download_name]]
+
+                files[download_name].append(found_input)
+            else:
+                files[download_name] = found_input
+
+        input_files = tuple(chain(*(([x] if not isinstance(x, list) else x) for x in files.values())))
 
         # Preprocess inputs
         if step.preprocessing_fn:
@@ -81,6 +95,9 @@ def process_step(
                 base_output_source=base_output_source,
                 input_files=input_files,
                 allow_missing_files=allow_missing_files,
+                workers=config.WORKERS_DOWNLOAD_COUNT,
+                progress=progress,
+                proc_name=step.step_name,
                 **{**files},
             )
             progress.set_description(step.step_name)

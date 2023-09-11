@@ -1,7 +1,6 @@
-from preprocessing.facilities.network import preprocess as preprocess_network
-
 from cli.datasets.preprocessor.config import BaseConfig, CommonStepConfig
 from cli.utils.files import RequiredFilePath
+from preprocessing.facilities.network import preprocess as preprocess_network
 
 
 class FacilitiesCommonConfig(BaseConfig):
@@ -19,7 +18,10 @@ class FacilitiesCommonConfig(BaseConfig):
         return (
             CommonStepConfig(
                 input=(RequiredFilePath("network.csv", download_name="network"),),
-                output=(RequiredFilePath("network.json"),),
+                output=(
+                    RequiredFilePath("network.json"),
+                    # OptionalFilePath("network.svg")  # Not yet supported by the app
+                ),
                 preprocessing_fn=preprocess_network,
                 keep=True,
                 enabled=True,
