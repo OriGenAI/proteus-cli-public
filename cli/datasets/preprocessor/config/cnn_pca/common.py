@@ -59,6 +59,7 @@ class CnnPcaCommonConfig(BaseCnnPcaCaseConfig):
                 ),
                 output=(RequiredFilePath("actnum.h5"),),
                 preprocessing_fn=export_actnum,
+                enabled=True,
             ),
         )
 
@@ -70,6 +71,7 @@ class CnnPcaCommonConfig(BaseCnnPcaCaseConfig):
                 preprocessing_fn=export_dat_properties,
                 keep=False,
                 name=m.name,
+                enabled=True,
             )
             for m in self.mapping
         )

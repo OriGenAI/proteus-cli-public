@@ -1,9 +1,8 @@
 from pathlib import Path
 
-from preprocessing.facilities.flowline import preprocess as preprocess_flowline
-
 from cli.datasets.preprocessor.config import BaseConfig, CaseStepConfig
 from cli.utils.files import RequiredFilePath
+from preprocessing.facilities.flowline import preprocess as preprocess_flowline
 
 
 class FacilitiesCaseConfig(BaseConfig):
@@ -34,15 +33,17 @@ class FacilitiesCaseConfig(BaseConfig):
 
         return tuple(
             CaseStepConfig(
-                input=(RequiredFilePath("network.csv"),)
-                + tuple(RequiredFilePath(input_path) for input_path in group["cases"]),
-                output=(RequiredFilePath(group["output_path"]),),
+                input=(RequiredFilePath("network.csv", download_name="network"),)
+                + tuple(RequiredFilePath(input_path, download_name="flowlines") for input_path in group_conf["cases"]),
+                output=(RequiredFilePath(group_conf["output_path"]),),
                 preprocessing_fn=preprocess_flowline,
-                root=str(group["root"]),  # The only path that needs to be a string for internal susbstrings processing
+                root=str(
+                    group_conf["root"]
+                ),  # The only path that needs to be a string for internal susbstrings processing
                 split=group_name,
                 case=None,
                 keep=True,
                 enabled=True,
             )
-            for group_name, group in groups.items()
+            for group_name, group_conf in groups.items()
         )

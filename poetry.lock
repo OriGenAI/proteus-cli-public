@@ -1402,14 +1402,14 @@ virtualenv = ">=20.10.0"
 
 [[package]]
 name = "proteus-preprocessing"
-version = "0.4.3"
+version = "0.4.5"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "proteus_preprocessing-0.4.3-py3-none-any.whl", hash = "sha256:14b40d76c2c36fd37aa1cf020a39ef716504f7b21bcda33bc22b23b0c8db5cdf"},
-    {file = "proteus_preprocessing-0.4.3.tar.gz", hash = "sha256:034e815a33ede24249c313badb9092d90739985e3bee4d388d3b46adf48c5d59"},
+    {file = "proteus_preprocessing-0.4.5-py3-none-any.whl", hash = "sha256:c624d8ff8bbb2cd42ac34bc4ec92aeacc9c44c84a3f0d748035610ebb5f6bbec"},
+    {file = "proteus_preprocessing-0.4.5.tar.gz", hash = "sha256:2f72a61dfa385806b803924cc40ae98c03df1957f88ec50d74d19cd6a6263bfb"},
 ]
 
 [package.dependencies]
@@ -1420,6 +1420,7 @@ opm = "2022.4"
 pandas = ">=1.4.1,<2.0.0"
 python-json-logger = ">=2.0.1,<3.0.0"
 readchar = ">=3.0.4,<4.0.0"
+scikit-network = ">=0.31.0,<0.32.0"
 tables = ">=3.7.0,<4.0.0"
 tabulate = ">=0.8.9,<0.9.0"
 tqdm = ">=4.61.0,<5.0.0"
@@ -1868,6 +1869,76 @@ botocore = ">=1.12.36,<2.0a.0"
 crt = ["botocore[crt] (>=1.20.29,<2.0a.0)"]
 
 [[package]]
+name = "scikit-network"
+version = "0.31.0"
+description = "Graph algorithms"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "scikit-network-0.31.0.tar.gz", hash = "sha256:b26d6704ff1f8367eae7c2061b3731c33d5a25c479f9d27e11481f3c2887609e"},
+    {file = "scikit_network-0.31.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:11d392b558fe4d1cf6bfd3e00e7baec02c5b818d9d3d785fc6c46cda86ebdbe9"},
+    {file = "scikit_network-0.31.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:7a82a8ffb2275ce4df8085c778c15953388d2cc931347761e6f11897e4a8e420"},
+    {file = "scikit_network-0.31.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b3883eda659b8c3d169df6217363fec171003df80e40b654ccc087ec708b9f7d"},
+    {file = "scikit_network-0.31.0-cp310-cp310-win_amd64.whl", hash = "sha256:dd4fd65f3fedb92f1b4ba6da56ee5af2f7f493c3d8083014ac6909920828d43e"},
+    {file = "scikit_network-0.31.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:86342f1a04725f9e010493d76ad10536c5cabb671ad1a60f79de454bb1ce71ad"},
+    {file = "scikit_network-0.31.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:efd0c05395ccb1f5fa440dfe6224734a08d5c3a8bedece35e4b3ada49eef51e8"},
+    {file = "scikit_network-0.31.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4f0a4a6b56540b5970555184fca2aa280a729da43ab464207dc61c06bc7bd420"},
+    {file = "scikit_network-0.31.0-cp311-cp311-win_amd64.whl", hash = "sha256:b5865df4ce2e66fdd22ce70ed5692fc38a93fda789e5b218c42885f5232dc1e8"},
+    {file = "scikit_network-0.31.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:e090fb96af0188014beb8b06db8493e6d56b77980857ed5998735c054b341f79"},
+    {file = "scikit_network-0.31.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:69d12ec8acada5a779d4151978395569b2f2a9faec6469d1b142668d499758a5"},
+    {file = "scikit_network-0.31.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:81af2f8319662c2ddb30f73ff7a380268f91a9f480461dffe25bbdf4e4e692d5"},
+    {file = "scikit_network-0.31.0-cp38-cp38-win_amd64.whl", hash = "sha256:83001c524a4e9b114357d3049ed975df19bb01533e36106f137d8dc2f195256f"},
+    {file = "scikit_network-0.31.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:5c22c10f0952d0f815fd4cdfd215b13415560e3ce23814be099c14c8db009fdf"},
+    {file = "scikit_network-0.31.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:095387ca3229da150adcac9e56acb674ea4b3dcd704d5a55cd9eda35d227ffe0"},
+    {file = "scikit_network-0.31.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e5002c1bfb99176e78f21e6450f51ef321723e71cbb4d8a11f42e179923ce59e"},
+    {file = "scikit_network-0.31.0-cp39-cp39-win_amd64.whl", hash = "sha256:2a00ec725815eb7fd632e509f6aaf51a892090359c7c4d3286f3780133837da8"},
+]
+
+[package.dependencies]
+numpy = ">=1.22.4"
+scipy = ">=1.7.3"
+
+[[package]]
+name = "scipy"
+version = "1.10.1"
+description = "Fundamental algorithms for scientific computing in Python"
+category = "main"
+optional = false
+python-versions = "<3.12,>=3.8"
+files = [
+    {file = "scipy-1.10.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:e7354fd7527a4b0377ce55f286805b34e8c54b91be865bac273f527e1b839019"},
+    {file = "scipy-1.10.1-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:4b3f429188c66603a1a5c549fb414e4d3bdc2a24792e061ffbd607d3d75fd84e"},
+    {file = "scipy-1.10.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1553b5dcddd64ba9a0d95355e63fe6c3fc303a8fd77c7bc91e77d61363f7433f"},
+    {file = "scipy-1.10.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4c0ff64b06b10e35215abce517252b375e580a6125fd5fdf6421b98efbefb2d2"},
+    {file = "scipy-1.10.1-cp310-cp310-win_amd64.whl", hash = "sha256:fae8a7b898c42dffe3f7361c40d5952b6bf32d10c4569098d276b4c547905ee1"},
+    {file = "scipy-1.10.1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:0f1564ea217e82c1bbe75ddf7285ba0709ecd503f048cb1236ae9995f64217bd"},
+    {file = "scipy-1.10.1-cp311-cp311-macosx_12_0_arm64.whl", hash = "sha256:d925fa1c81b772882aa55bcc10bf88324dadb66ff85d548c71515f6689c6dac5"},
+    {file = "scipy-1.10.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:aaea0a6be54462ec027de54fca511540980d1e9eea68b2d5c1dbfe084797be35"},
+    {file = "scipy-1.10.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:15a35c4242ec5f292c3dd364a7c71a61be87a3d4ddcc693372813c0b73c9af1d"},
+    {file = "scipy-1.10.1-cp311-cp311-win_amd64.whl", hash = "sha256:43b8e0bcb877faf0abfb613d51026cd5cc78918e9530e375727bf0625c82788f"},
+    {file = "scipy-1.10.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:5678f88c68ea866ed9ebe3a989091088553ba12c6090244fdae3e467b1139c35"},
+    {file = "scipy-1.10.1-cp38-cp38-macosx_12_0_arm64.whl", hash = "sha256:39becb03541f9e58243f4197584286e339029e8908c46f7221abeea4b749fa88"},
+    {file = "scipy-1.10.1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:bce5869c8d68cf383ce240e44c1d9ae7c06078a9396df68ce88a1230f93a30c1"},
+    {file = "scipy-1.10.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:07c3457ce0b3ad5124f98a86533106b643dd811dd61b548e78cf4c8786652f6f"},
+    {file = "scipy-1.10.1-cp38-cp38-win_amd64.whl", hash = "sha256:049a8bbf0ad95277ffba9b3b7d23e5369cc39e66406d60422c8cfef40ccc8415"},
+    {file = "scipy-1.10.1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:cd9f1027ff30d90618914a64ca9b1a77a431159df0e2a195d8a9e8a04c78abf9"},
+    {file = "scipy-1.10.1-cp39-cp39-macosx_12_0_arm64.whl", hash = "sha256:79c8e5a6c6ffaf3a2262ef1be1e108a035cf4f05c14df56057b64acc5bebffb6"},
+    {file = "scipy-1.10.1-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:51af417a000d2dbe1ec6c372dfe688e041a7084da4fdd350aeb139bd3fb55353"},
+    {file = "scipy-1.10.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1b4735d6c28aad3cdcf52117e0e91d6b39acd4272f3f5cd9907c24ee931ad601"},
+    {file = "scipy-1.10.1-cp39-cp39-win_amd64.whl", hash = "sha256:7ff7f37b1bf4417baca958d254e8e2875d0cc23aaadbe65b3d5b3077b0eb23ea"},
+    {file = "scipy-1.10.1.tar.gz", hash = "sha256:2cf9dfb80a7b4589ba4c40ce7588986d6d5cebc5457cad2c2880f6bc2d42f3a5"},
+]
+
+[package.dependencies]
+numpy = ">=1.19.5,<1.27.0"
+
+[package.extras]
+dev = ["click", "doit (>=0.36.0)", "flake8", "mypy", "pycodestyle", "pydevtool", "rich-click", "typing_extensions"]
+doc = ["matplotlib (>2)", "numpydoc", "pydata-sphinx-theme (==0.9.0)", "sphinx (!=4.1.0)", "sphinx-design (>=0.2.0)"]
+test = ["asv", "gmpy2", "mpmath", "pooch", "pytest", "pytest-cov", "pytest-timeout", "pytest-xdist", "scikit-umfpack", "threadpoolctl"]
+
+[[package]]
 name = "setuptools"
 version = "67.7.2"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
@@ -2051,4 +2122,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.3)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.8"
-content-hash = "b4dde033676242e26c223a64ba359093f4859cfd8a4a0f52811a86fe87846394"
+content-hash = "b8ac955ee42dad0039f21aa6c5f80210f90a13b17dc7d15ecc41e54121f09130"
