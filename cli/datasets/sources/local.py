@@ -15,6 +15,10 @@ class LocalSource(Source):
         super().__init__(os.path.abspath(os.path.expanduser(uri)))
         self.sandbox_uri = os.path.abspath(sandbox_uri or self.uri)
 
+    @property
+    def subpath(self):
+        return self.uri
+
     def list_contents(self, starts_with="", ends_with=""):
         source_uri = self.uri
         starts_with = starts_with.lstrip("/")
