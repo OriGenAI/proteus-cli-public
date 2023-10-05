@@ -5,13 +5,14 @@ from itertools import chain
 from threading import RLock, Thread
 from typing import Iterator, Union, Sequence
 
-from cli import proteus, config
 from cli.api.hooks import TqdmUpWithReport
 from cli.datasets.preprocessor.config import StepConfigWithMetadata
 from cli.datasets.sources.common import Source
 from cli.datasets.sources.local import LocalSource
 from cli.utils.files import upload_file, download_file, PathMeta, RequiredFilePath
 from cli.utils.sync import TaskDependencySemaphore
+
+from cli import proteus, config
 
 
 def files_exist_in_bucket(outputs, bucket_url):
@@ -112,12 +113,13 @@ def process_step(
                     f"from {step.root}, but the file was not found."
                 )
 
-            found_output = found_output_files[0]
-            found_outputs.append(output)
-            progress.set_postfix({"uploading": base_output_source.to_relative(found_output.path)})
-            upload_file(base_output_source.to_relative(found_output.path), found_output.path, cases_url)
-            progress.set_postfix({})
-            progress.set_description(step.step_name)
+            for found_output in found_output_files:
+                found_outputs.append(found_output)
+                progress.set_postfix({"uploading": base_output_source.to_relative(found_output.path)})
+                upload_file(base_output_source.to_relative(found_output.path), found_output.path, cases_url)
+                progress.set_postfix({})
+                progress.set_description(step.step_name)
+
             progress.update(1)
             progress.refresh()
 
@@ -199,7 +201,8 @@ def _lock_dependency(output_path, keep, step_info):
 
 def _rm_input(output_path, file_semaphore, step_info):
     file_semaphore.acquire_dependecy(step_info)
-    try:
-        os.remove(output_path)
-    except FileNotFoundError:
-        pass
+    if output_path:
+        try:
+            os.remove(output_path)
+        except FileNotFoundError:
+            pass
