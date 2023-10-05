@@ -1,8 +1,10 @@
 from pathlib import Path
 
 from cli.datasets.preprocessor.config import BaseConfig, CaseStepConfig
-from cli.utils.files import RequiredFilePath
+from cli.utils.files import RequiredFilePath, OptionalFilePath
+
 from preprocessing.facilities.flowline import preprocess as preprocess_flowline
+from preprocessing.facilities.sampling_data import preprocess as preprocess_sampling_data
 
 
 class FacilitiesCaseConfig(BaseConfig):
@@ -47,3 +49,41 @@ class FacilitiesCaseConfig(BaseConfig):
             )
             for group_name, group_conf in groups.items()
         )
+
+    def step_2_override_sampling(self):
+
+        cases_info = {
+            g: {
+                "max": max(x["number"] for x in self.cases if x["group"] == g),
+                "min": min(x["number"] for x in self.cases if x["group"] == g),
+            }
+            for g in set(x["group"] for x in self.cases)
+        }
+
+        cases = []
+
+        for (
+            group,
+            info,
+        ) in cases_info.items():
+            inputs = [
+                OptionalFilePath("../../../network.csv", download_name="network"),
+                OptionalFilePath("../../../subsurface_mapping.csv", download_name="subsurface_mapping"),
+            ]
+            outputs = []
+            for csv_name in ("bfpd", "bsw"):
+                inputs.append(OptionalFilePath(csv_name + ".csv", download_name=csv_name))
+                outputs.append(OptionalFilePath(csv_name + ".csv", download_name=csv_name))
+
+            cases.append(
+                CaseStepConfig(
+                    input=inputs,
+                    output=outputs,
+                    preprocessing_fn=preprocess_sampling_data,
+                    split=group,
+                    case=None,
+                    root=f"input/{group}/SIMULATION_{info['min']}_{info['max']}",
+                )
+            )
+
+        return tuple(cases)

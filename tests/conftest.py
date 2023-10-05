@@ -29,11 +29,7 @@ def _mock_azcopy_command(mocker):
     Ensure azcopy is never really called
     """
 
-    class FakeAZCopyDownload:
-        def wait(self):
-            pass
-
-    mock = mocker.patch("proteus.bucket.Bucket._download_via_azcopy_process", return_value=FakeAZCopyDownload())
+    mock = mocker.patch("proteus.bucket.Bucket.run_azcopy", return_value=None)
     return mock
 
 
