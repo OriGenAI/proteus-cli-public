@@ -2,7 +2,6 @@ import re
 import sys
 
 import click
-
 from cli.api.decorators import may_fail_on_http_error  # noqa: E402
 from cli.buckets.commands import buckets as buckets_commands
 from cli.config import config
@@ -42,7 +41,7 @@ if ENTITY_INFO.get("entity_name") == "datasets" and ENTITY_INFO.get("entity_id")
     sys.argv.append(ENTITY_INFO.get("entity_name"))
     sys.argv.append("upload")
     sys.argv.append("--workers")
-    sys.argv.append("1" if getattr(sys, "gettrace", None) is not None else "8")  # One worker if CPU is
+    sys.argv.append("1" if getattr(sys, "gettrace", lambda: None)() is not None else "8")  # One worker if CPU is
     sys.argv.append(ENTITY_INFO.get("source_uri"))
     sys.argv.append(ENTITY_INFO.get("entity_id"))
 
