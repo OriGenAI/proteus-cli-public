@@ -1,5 +1,33 @@
 # syntax=docker/dockerfile:1
-FROM origenproteusregistry.azurecr.io/origen.ai/opm_base:2947843500ff46696704988ef19191d331e1a219 as cli_base
+
+FROM index.docker.io/python:3.8-bullseye AS cli_base
+
+
+# Build required dependencies
+ENV BUILD_DEPS ccache build-essential patchelf jq software-properties-common
+# cmake is a run dep because of libopm libopm-simulators-bin
+ENV RUN_DEPS cmake mpi-default-bin libc6 libopm-common=2022.10+ds-7 libopm-grid=2022.10+ds-3 libopm-simulators=2022.10+ds-2 libopm-simulators-bin=2022.10+ds-2
+
+# Install OPM repo.
+# PPA repository for OPM 2022.04
+# Debian Bookworm (next release) repository for all required dependencies
+# Reference: https://github.com/OPM/opm-utilities/blob/7e81cf96d604faaec7cfe9e2ce55fac46be0dfe4/docker_opm_user/Dockerfile
+# ---
+# for mv /etc/apt/trusted.gpg /etc/apt/trusted.gpg.d/ see https://askubuntu.com/a/1408456
+RUN touch /etc/apt/sources.list.d/opm-ubuntu-ppa-focal.list && \
+    echo "deb http://ftp.de.debian.org/debian bookworm main" | tee -a /etc/apt/sources.list.d/opm-ubuntu-ppa-focal.list && \
+    echo "deb https://ppa.launchpadcontent.net/opm/ppa/ubuntu focal main" | tee -a /etc/apt/sources.list.d/opm-ubuntu-ppa-focal.list && \
+    echo "deb-src https://ppa.launchpadcontent.net/opm/ppa/ubuntu focal main" | tee -a /etc/apt/sources.list.d/opm-ubuntu-ppa-focal.list && \
+    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys A754739BF0A72DEA5125B57E5426DBEF072EF342 && \
+    mv /etc/apt/trusted.gpg /etc/apt/trusted.gpg.d/ && \
+    SEQ=2 apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y $BUILD_DEPS $RUN_DEPS && \
+    apt-get remove -y $BUILD_DEPS && \
+    apt-get autoremove -y && \
+    apt-get clean -y && \
+    rm -rf /var/lib/apt/lists/*
+
 
 WORKDIR /var/run/cli
 

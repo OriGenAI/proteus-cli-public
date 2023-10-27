@@ -45,7 +45,7 @@ class FacilitiesCaseConfig(BaseConfig):
                 split=group_name,
                 case=None,
                 keep=True,
-                enabled=True,
+                enabled=False,
             )
             for group_name, group_conf in groups.items()
         )
