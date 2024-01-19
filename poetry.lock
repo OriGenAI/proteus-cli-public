@@ -1453,14 +1453,14 @@ tqdm = ">=4.61.0,<5.0.0"
 
 [[package]]
 name = "proteus-runtime"
-version = "0.5.3"
+version = "0.5.9"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "proteus_runtime-0.5.3-py3-none-any.whl", hash = "sha256:97b15a2a40035d184e4cf1ae781fe86662e98f2ba549a1f2a2c60d8d5c82ea5a"},
-    {file = "proteus_runtime-0.5.3.tar.gz", hash = "sha256:a23f6757e9d7a9f5877eebb42b25fbe5a7568f59523014b663ba42913c0d93e8"},
+    {file = "proteus_runtime-0.5.9-py3-none-any.whl", hash = "sha256:1cc2fe03fa413f02b0d7c244b19ffbaebbeb2a4fdfb66d8017dde63ab770d050"},
+    {file = "proteus_runtime-0.5.9.tar.gz", hash = "sha256:9874443ccb574597232b42b00424ca720098d7cbb1c99c5d33f2610ed993d8ec"},
 ]
 
 [package.dependencies]
@@ -2195,4 +2195,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.3)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.8"
-content-hash = "84a13de1a3c7a675d0180c165b7b063c72b26570e18b9811d263b8b9ee869e23"
+content-hash = "9631afaade17a21e077e57e49a41e87faf8f3d57821bd7e3b9a429aca4db938b"
