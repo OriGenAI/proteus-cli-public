@@ -2,7 +2,6 @@ from pathlib import Path
 
 from cli.datasets.preprocessor.config import BaseConfig, CaseStepConfig
 from cli.utils.files import RequiredFilePath, OptionalFilePath
-
 from preprocessing.facilities.flowline import preprocess as preprocess_flowline
 from preprocessing.facilities.sampling_data import preprocess as preprocess_sampling_data
 
@@ -45,7 +44,7 @@ class FacilitiesCaseConfig(BaseConfig):
                 split=group_name,
                 case=None,
                 keep=True,
-                enabled=False,
+                enabled=True,
             )
             for group_name, group_conf in groups.items()
         )
