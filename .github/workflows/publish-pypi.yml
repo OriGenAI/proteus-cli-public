@@ -1,8 +1,8 @@
 name: Upload Python Package
 
 on:
- release:
-   types: [published]
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -11,20 +11,45 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v3
-      with:
-        python-version: '3.8'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install poetry
-    - name: Build package
-      run: |
-        poetry env use `which python3.8`
-        poetry build
-    - name: Publish package
-      run: |
-        poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
-        poetry publish
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry twine
+
+      - name: Build package
+        run: |
+          poetry env use `which python3.8`
+          poetry build
+
+      - name: Determine if release should be yanked
+        id: yank_check
+        run: |
+          # Asumiendo que usas un prefijo para los tags destinados a ser "yanked"
+          if [[ "${{ github.ref }}" == refs/tags/dev-* ]]; then
+            echo "Setting release to be yanked"
+            echo "::set-output name=yanked::true"
+          else
+            echo "::set-output name=yanked::false"
+          fi
+
+      - name: Publish package
+        if: steps.yank_check.outputs.yanked == 'false'
+        run: |
+          poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
+          poetry publish
+
+      - name: Yank package
+        if: steps.yank_check.outputs.yanked == 'true'
+        run: |
+          PACKAGE_VERSION=$(echo ${{ github.ref }} | sed 's/refs\/tags\///')
+          # Aquí necesitas extraer el nombre del paquete de alguna manera, posiblemente desde pyproject.toml o asumir un nombre fijo
+          PACKAGE_NAME="your-package-name"
+          echo "Yanking version $PACKAGE_VERSION for $PACKAGE_NAME"
+          poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
+          twine yank --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} -r pypi ${PACKAGE_NAME}==${PACKAGE_VERSION}
