@@ -41,4 +41,4 @@ jobs:
         PACKAGE_VERSION=$(poetry version | awk '{print $2}')
         echo "Marking $PACKAGE_NAME==$PACKAGE_VERSION as yanked"
         echo "" > "${PACKAGE_NAME}-${PACKAGE_VERSION}.yank"
-        curl -X POST -F "content=@${PACKAGE_NAME}-${PACKAGE_VERSION}.yank" -u "__token__:${PYPI_API_TOKEN}" https://upload.pypi.org/legacy/
+        curl -X POST -F "content=@${PACKAGE_NAME}-${PACKAGE_VERSION}.yank" -u "__token__:${{ secrets.PYPI_API_TOKEN }}" https://upload.pypi.org/legacy/
