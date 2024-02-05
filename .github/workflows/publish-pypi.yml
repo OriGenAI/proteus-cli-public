@@ -1,8 +1,8 @@
 name: Upload Python Package
 
 on:
- release:
-   types: [published]
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -18,13 +18,10 @@ jobs:
       with:
         python-version: '3.8'
 
-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install poetry
-        pip install twine>=4.0.1
-
 
     - name: Build package
       run: |
@@ -36,11 +33,12 @@ jobs:
         poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
         poetry publish
 
-    - name: Yank package version
+    - name: Yank package version using PyPI API
       env:
         PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
       run: |
         PACKAGE_NAME=$(poetry version | awk '{print $1}')
         PACKAGE_VERSION=$(poetry version | awk '{print $2}')
         echo "Marking $PACKAGE_NAME==$PACKAGE_VERSION as yanked"
-        twine yank --username __token__ --password $PYPI_API_TOKEN --yes $PACKAGE_NAME==$PACKAGE_VERSION
+        echo "" > "${PACKAGE_NAME}-${PACKAGE_VERSION}.yank"
+        curl -X POST -F "content=@${PACKAGE_NAME}-${PACKAGE_VERSION}.yank" -u "__token__:${PYPI_API_TOKEN}" https://upload.pypi.org/legacy/
