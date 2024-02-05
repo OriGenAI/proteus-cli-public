@@ -75,7 +75,7 @@ jobs:
 
     - name: Get branch name
       id: branch_name
-      uses: tj-actions/branch-names@v6
+      uses: tj-actions/branch-names@v8
 
     # Retags the built image with the commit id and branch name so that it can be used in other workflows, etc.
     - name: Retag successful image
