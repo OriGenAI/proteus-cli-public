@@ -38,7 +38,7 @@ RUN pip install --no-cache-dir proteus-cli==$CLI_VERSION &&  \
     pip cache purge
 
 # Install Azure CLI
-RUN curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
 RUN \
     wget https://aka.ms/downloadazcopy-v10-linux && \
