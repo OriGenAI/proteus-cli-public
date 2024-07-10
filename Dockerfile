@@ -14,6 +14,7 @@ ENV RUN_DEPS cmake mpi-default-bin libc6 libopm-common=2022.10+ds-7 libopm-grid=
 # Reference: https://github.com/OPM/opm-utilities/blob/7e81cf96d604faaec7cfe9e2ce55fac46be0dfe4/docker_opm_user/Dockerfile
 # ---
 # for mv /etc/apt/trusted.gpg /etc/apt/trusted.gpg.d/ see https://askubuntu.com/a/1408456
+
 RUN touch /etc/apt/sources.list.d/opm-ubuntu-ppa-focal.list && \
     echo "deb http://ftp.de.debian.org/debian bookworm main" | tee -a /etc/apt/sources.list.d/opm-ubuntu-ppa-focal.list && \
     echo "deb https://ppa.launchpadcontent.net/opm/ppa/ubuntu focal main" | tee -a /etc/apt/sources.list.d/opm-ubuntu-ppa-focal.list && \
@@ -40,6 +41,9 @@ RUN pip install --no-cache-dir proteus-cli==$CLI_VERSION &&  \
 # Install Azure CLI
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
+# Install Azure Developer CLI
+RUN curl -fsSL https://aka.ms/install-azd.sh | bash
+
 RUN \
     wget https://aka.ms/downloadazcopy-v10-linux && \
     tar -xvf ./downloadazcopy-v10-linux && \
@@ -54,3 +58,6 @@ COPY poetry.lock pyproject.toml ./
 RUN pip install --no-cache-dir poetry && poetry install --no-interaction --no-ansi --no-root --no-cache
 
 ENTRYPOINT []
+
+# Ensure azd is authenticated
+RUN azd auth login
