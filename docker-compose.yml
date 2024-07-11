@@ -6,7 +6,7 @@ services:
       context: .
       target: cli_base
       args:
-        CLI_VERSION: 1.1.19
+        CLI_VERSION: 1.1.36
 
   cli-dev:
     build:
