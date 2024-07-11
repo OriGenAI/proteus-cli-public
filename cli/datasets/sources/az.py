@@ -23,6 +23,7 @@ class AZSource(Source):
     )
 
     SAS_TOKEN_COMPONENTS = {"sv", "se", "sr", "sp"}
+    NEW_SAS_TOKEN_COMPONENTS = {"si", "sig", "sr", "sv"}
 
     CLIENT_INIT_PARAMS = {"max_single_get_size": 256 * 1024 * 1024, "max_chunk_get_size": 128 * 1024 * 1024}
     MAX_CONCURRENCY = 10
@@ -67,10 +68,12 @@ class AZSource(Source):
 
     def _init_container_client(self):
         url_sas_token_components = set(x.split("=")[0] for x in self.url_sas_token.split("&") if x)
-
         errors = []
 
-        if self.SAS_TOKEN_COMPONENTS.intersection(url_sas_token_components) == self.SAS_TOKEN_COMPONENTS:
+        if (
+            self.SAS_TOKEN_COMPONENTS.intersection(url_sas_token_components) == self.SAS_TOKEN_COMPONENTS
+            or self.NEW_SAS_TOKEN_COMPONENTS.intersection(url_sas_token_components) == self.NEW_SAS_TOKEN_COMPONENTS
+        ):
             self.container_client = ContainerClient.from_container_url(
                 f"{self.storage_url}/{self.container_name}?" + self.url_sas_token, **self.CLIENT_INIT_PARAMS
             )
