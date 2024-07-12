@@ -4,13 +4,23 @@ services:
   cli:
     build:
       context: .
+      dockerfile: Dockerfile
       target: cli_base
       args:
-        CLI_VERSION: 1.1.36
+        CLI_VERSION: 1.1.37
+    env_file:
+      - ./config.env
+    volumes:
+      - .:/var/run/cli/
 
   cli-dev:
     build:
       context: .
+      dockerfile: Dockerfile
       target: cli_development
+      args:
+        CLI_VERSION: 1.1.37
     volumes:
-      - ./:/var/run/cli/
+      - .:/var/run/cli/
+    env_file:
+      - ./config.env
