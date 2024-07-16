@@ -3,7 +3,7 @@
 FROM python:3.8-slim-bookworm AS cli_base
 
 # Build required dependencies
-ENV BUILD_DEPS="ccache build-essential patchelf jq software-properties-common"
+ENV BUILD_DEPS="ccache build-essential patchelf jq software-properties-common gnupg"
 ENV RUN_DEPS="cmake mpi-default-bin libc6 libopm-common=2022.10+ds-7 libopm-grid=2022.10+ds-3 libopm-simulators=2022.10+ds-2 libopm-simulators-bin=2022.10+ds-2"
 
 # Install OPM repo
@@ -11,6 +11,8 @@ RUN touch /etc/apt/sources.list.d/opm-ubuntu-ppa-focal.list && \
     echo "deb http://ftp.de.debian.org/debian bookworm main" | tee -a /etc/apt/sources.list.d/opm-ubuntu-ppa-focal.list && \
     echo "deb https://ppa.launchpadcontent.net/opm/ppa/ubuntu focal main" | tee -a /etc/apt/sources.list.d/opm-ubuntu-ppa-focal.list && \
     echo "deb-src https://ppa.launchpadcontent.net/opm/ppa/ubuntu focal main" | tee -a /etc/apt/sources.list.d/opm-ubuntu-ppa-focal.list && \
+    apt-get update && \
+    apt-get install -y gnupg && \
     apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys A754739BF0A72DEA5125B57E5426DBEF072EF342 && \
     mv /etc/apt/trusted.gpg /etc/apt/trusted.gpg.d/ && \
     apt-get update && \
