@@ -3,7 +3,7 @@
 FROM python:3.8-slim-bookworm AS cli_base
 
 # Build required dependencies
-ENV BUILD_DEPS="ccache build-essential patchelf jq software-properties-common gnupg curl wget"
+ENV BUILD_DEPS="ccache build-essential patchelf jq software-properties-common gnupg"
 ENV RUN_DEPS="cmake mpi-default-bin libc6 libopm-common=2022.10+ds-7 libopm-grid=2022.10+ds-3 libopm-simulators=2022.10+ds-2 libopm-simulators-bin=2022.10+ds-2"
 
 # Install OPM repo
@@ -23,6 +23,9 @@ RUN touch /etc/apt/sources.list.d/opm-ubuntu-ppa-focal.list && \
     apt-get autoremove -y && \
     apt-get clean -y && \
     rm -rf /var/lib/apt/lists/*
+
+# Reinstall curl and wget
+RUN apt-get update && apt-get install -y curl wget
 
 WORKDIR /var/run/cli
 
