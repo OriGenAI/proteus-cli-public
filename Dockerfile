@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM python:3.8-bullseye AS cli_base
+FROM python:3.8-slim-bookworm AS cli_base
 
 # Build required dependencies
 ENV BUILD_DEPS="ccache build-essential patchelf jq software-properties-common"
@@ -25,6 +25,7 @@ WORKDIR /var/run/cli
 
 ARG CLI_VERSION
 
+RUN pip --no-cache-dir install --upgrade pip==23.3
 RUN pip install --no-cache-dir proteus-cli==$CLI_VERSION
 RUN pip install --no-cache origen-ai-ecl==0.2.11
 
