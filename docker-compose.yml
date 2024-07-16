@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
       target: cli_base
       args:
-        CLI_VERSION: 1.1.39
+        CLI_VERSION: 1.1.40
     env_file:
       - ./config.env
     volumes:
@@ -19,7 +19,7 @@ services:
       dockerfile: Dockerfile
       target: cli_development
       args:
-        CLI_VERSION: 1.1.39
+        CLI_VERSION: 1.1.40
     volumes:
       - .:/var/run/cli/
     env_file:

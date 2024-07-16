@@ -13,7 +13,8 @@ RUN touch /etc/apt/sources.list.d/opm-ubuntu-ppa-focal.list && \
     echo "deb-src https://ppa.launchpadcontent.net/opm/ppa/ubuntu focal main" | tee -a /etc/apt/sources.list.d/opm-ubuntu-ppa-focal.list && \
     apt-get update && \
     apt-get install -y gnupg && \
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys A754739BF0A72DEA5125B57E5426DBEF072EF342 && \
+    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys A754739BF0A72DEA5125B57E5426DBEF072EF342 || \
+    apt-get install -y dirmngr && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys A754739BF0A72DEA5125B57E5426DBEF072EF342 && \
     mv /etc/apt/trusted.gpg /etc/apt/trusted.gpg.d/ && \
     apt-get update && \
     apt-get upgrade -y && \
